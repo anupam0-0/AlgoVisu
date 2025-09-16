@@ -16,15 +16,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
-    "/visualizers/array/loading": [
+    "/visualizers/queue/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/array/loading.js"
+      "static/chunks/app/visualizers/queue/loading.js"
     ],
-    "/visualizers/array/page": [
+    "/visualizers/queue/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/array/page.js"
+      "static/chunks/app/visualizers/queue/page.js"
     ]
   }
 }

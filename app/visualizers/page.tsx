@@ -31,7 +31,7 @@ export default function VisualizersPage() {
       icon: <Layers className="h-6 w-6" />,
       difficulty: "Beginner",
       topics: ["Queue", "FIFO", "Expression Evaluation"],
-      available: false,
+      available: true,
     },
     {
       id: "sorting",
