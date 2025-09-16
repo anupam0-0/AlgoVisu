@@ -291,12 +291,12 @@ export default function ArrayVisualizerPage() {
 
         {/* Algorithm Steps */}
         {searchSteps.length > 0 && (
-          <Card>
+          <Card className="" >
             <CardHeader>
               <CardTitle className="text-lg">Algorithm Steps</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto">
                 {searchSteps.map((step, index) => (
                   <div
                     key={index}

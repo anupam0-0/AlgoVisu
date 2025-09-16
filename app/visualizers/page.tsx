@@ -25,6 +25,15 @@ export default function VisualizersPage() {
       available: true,
     },
     {
+      id: "queue",
+      title: "Queue Visualizer",
+      description: "FIFO operations with push, pop, and peek",
+      icon: <Layers className="h-6 w-6" />,
+      difficulty: "Beginner",
+      topics: ["Queue", "FIFO", "Expression Evaluation"],
+      available: false,
+    },
+    {
       id: "sorting",
       title: "Sorting Algorithms",
       description: "Compare different sorting algorithms side by side",
@@ -45,11 +54,20 @@ export default function VisualizersPage() {
     {
       id: "graph",
       title: "Graph Algorithms",
-      description: "BFS, DFS, shortest path, and MST algorithms",
+      description: "BFS, DFS, shortest path algorithms",
       icon: <Network className="h-6 w-6" />,
       difficulty: "Advanced",
       topics: ["BFS", "DFS", "Graph Traversal", "Shortest Path"],
       available: true,
+    },
+    {
+      id: "mst",
+      title: "Mininum Spanning Tree Visualizer",
+      description: "Kruskal's and Prim's algorithms",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["Kruskal's", "Prim's"],
+      available: false,
     },
   ]
 
