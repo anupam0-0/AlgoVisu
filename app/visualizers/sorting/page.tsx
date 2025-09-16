@@ -192,7 +192,6 @@ export default function SortingVisualizerPage() {
         description: `Finding minimum element from position ${i} onwards`,
         comparisons,
         swaps,
-        isSelected: true,
       })
 
       for (let j = i + 1; j < array.length; j++) {
@@ -264,8 +263,8 @@ export default function SortingVisualizerPage() {
         array: [...array],
         description: `Inserting element ${key.value} into sorted portion`,
         comparisons,
-        swaps,
-        isSelected: true,
+        swaps
+        
       })
 
       while (j >= 0 && array[j].value > key.value) {
