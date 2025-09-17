@@ -61,6 +61,15 @@ export default function VisualizersPage() {
       available: true,
     },
     {
+      id: "linked list",
+      title: "Linked List Visualizer",
+      description: "Singlt, doubly, and circular linked lists",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["single", "double", "circular"],
+      available: false,
+    },
+    {
       id: "mst",
       title: "Mininum Spanning Tree Visualizer",
       description: "Kruskal's and Prim's algorithms",
