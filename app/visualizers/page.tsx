@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import Link from "next/link"
+import Header from "@/components/header"
 import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Shuffle } from "lucide-react"
 
 export default function VisualizersPage() {
@@ -94,36 +95,22 @@ export default function VisualizersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-orange-200">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </Link>
-              </Button>
-              <h1 className="text-xl font-bold text-foreground">DSA Visualizers</h1>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-4">Choose Your Learning Path</h1>
-          <p className="text-muted-foreground text-lg">
+        <div className="my-8 mb-16">
+          <h1 className="text-5xl font-bold mb-4">Choose Your Learning Path</h1>
+          <p className="text-primary text-lg">
             Select a visualizer to start exploring data structures and algorithms interactively
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visualizers.map((visualizer) => (
-            <Card key={visualizer.id} className={`relative ${!visualizer.available ? "opacity-60" : ""}`}>
+            <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : ""}`}>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -131,8 +118,8 @@ export default function VisualizersPage() {
                       {visualizer.icon}
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{visualizer.title}</CardTitle>
-                      <Badge className={`text-xs mt-1 ${getDifficultyColor(visualizer.difficulty)}`}>
+                      <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
+                      <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
                         {visualizer.difficulty}
                       </Badge>
                     </div>
@@ -140,10 +127,10 @@ export default function VisualizersPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription className="mb-4">{visualizer.description}</CardDescription>
+                <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
                 <div className="flex flex-wrap gap-1 mb-4">
                   {visualizer.topics.map((topic, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
+                    <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
                       {topic}
                     </Badge>
                   ))}
@@ -163,7 +150,7 @@ export default function VisualizersPage() {
               </CardContent>
               {!visualizer.available && (
                 <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
-                  <Badge variant="secondary">Coming Soon</Badge>
+                  <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl " >Coming Soon</h1>
                 </div>
               )}
             </Card>
@@ -171,8 +158,8 @@ export default function VisualizersPage() {
         </div>
 
         {/* Learning Tips */}
-        <div className="mt-12 bg-muted/30 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Learning Tips</h2>
+        <div className="mt-16 bg-orange-100 rounded-lg p-6 ">
+          <h2 className="text-xl font-semibold mb-4 ">Learning Tips</h2>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
               <h3 className="font-medium mb-2">Start Simple</h3>

@@ -1,4 +1,7 @@
 {
+  "/visualizers/stack/page": "app/visualizers/stack/page.js",
+  "/visualizers/page": "app/visualizers/page.js",
+  "/visualizers/tree/page": "app/visualizers/tree/page.js",
   "/page": "app/page.js",
-  "/visualizers/page": "app/visualizers/page.js"
+  "/visualizers/array/page": "app/visualizers/array/page.js"
 }
