@@ -1,6 +1,6 @@
-# TRACE:Technology for Real-time Algorithm Comprehension & Exploration
+# VTRACE:Visualization Tool for Real-time Algorithm Comprehension & Exploration
 
-TRACE:Technology for Real-time Algorithm Comprehension & Exploration is a web application for visualizing algorithms and data structures. It provides interactive visualizations for arrays, stacks, queues, trees, graphs, and sorting algorithms, helping users understand how these structures and algorithms work step by step.
+VTRACE:Visualization Tool for Real-time Algorithm Comprehension & Exploration is a web application for visualizing algorithms and data structures. It provides interactive visualizations for arrays, stacks, queues, trees, graphs, and sorting algorithms, helping users understand how these structures and algorithms work step by step.
 
 ## Features
 
