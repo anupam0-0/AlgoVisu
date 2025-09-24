@@ -8,6 +8,7 @@ import { Separator } from "../components/ui/separator"
 import Link from "next/link"
 import { ArrowLeft, Play, Pause, SkipBack, SkipForward, RotateCcw, Settings, Clock, Zap } from "lucide-react"
 import type { ReactNode } from "react"
+import Header from "../components/header"
 
 interface VisualizerLayoutProps {
   title: string
@@ -65,23 +66,25 @@ export function VisualizerLayout({
   const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-orange-200">
       {/* Enhanced Header */}
-      <header className="border-b border-border bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+         <header className="border-y-4 border-primary bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" asChild className="hover:bg-blue-50">
+              <Button variant="ghost" size="sm" asChild className="hover:bg-orange-50 hover:scale-120 hover:text-primary ">
                 <Link href="/visualizers">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Visualizers
+                  <ArrowLeft strokeWidth="2px" size="30" className="h-6 w-6 " />
                 </Link>
               </Button>
               <div>
+                <div className="flex gap-4">
+
                 <h1 className="text-xl font-bold text-foreground">{title}</h1>
-                <div className="flex items-center gap-2 mt-1">
                   <Badge className={`text-xs border ${getDifficultyColor(difficulty)}`}>{difficulty}</Badge>
-                  <span className="text-sm text-muted-foreground">{description}</span>
+</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-primary/60">{description}</span>
                 </div>
               </div>
             </div>
@@ -93,13 +96,13 @@ export function VisualizerLayout({
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="grid lg:grid-cols-4 gap-6">
+      <div className="container mx-auto px-4 py-8 max-w-7xl ">
+        <div className="grid lg:grid-cols-4 gap-6 ">
           {/* Main Visualization Area */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 ">
             {/* Enhanced Visualization Card */}
-            <Card className="mb-6 shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-              <CardContent className="p-0">
+            <Card className="mb-6 shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
+              <CardContent className="p-0 ">
                 {/* Progress Bar */}
                 {totalSteps > 0 && (
                   <div className="px-6 pt-6 pb-2">
@@ -114,8 +117,8 @@ export function VisualizerLayout({
                 )}
 
                 {/* Visualization Canvas */}
-                <div className="p-6">
-                  <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-6 min-h-[400px] flex items-center justify-center border border-slate-200/50">
+                <div className="p-6 ">
+                  <div className=" rounded-xl p-6 min-h-[400px] flex items-center justify-center border border-slate-200/50">
                     {children}
                   </div>
                 </div>
@@ -123,7 +126,7 @@ export function VisualizerLayout({
             </Card>
 
             {/* Enhanced Controls */}
-            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Play className="h-5 w-5 text-blue-600" />
@@ -137,17 +140,17 @@ export function VisualizerLayout({
                     size="sm"
                     onClick={onStepBack}
                     disabled={currentStep === 0}
-                    className="hover:bg-blue-50 disabled:opacity-50 bg-transparent"
+                    className="hover:bg-blue-50 disabled:opacity-50 border border-2 border-primary bg-transparent"
                   >
                     <SkipBack className="h-4 w-4" />
                   </Button>
                   {isPlaying ? (
-                    <Button onClick={onPause} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 shadow-md">
+                    <Button onClick={onPause} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 shadow-md">
                       <Pause className="h-4 w-4 mr-2" />
                       Pause
                     </Button>
                   ) : (
-                    <Button onClick={onPlay} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 shadow-md">
+                    <Button onClick={onPlay} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 shadow-md">
                       <Play className="h-4 w-4 mr-2" />
                       Play
                     </Button>
@@ -157,7 +160,7 @@ export function VisualizerLayout({
                     size="sm"
                     onClick={onStepForward}
                     disabled={currentStep >= totalSteps}
-                    className="hover:bg-blue-50 disabled:opacity-50"
+                    className="hover:bg-blue-50 border border-2 border-primary disabled:opacity-50"
                   >
                     <SkipForward className="h-4 w-4" />
                   </Button>
@@ -165,7 +168,7 @@ export function VisualizerLayout({
                     variant="outline"
                     size="sm"
                     onClick={onReset}
-                    className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 bg-transparent"
+                    className="hover:bg-red-50 hover:border-red-200 border border-2 border-primary hover:text-red-600 bg-transparent"
                   >
                     <RotateCcw className="h-4 w-4" />
                   </Button>
@@ -188,7 +191,7 @@ export function VisualizerLayout({
           <div className="space-y-6">
             {/* Complexity Analysis */}
             {complexity && (
-              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Zap className="h-5 w-5 text-yellow-600" />
@@ -196,8 +199,8 @@ export function VisualizerLayout({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-100">
+                    <div className="flex items-center gap-2 mb-1 ">
                       <Clock className="h-4 w-4 text-blue-600" />
                       <span className="text-sm font-medium text-blue-900">Time Complexity</span>
                     </div>
@@ -205,7 +208,7 @@ export function VisualizerLayout({
                       {complexity.time}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+                  <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-100">
                     <div className="flex items-center gap-2 mb-1">
                       <Zap className="h-4 w-4 text-green-600" />
                       <span className="text-sm font-medium text-green-900">Space Complexity</span>
@@ -219,12 +222,12 @@ export function VisualizerLayout({
             )}
 
             {/* Algorithm Steps */}
-            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Algorithm Steps</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="text-sm text-primary/80 p-3 bg-slate-50 rounded-lg border-2 border-slate-200">
                   Step-by-step explanation will appear here as you progress through the algorithm.
                 </div>
               </CardContent>
@@ -232,7 +235,7 @@ export function VisualizerLayout({
 
             {/* Real-world Applications */}
             {applications.length > 0 && (
-              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Real-world Applications</CardTitle>
                 </CardHeader>
@@ -241,7 +244,7 @@ export function VisualizerLayout({
                     <div key={index}>
                       <div className="border-l-4 border-blue-200 pl-4 py-2 bg-gradient-to-r from-blue-50/50 to-transparent rounded-r-lg">
                         <h4 className="font-semibold text-sm mb-2 text-blue-900">{app.title}</h4>
-                        <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{app.description}</p>
+                        <p className="text-xs text-primary/80 mb-3 leading-relaxed">{app.description}</p>
                         <div className="space-y-1">
                           {app.examples.map((example, exIndex) => (
                             <div
