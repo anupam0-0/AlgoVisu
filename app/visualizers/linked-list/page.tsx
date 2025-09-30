@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -9,71 +9,68 @@ import { Badge } from "../../../components/ui/badge"
 import { Plus, Trash2, ChevronRight, ArrowRight, Repeat, ArrowLeftRight, ArrowLeft } from "lucide-react"
 
 interface NodeItem {
-  id: number
   value: string | number
   isHighlighted?: boolean
   isRemoved?: boolean
   isTraversed?: boolean
-  prevId?: number | null
-  nextId?: number | null
+  nextId?: number
+  prevId?: number
 }
 
 type ListType = "singly" | "doubly" | "circular"
 
 function buildPointers(nodes: NodeItem[], listType: ListType): NodeItem[] {
-  const updated = nodes.map(n => ({ ...n }))
-  for (let i = 0; i < updated.length; i++) {
-    updated[i].nextId = i < updated.length - 1 ? updated[i + 1].id : (listType === "circular" && updated.length > 1 ? updated[0].id : undefined)
-    updated[i].prevId = (listType === "doubly" || listType === "circular") && i > 0 ? updated[i - 1].id : (listType === "circular" && i === 0 && updated.length > 1 ? updated[updated.length - 1].id : undefined)
-  }
-  return updated
+  return nodes.map((node, i) => ({
+    ...node,
+    nextId: i < nodes.length - 1 ? i + 1 : (listType === "circular" && nodes.length > 1 ? 0 : undefined),
+    prevId: (listType === "doubly" || listType === "circular") && i > 0 ? i - 1 : (listType === "circular" && i === 0 && nodes.length > 1 ? nodes.length - 1 : undefined)
+  }))
 }
 
 export default function LinkedListVisualizerPage() {
   const [nodes, setNodes] = useState<NodeItem[]>(buildPointers([
-    { id: 1, value: 10 },
-    { id: 2, value: 20 },
-    { id: 3, value: 30 },
+    { value: 10 },
+    { value: 20 },
+    { value: 30 },
   ], "singly"))
   const [inputValue, setInputValue] = useState("")
   const [currentStep, setCurrentStep] = useState(0)
   const [operations, setOperations] = useState<string[]>([])
   const [isPlaying, setIsPlaying] = useState(false)
-  const [traversalId, setTraversalId] = useState<number | null>(null)
+  const [traversalIndex, setTraversalIndex] = useState<number | null>(null)
   const [traversalDone, setTraversalDone] = useState(false)
   const [listType, setListType] = useState<ListType>("singly")
   const [traversalDirection, setTraversalDirection] = useState<"forward" | "backward">("forward")
 
-  // Head and tail
-  const headId = nodes.length > 0 ? nodes[0].id : null
-  const tailId = nodes.length > 0 ? nodes[nodes.length - 1].id : null
+  // Head and tail indices
+  const headIndex = nodes.length > 0 ? 0 : null
+  const tailIndex = nodes.length > 0 ? nodes.length - 1 : null
 
-  // Rebuild pointers on list type change or node count change
+  // Rebuild pointers on list type change
   useEffect(() => {
     setNodes(prev => buildPointers(prev, listType))
-    setTraversalId(null)
+    setTraversalIndex(null)
     setTraversalDone(false)
     setCurrentStep(0)
   }, [listType])
 
   const resetList = () => {
     setNodes(buildPointers([
-      { id: 1, value: 10 },
-      { id: 2, value: 20 },
-      { id: 3, value: 30 },
+      { value: 10 },
+      { value: 20 },
+      { value: 30 },
     ], listType))
     setOperations([])
     setCurrentStep(0)
     setIsPlaying(false)
-    setTraversalId(null)
+    setTraversalIndex(null)
     setTraversalDone(false)
   }
 
   const appendNode = () => {
     if (!inputValue.trim()) return
-    const newId = Date.now()
     const newValue = isNaN(Number(inputValue)) ? inputValue : Number(inputValue)
-    setNodes(prev => buildPointers([...prev, { id: newId, value: newValue, isHighlighted: true }], listType))
+    setNodes(prev => buildPointers([...prev, { value: newValue, isHighlighted: true }], listType))
     setOperations(prev => [...prev, `Appended ${newValue}`])
     setInputValue("")
     setTraversalDone(false)
@@ -84,9 +81,8 @@ export default function LinkedListVisualizerPage() {
 
   const prependNode = () => {
     if (!inputValue.trim()) return
-    const newId = Date.now()
     const newValue = isNaN(Number(inputValue)) ? inputValue : Number(inputValue)
-    setNodes(prev => buildPointers([{ id: newId, value: newValue, isHighlighted: true }, ...prev], listType))
+    setNodes(prev => buildPointers([{ value: newValue, isHighlighted: true }, ...prev], listType))
     setOperations(prev => [...prev, `Prepended ${newValue}`])
     setInputValue("")
     setTraversalDone(false)
@@ -95,28 +91,28 @@ export default function LinkedListVisualizerPage() {
     }, 400)
   }
 
-  const removeNode = (id: number) => {
-    setNodes(prev => prev.map(n => n.id === id ? { ...n, isRemoved: true } : n))
-    const node = nodes.find(n => n.id === id)
+  const removeNode = (index: number) => {
+    setNodes(prev => prev.map((n, i) => i === index ? { ...n, isRemoved: true } : n))
+    const node = nodes[index]
     setOperations(prev => [...prev, `Removed ${node?.value}`])
     setTimeout(() => {
-      setNodes(prev => buildPointers(prev.filter(n => n.id !== id), listType))
-      setTraversalId(null)
+      setNodes(prev => buildPointers(prev.filter((_, i) => i !== index), listType))
+      setTraversalIndex(null)
       setTraversalDone(false)
     }, 300)
   }
 
-  // Traverse using pointers, not array index
-  const getNodeById = (id: number | null) => nodes.find(n => n.id === id) || null
+  // Get node by index
+  const getNodeByIndex = (index: number | null) => index !== null && index >= 0 && index < nodes.length ? nodes[index] : null
 
   const startTraversal = (direction: "forward" | "backward" = "forward") => {
     setNodes(prev => prev.map(n => ({ ...n, isTraversed: false })))
     setTraversalDirection(direction)
     if (direction === "forward") {
-      setTraversalId(headId)
+      setTraversalIndex(headIndex)
       setOperations(prev => [...prev, `Started forward traversal`])
     } else {
-      setTraversalId(tailId)
+      setTraversalIndex(tailIndex)
       setOperations(prev => [...prev, `Started backward traversal`])
     }
     setCurrentStep(0)
@@ -124,39 +120,38 @@ export default function LinkedListVisualizerPage() {
   }
 
   const stepForward = () => {
-    if (traversalId === null) return
-    setNodes(prev => prev.map(n => n.id === traversalId ? { ...n, isTraversed: true } : n))
-    const current = getNodeById(traversalId)
-    let nextId: number | null | undefined
+    if (traversalIndex === null) return
+    setNodes(prev => prev.map((n, i) => i === traversalIndex ? { ...n, isTraversed: true } : n))
+    const current = getNodeByIndex(traversalIndex)
+    let nextIndex: number | null | undefined
     if (traversalDirection === "forward") {
-      nextId = current?.nextId
-      if (listType === "circular" && nextId === headId) nextId = null
+      nextIndex = current?.nextId
+      if (listType === "circular" && nextIndex === headIndex) nextIndex = null
     } else {
-      nextId = current?.prevId
-      if (listType === "circular" && nextId === tailId) nextId = null
+      nextIndex = current?.prevId
+      if (listType === "circular" && nextIndex === tailIndex) nextIndex = null
     }
-    if (nextId && getNodeById(nextId)) {
-      setTraversalId(nextId)
+    if (nextIndex !== undefined && nextIndex !== null && getNodeByIndex(nextIndex)) {
+      setTraversalIndex(nextIndex)
       setCurrentStep(s => s + 1)
     } else {
-      setTraversalId(null)
+      setTraversalIndex(null)
       setIsPlaying(false)
       setTraversalDone(true)
     }
   }
 
   const stepBack = () => {
-    // Untraverse previous node
-    if (traversalId === null) return
-    let prevId: number | null | undefined
+    if (traversalIndex === null) return
+    let prevIndex: number | null | undefined
     if (traversalDirection === "forward") {
-      prevId = getNodeById(traversalId)?.prevId
+      prevIndex = getNodeByIndex(traversalIndex)?.prevId
     } else {
-      prevId = getNodeById(traversalId)?.nextId
+      prevIndex = getNodeByIndex(traversalIndex)?.nextId
     }
-    if (prevId && getNodeById(prevId)) {
-      setNodes(prev => prev.map(n => n.id === prevId ? { ...n, isTraversed: false } : n))
-      setTraversalId(prevId)
+    if (prevIndex !== undefined && prevIndex !== null && prevIndex >= 0 && prevIndex < nodes.length) {
+      setNodes(prev => prev.map((n, i) => i === prevIndex ? { ...n, isTraversed: false } : n))
+      setTraversalIndex(prevIndex)
       setCurrentStep(s => s - 1)
       setTraversalDone(false)
     }
@@ -165,20 +160,20 @@ export default function LinkedListVisualizerPage() {
   const play = () => {
     if (nodes.length === 0) return
     setIsPlaying(true)
-    if (traversalId === null) startTraversal(traversalDirection)
+    if (traversalIndex === null) startTraversal(traversalDirection)
     setTraversalDone(false)
   }
 
   const pause = () => setIsPlaying(false)
 
   useEffect(() => {
-    if (isPlaying && traversalId !== null) {
+    if (isPlaying && traversalIndex !== null) {
       const timer = setTimeout(() => {
         stepForward()
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [isPlaying, traversalId, nodes.length])
+  }, [isPlaying, traversalIndex, nodes.length])
 
   useEffect(() => {
     if (traversalDone) {
@@ -194,30 +189,42 @@ export default function LinkedListVisualizerPage() {
   ]
 
   // For rendering, follow pointers from head
-  const renderNodes: NodeItem[] = []
-  let currentId = headId
-  const visited = new Set<number>()
-  while (currentId && !visited.has(currentId)) {
-    const node = getNodeById(currentId)
-    if (!node) break
-    renderNodes.push(node)
-    visited.add(currentId)
-    currentId = node.nextId ?? null
-    if (listType === "circular" && currentId === headId) break
-  }
+  const renderNodes = useMemo(() => {
+    if (nodes.length === 0) return []
+    
+    const result: (NodeItem & { index: number })[] = []
+    const visited = new Set<number>()
+    let currentIndex = headIndex
+    
+    while (currentIndex !== null && !visited.has(currentIndex)) {
+      const node = getNodeByIndex(currentIndex)
+      if (!node) break
+      
+      result.push({ ...node, index: currentIndex })
+      visited.add(currentIndex)
+      
+      // Stop if we've completed a full circle in circular list
+      if (listType === "circular" && result.length > 1 && currentIndex === headIndex) break
+      
+      currentIndex = node.nextId ?? null
+    }
+    
+    return result
+  }, [nodes, headIndex, listType])
 
   const applications = [
-  {
-    title: "Dynamic Memory",
-    description: "Linked lists allow efficient insertions and deletions without reallocating entire structures",
-    examples: ["Memory allocators", "Adjacency lists", "Undo/Redo lists"],
-  },
-  {
-    title: "Flexible Data Structures",
-    description: "Used where size changes frequently and random access is not required",
-    examples: ["Implementing stacks/queues", "Graph representations", "Sparse data"],
-  },
-]
+    {
+      title: "Dynamic Memory",
+      description: "Linked lists allow efficient insertions and deletions without reallocating entire structures",
+      examples: ["Memory allocators", "Adjacency lists", "Undo/Redo lists"],
+    },
+    {
+      title: "Flexible Data Structures",
+      description: "Used where size changes frequently and random access is not required",
+      examples: ["Implementing stacks/queues", "Graph representations", "Sparse data"],
+    },
+  ]
+
   return (
     <VisualizerLayout
       title="Linked List Visualizer"
@@ -260,54 +267,78 @@ export default function LinkedListVisualizerPage() {
           {renderNodes.length === 0 ? (
             <div className="text-muted-foreground">List is empty</div>
           ) : (
-            <div className="flex items-center">
+            <div className="flex items-center relative">
+              {/* HEAD indicator */}
               {listType !== "circular" && (
                 <div className="flex flex-col items-center mr-4">
                   <div className="text-xs text-muted-foreground mb-1">HEAD</div>
                   <div className="w-8 h-0.5 bg-primary"></div>
                 </div>
               )}
-              {renderNodes.map((node, idx) => (
-                <div key={node.id} className="flex items-center gap-2 relative">
-                  <div
-                    className={`
-                      w-32 h-20 border-2 rounded-lg flex flex-col items-center justify-center relative
-                      transition-all duration-300
-                      ${
-                        node.isRemoved
-                          ? "bg-red-100 border-red-500 opacity-60 line-through"
-                          : traversalId === node.id
-                            ? "bg-blue-200 border-blue-500 scale-105 shadow-lg"
-                            : node.isTraversed
-                              ? "bg-green-200 border-green-500"
-                              : node.isHighlighted
-                                ? "bg-accent/20 border-accent scale-105"
-                                : "bg-card border-border"
-                      }
-                    `}
-                  >
-                    <div className="font-mono font-bold text-lg">{node.value}</div>
-                  </div>
-                  {/* Arrows */}
-                  {node.nextId && getNodeById(node.nextId) && (
-                    <div className="flex flex-col items-center">
-                      {(listType === "singly" || listType === "circular") && (
-                        <ChevronRight className="h-6 w-6 text-accent" />
-                      )}
-                      {listType === "doubly" && (
-                        <div className="flex flex-col items-center">
-                          <ChevronRight className="h-6 w-6 text-accent" />
-                          <ArrowLeft className="h-6 w-6 text-accent -mt-2" />
-                        </div>
-                      )}
+
+              {/* Nodes and arrows */}
+              {renderNodes.map((node, idx) => {
+                const hasNext = node.nextId !== undefined && node.nextId >= 0 && node.nextId < nodes.length
+                const hasPrev = node.prevId !== undefined && node.prevId >= 0 && node.prevId < nodes.length
+                
+                return (
+                  <div key={node.index} className="flex items-center gap-2 relative">
+                    {/* Node */}
+                    <div
+                      className={`
+                        w-24 h-20 border-2 rounded-lg flex flex-col items-center justify-center relative
+                        transition-all duration-300 z-10
+                        ${
+                          node.isRemoved
+                            ? "bg-red-100 border-red-500 opacity-60 line-through"
+                            : traversalIndex === node.index
+                              ? "bg-blue-200 border-blue-500 scale-105 shadow-lg"
+                              : node.isTraversed
+                                ? "bg-green-200 border-green-500"
+                                : node.isHighlighted
+                                  ? "bg-accent/20 border-accent scale-105"
+                                  : "bg-card border-border"
+                        }
+                      `}
+                    >
+                      <div className="font-mono font-bold text-lg">{node.value}</div>
+                      <div className="absolute -bottom-6 text-xs text-muted-foreground">
+                        Index: {node.index}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {/* Arrows */}
+                    {hasNext && (
+                      <div className="flex flex-col items-center">
+                        {(listType === "singly" || listType === "circular") && (
+                          <ChevronRight className="h-6 w-6 text-accent" />
+                        )}
+                        {listType === "doubly" && (
+                          <div className="flex flex-col items-center">
+                            <ChevronRight className="h-6 w-6 text-accent" />
+                            <ArrowLeft className="h-6 w-6 text-accent -mt-2" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* TAIL indicator */}
               {listType !== "circular" && (
                 <div className="flex flex-col items-center ml-4">
                   <div className="w-8 h-0.5 bg-primary"></div>
                   <div className="text-xs text-muted-foreground mt-1">TAIL</div>
+                </div>
+              )}
+
+              {/* Circular connection arrow */}
+              {listType === "circular" && renderNodes.length > 1 && (
+                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-accent/30 -z-10">
+                  <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2">
+                    <Repeat className="h-5 w-5 text-accent rotate-90" />
+                  </div>
                 </div>
               )}
             </div>
@@ -352,7 +383,7 @@ export default function LinkedListVisualizerPage() {
               <p className="text-sm text-muted-foreground">Click the trash icon on a node to remove it</p>
               <div className="flex flex-wrap gap-2">
                 {renderNodes.map((n) => (
-                  <Button key={n.id} variant="destructive" size="sm" onClick={() => removeNode(n.id)}>
+                  <Button key={n.index} variant="destructive" size="sm" onClick={() => removeNode(n.index)}>
                     Delete {n.value}
                   </Button>
                 ))}
@@ -392,14 +423,14 @@ export default function LinkedListVisualizerPage() {
               <div className="flex gap-2">
                 <Button 
                   onClick={stepBack} 
-                  disabled={traversalId === null}
+                  disabled={traversalIndex === null}
                   variant="outline"
                 >
                   Back
                 </Button>
                 <Button
                   onClick={stepForward}
-                  disabled={traversalId === null}
+                  disabled={traversalIndex === null}
                   variant="outline"
                 >
                   Next
@@ -408,8 +439,8 @@ export default function LinkedListVisualizerPage() {
 
               <div className="text-sm text-muted-foreground mt-2">
                 Current:{" "}
-                {traversalId === null ? "—" : `${getNodeById(traversalId)?.value} (id ${traversalId})`}
-                {traversalId !== null && ` | Direction: ${traversalDirection}`}
+                {traversalIndex === null ? "—" : `${getNodeByIndex(traversalIndex)?.value} (index ${traversalIndex})`}
+                {traversalIndex !== null && ` | Direction: ${traversalDirection}`}
               </div>
             </CardContent>
           </Card>
