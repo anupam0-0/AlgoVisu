@@ -1,6 +1,5 @@
 {
   "/page": "app/page.js",
-  "/visualizers/page": "app/visualizers/page.js",
-  "/visualizers/linked-list/page": "app/visualizers/linked-list/page.js",
-  "/visualizers/sorting/page": "app/visualizers/sorting/page.js"
+  "/visualizers/sorting/page": "app/visualizers/sorting/page.js",
+  "/visualizers/page": "app/visualizers/page.js"
 }

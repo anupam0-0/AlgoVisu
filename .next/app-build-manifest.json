@@ -16,16 +16,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
-    "/visualizers/linked-list/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/linked-list/loading.js"
-    ],
-    "/visualizers/linked-list/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/linked-list/page.js"
-    ],
     "/visualizers/sorting/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
