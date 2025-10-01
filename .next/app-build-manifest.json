@@ -25,26 +25,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/tree/page.js"
-    ],
-    "/visualizers/sorting/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sorting/loading.js"
-    ],
-    "/visualizers/sorting/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sorting/page.js"
-    ],
-    "/visualizers/queue/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/queue/loading.js"
-    ],
-    "/visualizers/queue/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/queue/page.js"
     ]
   }
 }

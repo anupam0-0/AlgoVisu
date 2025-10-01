@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Card, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Plus } from "lucide-react"
+import { Plus, Trash2, RefreshCcw } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
 interface TreeNode {
@@ -41,6 +41,7 @@ export default function TreeVisualizerPage() {
   const [treeHeight, setTreeHeight] = useState(0)
   const [nodeCount, setNodeCount] = useState(0)
   const [speed, setSpeed] = useState([1000]) // Speed in ms, default 1000ms
+  const [deleteValue, setDeleteValue] = useState("")
 
   // Added real-world applications for trees and BST
   const applications = [
@@ -495,6 +496,43 @@ export default function TreeVisualizerPage() {
     setRoot({ ...root })
   }
 
+  // Utility to generate a random BST with unique values and random weights
+  const generateRandomTree = (nodeCount = 7, min = 10, max = 99) => {
+    // Generate unique random values
+    const values = new Set<number>()
+    while (values.size < nodeCount) {
+      values.add(Math.floor(Math.random() * (max - min + 1)) + min)
+    }
+    const arr = Array.from(values)
+    let newRoot: TreeNode | null = null
+    const insert = (node: TreeNode | null, val: number): TreeNode => {
+      if (!node) return { value: val, id: val.toString() }
+      if (val < node.value) node.left = insert(node.left, val)
+      else if (val > node.value) node.right = insert(node.right, val)
+      return node
+    }
+    for (const v of arr) {
+      newRoot = insert(newRoot, v)
+    }
+    setRoot(newRoot)
+    calculateTreeMetrics(newRoot)
+    setTraversalSteps([])
+    setTraversalResult([])
+    setCurrentStep(0)
+    setIsPlaying(false)
+  }
+
+  // Update deleteNode to clear traversal state and input
+  const handleDeleteNode = () => {
+    if (!deleteValue) return
+    deleteNode(Number.parseInt(deleteValue))
+    setDeleteValue("")
+    setTraversalSteps([])
+    setTraversalResult([])
+    setCurrentStep(0)
+    setIsPlaying(false)
+  }
+
   useEffect(() => {
     if (isPlaying && currentStep < traversalSteps.length - 1) {
       const timer = setTimeout(() => stepForward(), speed[0])
@@ -535,6 +573,18 @@ export default function TreeVisualizerPage() {
           <svg width="800" height="400" className="mx-auto">
             {positionedRoot && renderTree(positionedRoot)}
           </svg>
+        </div>
+
+        {/* Controls Row: Add Random Tree Button */}
+        <div className="flex flex-wrap gap-4 mb-2">
+          <button
+            onClick={() => generateRandomTree()}
+            className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+            title="Generate Random Tree"
+          >
+            <RefreshCcw className="h-5 w-5" />
+            Random Tree
+          </button>
         </div>
 
         {/* Pseudocode Panel */}
@@ -618,6 +668,33 @@ export default function TreeVisualizerPage() {
             </div>
           </Card>
 
+          {/* Delete Node */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Delete Node
+              </CardTitle>
+            </CardHeader>
+            <div className="p-4 pt-0 space-y-3">
+              <input
+                type="number"
+                value={deleteValue}
+                onChange={(e) => setDeleteValue(e.target.value)}
+                placeholder="Enter value to delete"
+                className="w-full px-3 py-2 border rounded-md"
+                onKeyPress={(e) => e.key === "Enter" && handleDeleteNode()}
+              />
+              <button
+                onClick={handleDeleteNode}
+                disabled={!deleteValue}
+                className="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                Delete
+              </button>
+            </div>
+          </Card>
+
           {/* Tree Traversal */}
           <Card>
             <CardHeader>
@@ -665,7 +742,7 @@ export default function TreeVisualizerPage() {
                   : speed[0] <= 1000
                   ? "Medium"
                   : "Slow"}
-                {" "}({speed[0]} ms)
+                
               </div>
             </div>
           </Card>
