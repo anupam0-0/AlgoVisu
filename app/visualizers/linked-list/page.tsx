@@ -27,6 +27,53 @@ function buildPointers(nodes: NodeItem[], listType: ListType): NodeItem[] {
   }))
 }
 
+// --- Pseudocode Definitions ---
+const pseudocodeDefinitions = {
+  append: [
+    "function append(value):",
+    "  newNode = Node(value)",
+    "  if head is null:",
+    "    head = newNode",
+    "    return",
+    "  current = head",
+    "  while current.next is not null:",
+    "    current = current.next",
+    "  current.next = newNode",
+  ],
+  prepend: [
+    "function prepend(value):",
+    "  newNode = Node(value)",
+    "  newNode.next = head",
+    "  head = newNode",
+  ],
+  remove: [
+    "function remove(index):",
+    "  if head is null:",
+    "    return",
+    "  if index == 0:",
+    "    head = head.next",
+    "    return",
+    "  current = head",
+    "  for i = 0 to index-1:",
+    "    current = current.next",
+    "  current.next = current.next.next",
+  ],
+  traverseForward: [
+    "function traverseForward():",
+    "  current = head",
+    "  while current is not null:",
+    "    visit(current)",
+    "    current = current.next",
+  ],
+  traverseBackward: [
+    "function traverseBackward():",
+    "  current = tail",
+    "  while current is not null:",
+    "    visit(current)",
+    "    current = current.prev",
+  ],
+}
+
 export default function LinkedListVisualizerPage() {
   const [nodes, setNodes] = useState<NodeItem[]>(buildPointers([
     { value: 10 },
@@ -41,10 +88,16 @@ export default function LinkedListVisualizerPage() {
   const [traversalDone, setTraversalDone] = useState(false)
   const [listType, setListType] = useState<ListType>("singly")
   const [traversalDirection, setTraversalDirection] = useState<"forward" | "backward">("forward")
+  const [speed, setSpeed] = useState([1000]) // Speed in ms, default 1000ms
+  const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(pseudocodeDefinitions.traverseForward)
+  const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
 
   // Head and tail indices
   const headIndex = nodes.length > 0 ? 0 : null
   const tailIndex = nodes.length > 0 ? nodes.length - 1 : null
+
+  const getNodeByIndex = (index: number | null) =>
+  index !== null && index >= 0 && index < nodes.length ? nodes[index] : null
 
   // Rebuild pointers on list type change
   useEffect(() => {
@@ -67,31 +120,71 @@ export default function LinkedListVisualizerPage() {
     setTraversalDone(false)
   }
 
+  // --- Pseudocode Step Helpers ---
+  const highlightPseudocode = (operation: string, line: number) => {
+    setCurrentPseudocode(pseudocodeDefinitions[operation])
+    setCurrentCodeLine(line)
+  }
+
+  // --- Modified Operations to include pseudocode highlighting ---
   const appendNode = () => {
     if (!inputValue.trim()) return
+    highlightPseudocode("append", 1)
     const newValue = isNaN(Number(inputValue)) ? inputValue : Number(inputValue)
+    setTimeout(() => highlightPseudocode("append", 2), 200)
+    setTimeout(() => {
+      if (nodes.length === 0) {
+        highlightPseudocode("append", 3)
+        setTimeout(() => highlightPseudocode("append", 4), 200)
+      } else {
+        highlightPseudocode("append", 5)
+        setTimeout(() => highlightPseudocode("append", 6), 200)
+        setTimeout(() => highlightPseudocode("append", 7), 400)
+        setTimeout(() => highlightPseudocode("append", 8), 600)
+      }
+    }, 400)
     setNodes(prev => buildPointers([...prev, { value: newValue, isHighlighted: true }], listType))
     setOperations(prev => [...prev, `Appended ${newValue}`])
     setInputValue("")
     setTraversalDone(false)
     setTimeout(() => {
       setNodes(prev => prev.map(n => ({ ...n, isHighlighted: false })))
-    }, 400)
+      setCurrentCodeLine(-1)
+    }, 1000)
   }
 
   const prependNode = () => {
     if (!inputValue.trim()) return
+    highlightPseudocode("prepend", 1)
     const newValue = isNaN(Number(inputValue)) ? inputValue : Number(inputValue)
+    setTimeout(() => highlightPseudocode("prepend", 2), 200)
+    setTimeout(() => highlightPseudocode("prepend", 3), 400)
+    setTimeout(() => highlightPseudocode("prepend", 4), 600)
     setNodes(prev => buildPointers([{ value: newValue, isHighlighted: true }, ...prev], listType))
     setOperations(prev => [...prev, `Prepended ${newValue}`])
     setInputValue("")
     setTraversalDone(false)
     setTimeout(() => {
       setNodes(prev => prev.map(n => ({ ...n, isHighlighted: false })))
-    }, 400)
+      setCurrentCodeLine(-1)
+    }, 1000)
   }
 
   const removeNode = (index: number) => {
+    highlightPseudocode("remove", 1)
+    setTimeout(() => highlightPseudocode("remove", 2), 200)
+    setTimeout(() => highlightPseudocode("remove", 3), 400)
+    setTimeout(() => {
+      if (index === 0) {
+        highlightPseudocode("remove", 4)
+        setTimeout(() => highlightPseudocode("remove", 5), 200)
+      } else {
+        highlightPseudocode("remove", 6)
+        setTimeout(() => highlightPseudocode("remove", 7), 200)
+        setTimeout(() => highlightPseudocode("remove", 8), 400)
+        setTimeout(() => highlightPseudocode("remove", 9), 600)
+      }
+    }, 600)
     setNodes(prev => prev.map((n, i) => i === index ? { ...n, isRemoved: true } : n))
     const node = nodes[index]
     setOperations(prev => [...prev, `Removed ${node?.value}`])
@@ -99,11 +192,9 @@ export default function LinkedListVisualizerPage() {
       setNodes(prev => buildPointers(prev.filter((_, i) => i !== index), listType))
       setTraversalIndex(null)
       setTraversalDone(false)
-    }, 300)
+      setCurrentCodeLine(-1)
+    }, 1000)
   }
-
-  // Get node by index
-  const getNodeByIndex = (index: number | null) => index !== null && index >= 0 && index < nodes.length ? nodes[index] : null
 
   const startTraversal = (direction: "forward" | "backward" = "forward") => {
     setNodes(prev => prev.map(n => ({ ...n, isTraversed: false })))
@@ -111,9 +202,13 @@ export default function LinkedListVisualizerPage() {
     if (direction === "forward") {
       setTraversalIndex(headIndex)
       setOperations(prev => [...prev, `Started forward traversal`])
+      setCurrentPseudocode(pseudocodeDefinitions.traverseForward)
+      setCurrentCodeLine(1)
     } else {
       setTraversalIndex(tailIndex)
       setOperations(prev => [...prev, `Started backward traversal`])
+      setCurrentPseudocode(pseudocodeDefinitions.traverseBackward)
+      setCurrentCodeLine(1)
     }
     setCurrentStep(0)
     setTraversalDone(false)
@@ -166,6 +261,19 @@ export default function LinkedListVisualizerPage() {
 
   const pause = () => setIsPlaying(false)
 
+  // --- Speed Control for Traversal ---
+  useEffect(() => {
+    if (isPlaying && traversalIndex !== null) {
+      let codeLine = traversalDirection === "forward" ? 3 : 3
+      setCurrentCodeLine(codeLine)
+      const timer = setTimeout(() => {
+        stepForward()
+        setCurrentCodeLine(traversalDirection === "forward" ? 4 : 4)
+      }, speed[0])
+      return () => clearTimeout(timer)
+    }
+  }, [isPlaying, traversalIndex, nodes.length, speed, traversalDirection])
+
   useEffect(() => {
     if (isPlaying && traversalIndex !== null) {
       const timer = setTimeout(() => {
@@ -199,8 +307,9 @@ export default function LinkedListVisualizerPage() {
     while (currentIndex !== null && !visited.has(currentIndex)) {
       const node = getNodeByIndex(currentIndex)
       if (!node) break
-      
+
       result.push({ ...node, index: currentIndex })
+
       visited.add(currentIndex)
       
       // Stop if we've completed a full circle in circular list
@@ -224,6 +333,8 @@ export default function LinkedListVisualizerPage() {
       examples: ["Implementing stacks/queues", "Graph representations", "Sparse data"],
     },
   ]
+
+  // Get node by index
 
   return (
     <VisualizerLayout
@@ -263,7 +374,7 @@ export default function LinkedListVisualizerPage() {
         </div>
 
         {/* Linked list visualization */}
-        <div className="flex items-center justify-center gap-4 overflow-x-auto py-4 min-h-[140px]">
+        <div className="flex-1 flex items-center justify-center gap-4 overflow-x-auto py-4 min-h-[140px]">
           {renderNodes.length === 0 ? (
             <div className="text-muted-foreground">List is empty</div>
           ) : (
@@ -344,6 +455,34 @@ export default function LinkedListVisualizerPage() {
             </div>
           )}
         </div>
+
+        {/* Pseudocode Panel BELOW the visualizer */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              Pseudocode
+            </CardTitle>
+          </CardHeader>
+          <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
+            {currentPseudocode.map((line, index) => (
+              <div
+                key={index}
+                className={`
+                  py-1 px-2 rounded
+                  ${currentCodeLine === index + 1
+                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                  }
+                `}
+              >
+                <span className="text-xs text-muted-foreground/70 mr-3">
+                  {index + 1}
+                </span>
+                {line || "\u00A0"}
+              </div>
+            ))}
+          </div>
+        </Card>
 
         {/* Controls */}
         <div className="grid md:grid-cols-3 gap-4">
@@ -445,6 +584,33 @@ export default function LinkedListVisualizerPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Speed Control */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Speed</CardTitle>
+          </CardHeader>
+          <div className="p-4 pt-0 space-y-3">
+            <input
+              type="range"
+              min={200}
+              max={2000}
+              step={100}
+              value={speed[0]}
+              onChange={e => setSpeed([parseInt(e.target.value)])}
+              className="w-full"
+              disabled={isPlaying}
+            />
+            <div className="text-sm text-muted-foreground text-center">
+              {speed[0] <= 400
+                ? "Fast"
+                : speed[0] <= 1000
+                ? "Medium"
+                : "Slow"}
+              
+            </div>
+          </div>
+        </Card>
 
         {/* Operations / Steps */}
         {operations.length > 0 && (

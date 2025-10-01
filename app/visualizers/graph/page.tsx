@@ -9,7 +9,7 @@ import { Badge } from "../../../components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
 import { Switch } from "../../../components/ui/switch"
 import { Label } from "../../../components/ui/label"
-import { Plus, Shuffle } from "lucide-react"
+import { Plus, Shuffle, X } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
 interface GraphNode {
@@ -44,6 +44,65 @@ interface TraversalStep {
 
 type AlgorithmType = "bfs" | "dfs" | "dijkstra"
 
+// --- Pseudocode Definitions ---
+const pseudocodeDefinitions = {
+  bfs: [
+    "function BFS(start):",
+    "  create queue Q",
+    "  mark start as visited",
+    "  Q.enqueue(start)",
+    "  while Q is not empty:",
+    "    node = Q.dequeue()",
+    "    for each neighbor of node:",
+    "      if neighbor not visited:",
+    "        mark neighbor as visited",
+    "        Q.enqueue(neighbor)",
+  ],
+  dfs: [
+    "function DFS(start):",
+    "  create stack S",
+    "  S.push(start)",
+    "  while S is not empty:",
+    "    node = S.pop()",
+    "    if node not visited:",
+    "      mark node as visited",
+    "      for each neighbor of node:",
+    "        if neighbor not visited:",
+    "          S.push(neighbor)",
+  ],
+  dijkstra: [
+    "function Dijkstra(start):",
+    "  set distance[start] = 0",
+    "  for all nodes v ≠ start: distance[v] = ∞",
+    "  create min-priority queue Q",
+    "  Q.insert(start, 0)",
+    "  while Q is not empty:",
+    "    u = Q.extractMin()",
+    "    for each neighbor v of u:",
+    "      alt = distance[u] + weight(u, v)",
+    "      if alt < distance[v]:",
+    "        distance[v] = alt",
+    "        Q.decreaseKey(v, alt)",
+  ],
+}
+
+// Helper to reconstruct path from BFS/DFS traversal
+function reconstructPath(
+  edges: GraphEdge[],
+  start: string,
+  target: string,
+  parentMap: { [key: string]: string }
+): string[] {
+  const path: string[] = []
+  let current = target
+  while (current !== start && parentMap[current]) {
+    path.push(current)
+    current = parentMap[current]
+  }
+  if (current === start) path.push(start)
+  return path.reverse()
+}
+
 export default function GraphVisualizerPage() {
   const [nodes, setNodes] = useState<GraphNode[]>([])
   const [edges, setEdges] = useState<GraphEdge[]>([])
@@ -59,6 +118,18 @@ export default function GraphVisualizerPage() {
   const [traversalSteps, setTraversalSteps] = useState<TraversalStep[]>([])
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(pseudocodeDefinitions.bfs)
+  const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
+
+  // New state for delete controls
+  const [deleteVertexId, setDeleteVertexId] = useState<string>("")
+  const [deleteEdgeFrom, setDeleteEdgeFrom] = useState<string>("")
+  const [deleteEdgeTo, setDeleteEdgeTo] = useState<string>("")
+
+  // State for editing edge weight
+  const [editEdgeFrom, setEditEdgeFrom] = useState<string>("")
+  const [editEdgeTo, setEditEdgeTo] = useState<string>("")
+  const [editEdgeWeight, setEditEdgeWeight] = useState<string>("")
 
   const applications = [
     {
@@ -221,6 +292,13 @@ export default function GraphVisualizerPage() {
     setIsPlaying(false)
   }
 
+  // --- Pseudocode Step Helpers ---
+  const highlightPseudocode = (algo: AlgorithmType, line: number) => {
+    setCurrentPseudocode(pseudocodeDefinitions[algo])
+    setCurrentCodeLine(line)
+  }
+
+  // --- Modified BFS/DFS to include pseudocode highlighting ---
   const performBFS = () => {
     if (!startNode) return
 
@@ -228,7 +306,9 @@ export default function GraphVisualizerPage() {
     const visited = new Set<string>()
     const queue = [startNode]
     const distances: { [key: string]: number } = { [startNode]: 0 }
+    const parent: { [key: string]: string } = {}
 
+    highlightPseudocode("bfs", 1) // function BFS(start)
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -238,10 +318,18 @@ export default function GraphVisualizerPage() {
       distances: { ...distances },
     })
 
+    highlightPseudocode("bfs", 2) // create queue Q
+    highlightPseudocode("bfs", 3) // mark start as visited
+    highlightPseudocode("bfs", 4) // Q.enqueue(start)
+
+    let found = false
+
     while (queue.length > 0) {
+      highlightPseudocode("bfs", 5) // while Q is not empty
       const currentNode = queue.shift()!
       visited.add(currentNode)
 
+      highlightPseudocode("bfs", 6) // node = Q.dequeue()
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -258,8 +346,13 @@ export default function GraphVisualizerPage() {
         .filter((neighbor) => !visited.has(neighbor) && !queue.includes(neighbor))
 
       for (const neighbor of neighbors) {
+        highlightPseudocode("bfs", 7) // for each neighbor of node
+        highlightPseudocode("bfs", 8) // if neighbor not visited
         queue.push(neighbor)
         distances[neighbor] = distances[currentNode] + 1
+        parent[neighbor] = currentNode
+        highlightPseudocode("bfs", 9) // mark neighbor as visited
+        highlightPseudocode("bfs", 10) // Q.enqueue(neighbor)
 
         steps.push({
           currentNode,
@@ -272,6 +365,7 @@ export default function GraphVisualizerPage() {
       }
 
       if (targetNode && currentNode === targetNode) {
+        found = true
         steps.push({
           currentNode,
           visitedNodes: Array.from(visited),
@@ -284,7 +378,26 @@ export default function GraphVisualizerPage() {
       }
     }
 
+    // If found, mark the path nodes as green in the last step
+    if (found) {
+      const path = reconstructPath(edges, startNode, targetNode, parent)
+      const lastStep = steps[steps.length - 1]
+      const pathSet = new Set(path)
+      // Add a new step with path info
+      steps.push({
+        ...lastStep,
+        description: "Final path highlighted in green.",
+        // Add a new property for path nodes
+        highlightedEdges: lastStep.highlightedEdges,
+        // Add a new property for path nodes
+        // We'll use this in the renderGraph function
+        pathNodes: path,
+      } as any)
+    }
+
     setTraversalSteps(steps)
+    setCurrentPseudocode(pseudocodeDefinitions.bfs)
+    setCurrentCodeLine(-1)
   }
 
   const performDFS = () => {
@@ -294,6 +407,7 @@ export default function GraphVisualizerPage() {
     const visited = new Set<string>()
     const stack = [startNode]
 
+    highlightPseudocode("dfs", 1) // function DFS(start)
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -302,12 +416,19 @@ export default function GraphVisualizerPage() {
       highlightedEdges: [],
     })
 
+    highlightPseudocode("dfs", 2) // create stack S
+    highlightPseudocode("dfs", 3) // S.push(start)
+
     while (stack.length > 0) {
+      highlightPseudocode("dfs", 4) // while S is not empty
       const currentNode = stack.pop()!
 
       if (visited.has(currentNode)) continue
 
+      highlightPseudocode("dfs", 5) // node = S.pop()
+      highlightPseudocode("dfs", 6) // if node not visited
       visited.add(currentNode)
+      highlightPseudocode("dfs", 7) // mark node as visited
 
       steps.push({
         currentNode,
@@ -325,17 +446,18 @@ export default function GraphVisualizerPage() {
         .reverse()
 
       for (const neighbor of neighbors) {
-        if (!visited.has(neighbor)) {
-          stack.push(neighbor)
+        highlightPseudocode("dfs", 8) // for each neighbor of node
+        highlightPseudocode("dfs", 9) // if neighbor not visited
+        stack.push(neighbor)
+        highlightPseudocode("dfs", 10) // S.push(neighbor)
 
-          steps.push({
-            currentNode,
-            visitedNodes: Array.from(visited),
-            stack: [...stack],
-            description: `Added ${neighbor} to stack`,
-            highlightedEdges: [`${currentNode}-${neighbor}`],
-          })
-        }
+        steps.push({
+          currentNode,
+          visitedNodes: Array.from(visited),
+          stack: [...stack],
+          description: `Added ${neighbor} to stack`,
+          highlightedEdges: [`${currentNode}-${neighbor}`],
+        })
       }
 
       if (targetNode && currentNode === targetNode) {
@@ -351,6 +473,8 @@ export default function GraphVisualizerPage() {
     }
 
     setTraversalSteps(steps)
+    setCurrentPseudocode(pseudocodeDefinitions.dfs)
+    setCurrentCodeLine(-1)
   }
 
   const startAlgorithm = () => {
@@ -408,36 +532,83 @@ export default function GraphVisualizerPage() {
     }
   }, [isPlaying, currentStep, traversalSteps.length])
 
+  // --- Modified renderGraph to color path nodes green ---
   const renderGraph = (): JSX.Element => {
     const currentStepData = traversalSteps[currentStep]
+    // For path coloring
+    const pathNodes: string[] = (currentStepData as any)?.pathNodes || []
 
     return (
       <svg width="600" height="300" className="border rounded-lg bg-white">
+        {/* Arrow marker for directed graphs */}
+        {isDirected && (
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="10"
+              markerHeight="7"
+              refX="10"
+              refY="3.5"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
+            </marker>
+          </defs>
+        )}
+
         {/* Render edges */}
         {edges.map((edge, index) => {
           const fromNode = nodes.find((n) => n.id === edge.from)
           const toNode = nodes.find((n) => n.id === edge.to)
           if (!fromNode || !toNode) return null
 
+          // Calculate direction for arrowhead offset
+          const dx = toNode.x - fromNode.x
+          const dy = toNode.y - fromNode.y
+          const len = Math.sqrt(dx * dx + dy * dy)
+          const offset = 20 // node radius
+          const normX = dx / len
+          const normY = dy / len
+
+          // Start and end points for the edge line (so arrowhead doesn't overlap node)
+          const startX = fromNode.x + normX * offset
+          const startY = fromNode.y + normY * offset
+          const endX = toNode.x - normX * offset
+          const endY = toNode.y - normY * offset
+
           const isHighlighted = currentStepData?.highlightedEdges.includes(`${edge.from}-${edge.to}`)
+
+          // Highlight edge green if both nodes are in pathNodes and consecutive
+          const isPathEdge =
+            pathNodes.length > 1 &&
+            pathNodes.some((id, idx) => idx < pathNodes.length - 1 && pathNodes[idx] === edge.from && pathNodes[idx + 1] === edge.to)
 
           return (
             <g key={index}>
               <line
-                x1={fromNode.x}
-                y1={fromNode.y}
-                x2={toNode.x}
-                y2={toNode.y}
-                stroke={isHighlighted ? "#6366f1" : "#e5e7eb"}
-                strokeWidth={isHighlighted ? "3" : "2"}
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke={
+                  isPathEdge
+                    ? "#22c55e"
+                    : isHighlighted
+                    ? "#6366f1"
+                    : "#e5e7eb"
+                }
+                strokeWidth={isPathEdge ? "4" : isHighlighted ? "3" : "2"}
                 markerEnd={isDirected ? "url(#arrowhead)" : undefined}
+                style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
               />
-              {isWeighted && edge.weight && (
+              {isWeighted && edge.weight !== undefined && (
                 <text
-                  x={(fromNode.x + toNode.x) / 2}
-                  y={(fromNode.y + toNode.y) / 2 - 10}
+                  x={(startX + endX) / 2 + 10 * -normY}
+                  y={(startY + endY) / 2 + 10 * normX}
                   textAnchor="middle"
-                  className="text-xs font-bold fill-gray-600"
+                  className="text-xs font-bold fill-blue-600"
+                  style={{ userSelect: "none" }}
                 >
                   {edge.weight}
                 </text>
@@ -446,15 +617,6 @@ export default function GraphVisualizerPage() {
           )
         })}
 
-        {/* Arrow marker for directed graphs */}
-        {isDirected && (
-          <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#e5e7eb" />
-            </marker>
-          </defs>
-        )}
-
         {/* Render nodes */}
         {nodes.map((node) => {
           const isVisited = currentStepData?.visitedNodes.includes(node.id)
@@ -462,6 +624,7 @@ export default function GraphVisualizerPage() {
           const isStart = node.id === startNode
           const isTarget = node.id === targetNode
           const distance = currentStepData?.distances?.[node.id]
+          const isPathNode = pathNodes.includes(node.id)
 
           return (
             <g key={node.id}>
@@ -470,10 +633,30 @@ export default function GraphVisualizerPage() {
                 cy={node.y}
                 r="20"
                 fill={
-                  isCurrent ? "#6366f1" : isStart ? "#22c55e" : isTarget ? "#ef4444" : isVisited ? "#f59e0b" : "#ffffff"
+                  isPathNode
+                    ? "#22c55e"
+                    : isCurrent
+                    ? "#6366f1"
+                    : isStart
+                    ? "#22c55e"
+                    : isTarget
+                    ? "#ef4444"
+                    : isVisited
+                    ? "#f59e0b"
+                    : "#ffffff"
                 }
                 stroke={
-                  isCurrent ? "#4f46e5" : isStart ? "#16a34a" : isTarget ? "#dc2626" : isVisited ? "#d97706" : "#6b7280"
+                  isPathNode
+                    ? "#16a34a"
+                    : isCurrent
+                    ? "#4f46e5"
+                    : isStart
+                    ? "#16a34a"
+                    : isTarget
+                    ? "#dc2626"
+                    : isVisited
+                    ? "#d97706"
+                    : "#6b7280"
                 }
                 strokeWidth="2"
                 className="cursor-pointer"
@@ -481,13 +664,22 @@ export default function GraphVisualizerPage() {
                   if (!startNode) setStartNode(node.id)
                   else if (!targetNode && node.id !== startNode) setTargetNode(node.id)
                 }}
+                style={{ transition: "fill 0.3s, stroke 0.3s" }}
               />
               <text
                 x={node.x}
                 y={node.y + 5}
                 textAnchor="middle"
                 className="text-sm font-bold pointer-events-none"
-                fill={isCurrent || isStart || isTarget || isVisited ? "#ffffff" : "#374151"}
+                fill={
+                  isPathNode ||
+                  isCurrent ||
+                  isStart ||
+                  isTarget ||
+                  isVisited
+                    ? "#ffffff"
+                    : "#374151"
+                }
               >
                 {node.label}
               </text>
@@ -526,6 +718,27 @@ export default function GraphVisualizerPage() {
 
   const currentAlgorithm = algorithmInfo[algorithm]
 
+  // Update pseudocode when algorithm changes
+  useEffect(() => {
+    setCurrentPseudocode(pseudocodeDefinitions[algorithm])
+    setCurrentCodeLine(-1)
+  }, [algorithm])
+
+  // Handler for editing edge weight
+  const handleEditEdgeWeight = () => {
+    if (!editEdgeFrom || !editEdgeTo || !editEdgeWeight) return
+    setEdges((prev) =>
+      prev.map((e) =>
+        e.from === editEdgeFrom && e.to === editEdgeTo
+          ? { ...e, weight: Number(editEdgeWeight) }
+          : e
+      )
+    )
+    setEditEdgeFrom("")
+    setEditEdgeTo("")
+    setEditEdgeWeight("")
+  }
+
   return (
     <VisualizerLayout
       title="Graph Algorithm Visualizer"
@@ -548,6 +761,34 @@ export default function GraphVisualizerPage() {
       <div className="w-full space-y-6">
         {/* Graph Visualization */}
         <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderGraph()}</div>
+
+        {/* Pseudocode Panel BELOW the visualizer */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              Pseudocode
+            </CardTitle>
+          </CardHeader>
+          <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
+            {currentPseudocode.map((line, index) => (
+              <div
+                key={index}
+                className={`
+                  py-1 px-2 rounded
+                  ${currentCodeLine === index + 1
+                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                  }
+                `}
+              >
+                <span className="text-xs text-muted-foreground/70 mr-3">
+                  {index + 1}
+                </span>
+                {line || "\u00A0"}
+              </div>
+            ))}
+          </div>
+        </Card>
 
         {/* Graph Controls */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -579,9 +820,7 @@ export default function GraphVisualizerPage() {
                 <SelectContent>
                   <SelectItem value="bfs">BFS</SelectItem>
                   <SelectItem value="dfs">DFS</SelectItem>
-                  <SelectItem value="dijkstra" disabled>
-                    Dijkstra (Soon)
-                  </SelectItem>
+                  <SelectItem value="dijkstra">Dijkstra</SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
@@ -632,16 +871,17 @@ export default function GraphVisualizerPage() {
           </Card>
         </div>
 
-        {/* Add Nodes and Edges */}
+        {/* Add/Delete Vertices and Edges */}
         <div className="grid md:grid-cols-2 gap-4">
+          {/* Add Vertex */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Add Node</CardTitle>
+              <CardTitle className="text-lg">Add Vertex</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Node label"
+                  placeholder="Vertex label"
                   value={newNodeLabel}
                   onChange={(e) => setNewNodeLabel(e.target.value)}
                   maxLength={1}
@@ -653,6 +893,7 @@ export default function GraphVisualizerPage() {
             </CardContent>
           </Card>
 
+          {/* Add Edge */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Add Edge</CardTitle>
@@ -689,7 +930,7 @@ export default function GraphVisualizerPage() {
                     placeholder="Weight"
                     value={edgeWeight}
                     onChange={(e) => setEdgeWeight(e.target.value)}
-                    className="w-20"
+                    className="w-36"
                   />
                 )}
                 <Button onClick={addEdge} disabled={!edgeFrom || !edgeTo}>
@@ -699,6 +940,147 @@ export default function GraphVisualizerPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Vertex/Edge by Select */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Delete Vertex */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Delete Vertex</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Select value={deleteVertexId} onValueChange={setDeleteVertexId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select vertex" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nodes.map((node) => (
+                      <SelectItem key={node.id} value={node.id}>
+                        {node.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (deleteVertexId) {
+                      removeNode(deleteVertexId)
+                      setDeleteVertexId("")
+                    }
+                  }}
+                  disabled={!deleteVertexId}
+                >
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Delete Edge */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Delete Edge</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Select value={deleteEdgeFrom} onValueChange={setDeleteEdgeFrom}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="From" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nodes.map((node) => (
+                      <SelectItem key={node.id} value={node.id}>
+                        {node.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={deleteEdgeTo} onValueChange={setDeleteEdgeTo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="To" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nodes.map((node) => (
+                      <SelectItem key={node.id} value={node.id}>
+                        {node.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (deleteEdgeFrom && deleteEdgeTo) {
+                      removeEdge(deleteEdgeFrom, deleteEdgeTo)
+                      setDeleteEdgeFrom("")
+                      setDeleteEdgeTo("")
+                    }
+                  }}
+                  disabled={!deleteEdgeFrom || !deleteEdgeTo}
+                >
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Edit Edge Weight */}
+        {isWeighted && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Edit Edge Weight</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-2">
+                  <Select value={editEdgeFrom} onValueChange={setEditEdgeFrom}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="From" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nodes.map((node) => (
+                        <SelectItem key={node.id} value={node.id}>
+                          {node.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={editEdgeTo} onValueChange={setEditEdgeTo}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="To" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nodes.map((node) => (
+                        <SelectItem key={node.id} value={node.id}>
+                          {node.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    placeholder="Weight"
+                    value={editEdgeWeight}
+                    onChange={(e) => setEditEdgeWeight(e.target.value)}
+                    className="w-36 text-base px-4 py-2" // Increased width and font size
+                  />
+                  <Button
+                    onClick={handleEditEdgeWeight}
+                    disabled={!editEdgeFrom || !editEdgeTo || !editEdgeWeight}
+                  >
+                    Change
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Select an edge and enter a new weight to update.
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Algorithm Info */}
         <Card>
