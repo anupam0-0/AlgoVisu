@@ -16,6 +16,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
+    "/visualizers/tree/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/tree/loading.js"
+    ],
+    "/visualizers/tree/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/tree/page.js"
+    ],
     "/visualizers/sorting/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -25,6 +35,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/sorting/page.js"
+    ],
+    "/visualizers/queue/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/queue/loading.js"
+    ],
+    "/visualizers/queue/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/queue/page.js"
     ]
   }
 }

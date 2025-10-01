@@ -67,7 +67,7 @@ export default function VisualizersPage() {
       description: "Singlt, doubly, and circular linked lists",
       icon: <Network className="h-6 w-6" />,
       difficulty: "Advanced",
-      topics: ["single", "double", "circular"],
+      topics: ["Single", "Double", "Circular"],
       available: true,
     },
     {

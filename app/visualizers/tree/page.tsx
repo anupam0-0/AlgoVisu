@@ -24,6 +24,7 @@ interface TraversalStep {
   description: string
   visitedNodes: string[]
   currentPath: string[]
+  codeLine?: number // <-- add this
 }
 
 type TraversalType = "inorder" | "preorder" | "postorder" | "levelorder"
@@ -39,6 +40,7 @@ export default function TreeVisualizerPage() {
   const [traversalResult, setTraversalResult] = useState<number[]>([])
   const [treeHeight, setTreeHeight] = useState(0)
   const [nodeCount, setNodeCount] = useState(0)
+  const [speed, setSpeed] = useState([1000]) // Speed in ms, default 1000ms
 
   // Added real-world applications for trees and BST
   const applications = [
@@ -200,6 +202,47 @@ export default function TreeVisualizerPage() {
     calculateTreeMetrics(newRoot)
   }
 
+  // 1. Add pseudocode definitions for traversals
+  const pseudocodeDefinitions = {
+    inorder: [
+      "function inorder(node):",
+      "  if node is null:",
+      "    return",
+      "  inorder(node.left)",
+      "  visit(node)",
+      "  inorder(node.right)",
+    ],
+    preorder: [
+      "function preorder(node):",
+      "  if node is null:",
+      "    return",
+      "  visit(node)",
+      "  preorder(node.left)",
+      "  preorder(node.right)",
+    ],
+    postorder: [
+      "function postorder(node):",
+      "  if node is null:",
+      "    return",
+      "  postorder(node.left)",
+      "  postorder(node.right)",
+      "  visit(node)",
+    ],
+    levelorder: [
+      "function levelorder(root):",
+      "  if root is null:",
+      "    return",
+      "  queue = [root]",
+      "  while queue is not empty:",
+      "    node = queue.pop()",
+      "    visit(node)",
+      "    if node.left:",
+      "      queue.push(node.left)",
+      "    if node.right:",
+      "      queue.push(node.right)",
+    ],
+  }
+
   const performTraversal = (type: TraversalType): void => {
     if (!root) return
 
@@ -207,108 +250,83 @@ export default function TreeVisualizerPage() {
     const result: number[] = []
     const visited: string[] = []
 
-    const inorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
-      if (!node) return
-
-      const currentPath = [...path, node.id]
-
-      if (node.left) {
-        steps.push({
-          node,
-          description: `Visiting left subtree of ${node.value}`,
-          visitedNodes: [...visited],
-          currentPath,
-        })
-        inorderTraversal(node.left, currentPath)
-      }
-
-      visited.push(node.id)
-      result.push(node.value)
+    // Helper to push a step with codeLine
+    const pushStep = (
+      node: TreeNode,
+      description: string,
+      codeLine: number,
+      currentPath: string[] = []
+    ) => {
       steps.push({
         node,
-        description: `Processing node ${node.value}`,
+        description,
         visitedNodes: [...visited],
         currentPath,
+        codeLine,
       })
+    }
 
-      if (node.right) {
-        steps.push({
-          node,
-          description: `Visiting right subtree of ${node.value}`,
-          visitedNodes: [...visited],
-          currentPath,
-        })
-        inorderTraversal(node.right, currentPath)
+    const inorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
+      // Line 1: function inorder(node)
+      if (!node) {
+        // Line 2: if node is null
+        pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path)
+        // Line 3: return
+        return
       }
+      const currentPath = [...path, node.id]
+      // Line 4: inorder(node.left)
+      pushStep(node, `Traverse left of ${node.value}`, 4, currentPath)
+      inorderTraversal(node.left, currentPath)
+      // Line 5: visit(node)
+      visited.push(node.id)
+      result.push(node.value)
+      pushStep(node, `Visit node ${node.value}`, 5, currentPath)
+      // Line 6: inorder(node.right)
+      pushStep(node, `Traverse right of ${node.value}`, 6, currentPath)
+      inorderTraversal(node.right, currentPath)
     }
 
     const preorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
-      if (!node) return
-
+      // Line 1: function preorder(node)
+      if (!node) {
+        // Line 2: if node is null
+        pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path)
+        // Line 3: return
+        return
+      }
       const currentPath = [...path, node.id]
+      // Line 4: visit(node)
       visited.push(node.id)
       result.push(node.value)
-      steps.push({
-        node,
-        description: `Processing node ${node.value}`,
-        visitedNodes: [...visited],
-        currentPath,
-      })
-
-      if (node.left) {
-        steps.push({
-          node,
-          description: `Visiting left subtree of ${node.value}`,
-          visitedNodes: [...visited],
-          currentPath,
-        })
-        preorderTraversal(node.left, currentPath)
-      }
-
-      if (node.right) {
-        steps.push({
-          node,
-          description: `Visiting right subtree of ${node.value}`,
-          visitedNodes: [...visited],
-          currentPath,
-        })
-        preorderTraversal(node.right, currentPath)
-      }
+      pushStep(node, `Visit node ${node.value}`, 4, currentPath)
+      // Line 5: preorder(node.left)
+      pushStep(node, `Traverse left of ${node.value}`, 5, currentPath)
+      preorderTraversal(node.left, currentPath)
+      // Line 6: preorder(node.right)
+      pushStep(node, `Traverse right of ${node.value}`, 6, currentPath)
+      preorderTraversal(node.right, currentPath)
     }
 
     const postorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
-      if (!node) return
-
+      // Line 1: function postorder(node)
+      if (!node) {
+        // Line 2: if node is null
+        pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path)
+        // Line 3: return
+        return
+      }
       const currentPath = [...path, node.id]
-
-      if (node.left) {
-        steps.push({
-          node,
-          description: `Visiting left subtree of ${node.value}`,
-          visitedNodes: [...visited],
-          currentPath,
-        })
-        postorderTraversal(node.left, currentPath)
-      }
-
-      if (node.right) {
-        steps.push({
-          node,
-          description: `Visiting right subtree of ${node.value}`,
-          visitedNodes: [...visited],
-          currentPath,
-        })
-        postorderTraversal(node.right, currentPath)
-      }
-
+      // Line 4: postorder(node.left)
+      pushStep(node, `Traverse left of ${node.value}`, 4, currentPath)
+      postorderTraversal(node.left, currentPath)
+      // Line 5: postorder(node.right)
+      pushStep(node, `Traverse right of ${node.value}`, 5, currentPath)
+      postorderTraversal(node.right, currentPath)
+      // Line 6: visit(node)
       visited.push(node.id)
       result.push(node.value)
-      steps.push({
-        node,
-        description: `Processing node ${node.value}`,
-        visitedNodes: [...visited],
-        currentPath,
-      })
+      pushStep(node, `Visit node ${node.value}`, 6, currentPath)
     }
 
     const levelorderTraversal = (): void => {
@@ -479,16 +497,18 @@ export default function TreeVisualizerPage() {
 
   useEffect(() => {
     if (isPlaying && currentStep < traversalSteps.length - 1) {
-      const timer = setTimeout(() => {
-        stepForward()
-      }, 1500)
+      const timer = setTimeout(() => stepForward(), speed[0])
       return () => clearTimeout(timer)
     } else if (currentStep >= traversalSteps.length - 1) {
       setIsPlaying(false)
     }
-  }, [isPlaying, currentStep, traversalSteps.length])
+  }, [isPlaying, currentStep, traversalSteps.length, speed])
 
   const positionedRoot = calculateNodePositions(root)
+
+  // 3. In your component, get the current pseudocode and codeLine
+  const currentPseudocode = pseudocodeDefinitions[traversalType]
+  const currentCodeLine = traversalSteps[currentStep]?.codeLine ?? -1
 
   return (
     <VisualizerLayout
@@ -517,8 +537,37 @@ export default function TreeVisualizerPage() {
           </svg>
         </div>
 
+        {/* Pseudocode Panel */}
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              Pseudocode
+            </CardTitle>
+          </CardHeader>
+          <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
+            {currentPseudocode.map((line, index) => (
+              <div
+                key={index}
+                className={`
+                  py-1 px-2 rounded
+                  ${currentCodeLine === index + 1
+                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                    : "text-muted-foreground"
+                  }
+                `}
+              >
+                <span className="text-xs text-muted-foreground/70 mr-3">
+                  {index + 1}
+                </span>
+                {line || "\u00A0"}
+              </div>
+            ))}
+          </div>
+        </Card>
+
         {/* Tree Operations */}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
+          {/* Insert Node */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -545,6 +594,7 @@ export default function TreeVisualizerPage() {
             </div>
           </Card>
 
+          {/* Search Node */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Search Node</CardTitle>
@@ -568,6 +618,7 @@ export default function TreeVisualizerPage() {
             </div>
           </Card>
 
+          {/* Tree Traversal */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Tree Traversal</CardTitle>
@@ -589,6 +640,33 @@ export default function TreeVisualizerPage() {
               >
                 Start Traversal
               </button>
+            </div>
+          </Card>
+
+          {/* Speed Control */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Speed</CardTitle>
+            </CardHeader>
+            <div className="p-4 pt-0 space-y-3">
+              <input
+                type="range"
+                min={200}
+                max={2000}
+                step={100}
+                value={speed[0]}
+                onChange={e => setSpeed([parseInt(e.target.value)])}
+                className="w-full"
+                disabled={isPlaying}
+              />
+              <div className="text-sm text-muted-foreground text-center">
+                {speed[0] <= 400
+                  ? "Fast"
+                  : speed[0] <= 1000
+                  ? "Medium"
+                  : "Slow"}
+                {" "}({speed[0]} ms)
+              </div>
             </div>
           </Card>
         </div>
