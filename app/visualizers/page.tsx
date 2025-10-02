@@ -77,7 +77,7 @@ export default function VisualizersPage() {
       icon: <Network className="h-6 w-6" />,
       difficulty: "Advanced",
       topics: ["Kruskal's", "Prim's"],
-      available: false,
+      available: true,
     },
   ]
 
