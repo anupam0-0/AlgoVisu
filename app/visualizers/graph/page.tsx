@@ -1,6 +1,5 @@
 "use client"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -23,7 +22,6 @@ interface GraphNode {
   isTargetNode?: boolean
   distance?: number
 }
-
 interface GraphEdge {
   from: string
   to: string
@@ -31,7 +29,6 @@ interface GraphEdge {
   isHighlighted?: boolean
   isInPath?: boolean
 }
-
 interface TraversalStep {
   currentNode: string
   visitedNodes: string[]
@@ -42,7 +39,6 @@ interface TraversalStep {
   distances?: { [key: string]: number }
   codeLine?: number
 }
-
 type AlgorithmType = "bfs" | "dfs" | "dijkstra"
 
 // --- Pseudocode Definitions ---
@@ -107,16 +103,13 @@ function reconstructPath(
 // Helper function to get neighbors considering graph direction
 function getNeighbors(nodeId: string, edges: GraphEdge[], isDirected: boolean): string[] {
   const neighbors: string[] = []
-  
   for (const edge of edges) {
     if (edge.from === nodeId) {
       neighbors.push(edge.to)
     } else if (!isDirected && edge.to === nodeId) {
-      // For undirected graphs, edges work both ways
       neighbors.push(edge.from)
     }
   }
-  
   return neighbors
 }
 
@@ -137,16 +130,20 @@ export default function GraphVisualizerPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(pseudocodeDefinitions.bfs)
   const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
-
   // New state for delete controls
   const [deleteVertexId, setDeleteVertexId] = useState<string>("")
   const [deleteEdgeFrom, setDeleteEdgeFrom] = useState<string>("")
   const [deleteEdgeTo, setDeleteEdgeTo] = useState<string>("")
-
   // State for editing edge weight
   const [editEdgeFrom, setEditEdgeFrom] = useState<string>("")
   const [editEdgeTo, setEditEdgeTo] = useState<string>("")
   const [editEdgeWeight, setEditEdgeWeight] = useState<string>("")
+
+  // Drag state
+  const [isDragging, setIsDragging] = useState(false)
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const svgRef = useRef<SVGSVGElement>(null)
 
   const applications = [
     {
@@ -181,7 +178,6 @@ export default function GraphVisualizerPage() {
       { id: "E", label: "E", x: 300, y: 200 },
       { id: "F", label: "F", x: 450, y: 250 },
     ]
-
     const sampleEdges: GraphEdge[] = [
       { from: "A", to: "B", weight: 4 },
       { from: "A", to: "D", weight: 2 },
@@ -191,7 +187,6 @@ export default function GraphVisualizerPage() {
       { from: "D", to: "E", weight: 5 },
       { from: "E", to: "F", weight: 1 },
     ]
-
     setNodes(sampleNodes)
     setEdges(sampleEdges)
     setStartNode("A")
@@ -200,14 +195,12 @@ export default function GraphVisualizerPage() {
 
   const addNode = () => {
     if (!newNodeLabel.trim()) return
-
     const newNode: GraphNode = {
       id: newNodeLabel.toUpperCase(),
       label: newNodeLabel.toUpperCase(),
       x: Math.random() * 400 + 100,
       y: Math.random() * 200 + 100,
     }
-
     if (!nodes.find((n) => n.id === newNode.id)) {
       setNodes([...nodes, newNode])
       setNewNodeLabel("")
@@ -223,15 +216,12 @@ export default function GraphVisualizerPage() {
 
   const addEdge = () => {
     if (!edgeFrom || !edgeTo || edgeFrom === edgeTo) return
-
     const weight = isWeighted ? Number.parseInt(edgeWeight) || 1 : undefined
     const newEdge: GraphEdge = {
       from: edgeFrom,
       to: edgeTo,
       weight,
     }
-
-    // Check if edge already exists
     const existingEdge = edges.find((e) => e.from === edgeFrom && e.to === edgeTo)
     if (!existingEdge) {
       setEdges([...edges, newEdge])
@@ -249,23 +239,18 @@ export default function GraphVisualizerPage() {
     const nodeCount = 6
     const newNodes: GraphNode[] = []
     const newEdges: GraphEdge[] = []
-
-    // Generate nodes
     for (let i = 0; i < nodeCount; i++) {
       const angle = (i * 2 * Math.PI) / nodeCount
       const radius = 120
       const centerX = 300
       const centerY = 150
-
       newNodes.push({
-        id: String.fromCharCode(65 + i), // A, B, C, etc.
+        id: String.fromCharCode(65 + i),
         label: String.fromCharCode(65 + i),
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
       })
     }
-
-    // Generate random edges
     for (let i = 0; i < nodeCount; i++) {
       const connections = Math.floor(Math.random() * 3) + 1
       for (let j = 0; j < connections; j++) {
@@ -277,15 +262,12 @@ export default function GraphVisualizerPage() {
             to: newNodes[targetIndex].id,
             weight,
           }
-
-          // Avoid duplicate edges
           if (!newEdges.find((e) => e.from === edge.from && e.to === edge.to)) {
             newEdges.push(edge)
           }
         }
       }
     }
-
     setNodes(newNodes)
     setEdges(newEdges)
     setStartNode(newNodes[0]?.id || "")
@@ -309,22 +291,18 @@ export default function GraphVisualizerPage() {
     setIsPlaying(false)
   }
 
-  // --- Pseudocode Step Helpers ---
   const highlightPseudocode = (algo: AlgorithmType, line: number) => {
     setCurrentPseudocode(pseudocodeDefinitions[algo])
     setCurrentCodeLine(line)
   }
 
-  // --- Modified BFS to use getNeighbors helper and track code lines ---
   const performBFS = () => {
     if (!startNode) return
-
     const steps: TraversalStep[] = []
     const visited = new Set<string>()
     const queue = [startNode]
     const distances: { [key: string]: number } = { [startNode]: 0 }
     const parent: { [key: string]: string } = {}
-
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -334,7 +312,6 @@ export default function GraphVisualizerPage() {
       distances: { ...distances },
       codeLine: 1,
     })
-
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -344,13 +321,10 @@ export default function GraphVisualizerPage() {
       distances: { ...distances },
       codeLine: 3,
     })
-
     let found = false
-
     while (queue.length > 0) {
       const currentNode = queue.shift()!
       visited.add(currentNode)
-
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -360,11 +334,8 @@ export default function GraphVisualizerPage() {
         distances: { ...distances },
         codeLine: 6,
       })
-
-      // Use the helper function to get neighbors - THIS IS THE FIX
       const neighbors = getNeighbors(currentNode, edges, isDirected)
         .filter((neighbor) => !visited.has(neighbor) && !queue.includes(neighbor))
-
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -374,12 +345,10 @@ export default function GraphVisualizerPage() {
         distances: { ...distances },
         codeLine: 7,
       })
-
       for (const neighbor of neighbors) {
         queue.push(neighbor)
         distances[neighbor] = distances[currentNode] + 1
         parent[neighbor] = currentNode
-
         steps.push({
           currentNode,
           visitedNodes: Array.from(visited),
@@ -390,7 +359,6 @@ export default function GraphVisualizerPage() {
           codeLine: 9,
         })
       }
-
       if (targetNode && currentNode === targetNode) {
         found = true
         steps.push({
@@ -405,13 +373,10 @@ export default function GraphVisualizerPage() {
         break
       }
     }
-
-    // If found, mark the path nodes as green in the last step
     if (found) {
       const path = reconstructPath(edges, startNode, targetNode, parent)
       const lastStep = steps[steps.length - 1]
       const pathSet = new Set(path)
-      // Add a new step with path info
       steps.push({
         ...lastStep,
         description: "Final path highlighted in green.",
@@ -420,19 +385,15 @@ export default function GraphVisualizerPage() {
         codeLine: -1,
       } as any)
     }
-
     setTraversalSteps(steps)
     setCurrentPseudocode(pseudocodeDefinitions.bfs)
   }
 
-  // --- Modified DFS to use getNeighbors helper and track code lines ---
   const performDFS = () => {
     if (!startNode) return
-
     const steps: TraversalStep[] = []
     const visited = new Set<string>()
     const stack = [startNode]
-
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -441,7 +402,6 @@ export default function GraphVisualizerPage() {
       highlightedEdges: [],
       codeLine: 1,
     })
-
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -450,14 +410,10 @@ export default function GraphVisualizerPage() {
       highlightedEdges: [],
       codeLine: 3,
     })
-
     while (stack.length > 0) {
       const currentNode = stack.pop()!
-
       if (visited.has(currentNode)) continue
-
       visited.add(currentNode)
-
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -466,12 +422,9 @@ export default function GraphVisualizerPage() {
         highlightedEdges: [],
         codeLine: 7,
       })
-
-      // Use the helper function to get neighbors - THIS IS THE FIX
       const neighbors = getNeighbors(currentNode, edges, isDirected)
         .filter((neighbor) => !visited.has(neighbor))
         .reverse()
-
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -480,10 +433,8 @@ export default function GraphVisualizerPage() {
         highlightedEdges: [],
         codeLine: 8,
       })
-
       for (const neighbor of neighbors) {
         stack.push(neighbor)
-
         steps.push({
           currentNode,
           visitedNodes: Array.from(visited),
@@ -493,7 +444,6 @@ export default function GraphVisualizerPage() {
           codeLine: 10,
         })
       }
-
       if (targetNode && currentNode === targetNode) {
         steps.push({
           currentNode,
@@ -506,7 +456,6 @@ export default function GraphVisualizerPage() {
         break
       }
     }
-
     setTraversalSteps(steps)
     setCurrentPseudocode(pseudocodeDefinitions.dfs)
   }
@@ -514,7 +463,6 @@ export default function GraphVisualizerPage() {
   const startAlgorithm = () => {
     resetGraph()
     setCurrentStep(0)
-
     switch (algorithm) {
       case "bfs":
         performBFS()
@@ -523,7 +471,6 @@ export default function GraphVisualizerPage() {
         performDFS()
         break
       case "dijkstra":
-        // Placeholder for Dijkstra's algorithm
         break
     }
   }
@@ -566,7 +513,6 @@ export default function GraphVisualizerPage() {
     }
   }, [isPlaying, currentStep, traversalSteps.length])
 
-  // Update pseudocode line highlighting when step changes
   useEffect(() => {
     if (traversalSteps.length > 0 && traversalSteps[currentStep]) {
       const codeLine = traversalSteps[currentStep].codeLine
@@ -576,15 +522,88 @@ export default function GraphVisualizerPage() {
     }
   }, [currentStep, traversalSteps])
 
-  // --- Modified renderGraph to color path nodes green ---
+  // Drag handlers
+  const handleMouseDown = (nodeId: string, e: React.MouseEvent) => {
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) return
+    setIsDragging(true)
+    setDraggedNodeId(nodeId)
+    const svgRect = svgRef.current?.getBoundingClientRect()
+    if (svgRect) {
+      setDragOffset({
+        x: e.clientX - svgRect.left - node.x,
+        y: e.clientY - svgRect.top - node.y,
+      })
+    }
+    // Prevent text selection
+    e.preventDefault()
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !draggedNodeId || !svgRef.current) return
+    const svgRect = svgRef.current.getBoundingClientRect()
+    const newX = e.clientX - svgRect.left - dragOffset.x
+    const newY = e.clientY - svgRect.top - dragOffset.y
+
+    setNodes(prev =>
+      prev.map(node =>
+        node.id === draggedNodeId
+          ? { ...node, x: Math.max(20, Math.min(580, newX)), y: Math.max(20, Math.min(280, newY)) }
+          : node
+      )
+    )
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+    setDraggedNodeId(null)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        if (!svgRef.current) return
+        const svgRect = svgRef.current.getBoundingClientRect()
+        const newX = e.clientX - svgRect.left - dragOffset.x
+        const newY = e.clientY - svgRect.top - dragOffset.y
+
+        setNodes(prev =>
+          prev.map(node =>
+            node.id === draggedNodeId
+              ? { ...node, x: Math.max(20, Math.min(580, newX)), y: Math.max(20, Math.min(280, newY)) }
+              : node
+          )
+        )
+      }
+
+      const handleGlobalMouseUp = () => {
+        setIsDragging(false)
+        setDraggedNodeId(null)
+      }
+
+      window.addEventListener('mousemove', handleGlobalMouseMove)
+      window.addEventListener('mouseup', handleGlobalMouseUp)
+
+      return () => {
+        window.removeEventListener('mousemove', handleGlobalMouseMove)
+        window.removeEventListener('mouseup', handleGlobalMouseUp)
+      }
+    }
+  }, [isDragging, draggedNodeId, dragOffset])
+
   const renderGraph = (): JSX.Element => {
     const currentStepData = traversalSteps[currentStep]
-    // For path coloring
     const pathNodes: string[] = (currentStepData as any)?.pathNodes || []
 
     return (
-      <svg width="600" height="300" className="border rounded-lg bg-white">
-        {/* Arrow marker for directed graphs */}
+      <svg
+        ref={svgRef}
+        width="600"
+        height="300"
+        className="border rounded-lg bg-white"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+      >
         {isDirected && (
           <defs>
             <marker
@@ -600,30 +619,21 @@ export default function GraphVisualizerPage() {
             </marker>
           </defs>
         )}
-
-        {/* Render edges */}
         {edges.map((edge, index) => {
           const fromNode = nodes.find((n) => n.id === edge.from)
           const toNode = nodes.find((n) => n.id === edge.to)
           if (!fromNode || !toNode) return null
-
-          // Calculate direction for arrowhead offset
           const dx = toNode.x - fromNode.x
           const dy = toNode.y - fromNode.y
           const len = Math.sqrt(dx * dx + dy * dy)
-          const offset = 20 // node radius
+          const offset = 20
           const normX = dx / len
           const normY = dy / len
-
-          // Start and end points for the edge line (so arrowhead doesn't overlap node)
           const startX = fromNode.x + normX * offset
           const startY = fromNode.y + normY * offset
           const endX = toNode.x - normX * offset
           const endY = toNode.y - normY * offset
-
           const isHighlighted = currentStepData?.highlightedEdges.includes(`${edge.from}-${edge.to}`)
-
-          // Highlight edge green if both nodes are in pathNodes and consecutive
           const isPathEdge =
             pathNodes.length > 1 &&
             pathNodes.some((id, idx) => idx < pathNodes.length - 1 && pathNodes[idx] === edge.from && pathNodes[idx + 1] === edge.to)
@@ -660,8 +670,6 @@ export default function GraphVisualizerPage() {
             </g>
           )
         })}
-
-        {/* Render nodes */}
         {nodes.map((node) => {
           const isVisited = currentStepData?.visitedNodes.includes(node.id)
           const isCurrent = currentStepData?.currentNode === node.id
@@ -703,11 +711,8 @@ export default function GraphVisualizerPage() {
                     : "#6b7280"
                 }
                 strokeWidth="2"
-                className="cursor-pointer"
-                onClick={() => {
-                  if (!startNode) setStartNode(node.id)
-                  else if (!targetNode && node.id !== startNode) setTargetNode(node.id)
-                }}
+                className="cursor-move"
+                onMouseDown={(e) => handleMouseDown(node.id, e)}
                 style={{ transition: "fill 0.3s, stroke 0.3s" }}
               />
               <text
@@ -762,23 +767,11 @@ export default function GraphVisualizerPage() {
 
   const currentAlgorithm = algorithmInfo[algorithm]
 
-  // Update pseudocode when algorithm changes
   useEffect(() => {
     setCurrentPseudocode(pseudocodeDefinitions[algorithm])
     setCurrentCodeLine(-1)
   }, [algorithm])
 
-  // Update pseudocode line highlighting when step changes
-  useEffect(() => {
-    if (traversalSteps.length > 0 && traversalSteps[currentStep]) {
-      const codeLine = traversalSteps[currentStep].codeLine
-      if (codeLine !== undefined) {
-        setCurrentCodeLine(codeLine)
-      }
-    }
-  }, [currentStep, traversalSteps])
-
-  // Handler for editing edge weight
   const handleEditEdgeWeight = () => {
     if (!editEdgeFrom || !editEdgeTo || !editEdgeWeight) return
     setEdges((prev) =>
@@ -813,10 +806,8 @@ export default function GraphVisualizerPage() {
       applications={applications}
     >
       <div className="w-full space-y-6">
-        {/* Graph Visualization */}
         <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderGraph()}</div>
 
-        {/* Pseudocode Panel BELOW the visualizer */}
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -861,7 +852,6 @@ export default function GraphVisualizerPage() {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Algorithm</CardTitle>
@@ -879,7 +869,6 @@ export default function GraphVisualizerPage() {
               </Select>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Start/Target</CardTitle>
@@ -911,7 +900,6 @@ export default function GraphVisualizerPage() {
               </Select>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Generate</CardTitle>
@@ -927,7 +915,6 @@ export default function GraphVisualizerPage() {
 
         {/* Add/Delete Vertices and Edges */}
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Add Vertex */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Add Vertex</CardTitle>
@@ -946,8 +933,6 @@ export default function GraphVisualizerPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Add Edge */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Add Edge</CardTitle>
@@ -995,9 +980,7 @@ export default function GraphVisualizerPage() {
           </Card>
         </div>
 
-        {/* Delete Vertex/Edge by Select */}
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Delete Vertex */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Delete Vertex</CardTitle>
@@ -1031,8 +1014,6 @@ export default function GraphVisualizerPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Delete Edge */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Delete Edge</CardTitle>
@@ -1081,7 +1062,6 @@ export default function GraphVisualizerPage() {
           </Card>
         </div>
 
-        {/* Edit Edge Weight */}
         {isWeighted && (
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
@@ -1136,7 +1116,6 @@ export default function GraphVisualizerPage() {
           </div>
         )}
 
-        {/* Algorithm Info */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{currentAlgorithm.name}</CardTitle>
@@ -1168,7 +1147,6 @@ export default function GraphVisualizerPage() {
           </CardContent>
         </Card>
 
-        {/* Current Step Description */}
         {traversalSteps.length > 0 && (
           <Card>
             <CardHeader>
@@ -1206,7 +1184,6 @@ export default function GraphVisualizerPage() {
           </Card>
         )}
 
-        {/* Legend */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Legend</CardTitle>
