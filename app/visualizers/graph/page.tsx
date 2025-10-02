@@ -40,6 +40,7 @@ interface TraversalStep {
   description: string
   highlightedEdges: string[]
   distances?: { [key: string]: number }
+  codeLine?: number
 }
 
 type AlgorithmType = "bfs" | "dfs" | "dijkstra"
@@ -101,6 +102,22 @@ function reconstructPath(
   }
   if (current === start) path.push(start)
   return path.reverse()
+}
+
+// Helper function to get neighbors considering graph direction
+function getNeighbors(nodeId: string, edges: GraphEdge[], isDirected: boolean): string[] {
+  const neighbors: string[] = []
+  
+  for (const edge of edges) {
+    if (edge.from === nodeId) {
+      neighbors.push(edge.to)
+    } else if (!isDirected && edge.to === nodeId) {
+      // For undirected graphs, edges work both ways
+      neighbors.push(edge.from)
+    }
+  }
+  
+  return neighbors
 }
 
 export default function GraphVisualizerPage() {
@@ -298,7 +315,7 @@ export default function GraphVisualizerPage() {
     setCurrentCodeLine(line)
   }
 
-  // --- Modified BFS/DFS to include pseudocode highlighting ---
+  // --- Modified BFS to use getNeighbors helper and track code lines ---
   const performBFS = () => {
     if (!startNode) return
 
@@ -308,7 +325,6 @@ export default function GraphVisualizerPage() {
     const distances: { [key: string]: number } = { [startNode]: 0 }
     const parent: { [key: string]: string } = {}
 
-    highlightPseudocode("bfs", 1) // function BFS(start)
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -316,51 +332,62 @@ export default function GraphVisualizerPage() {
       description: `Starting BFS from node ${startNode}`,
       highlightedEdges: [],
       distances: { ...distances },
+      codeLine: 1,
     })
 
-    highlightPseudocode("bfs", 2) // create queue Q
-    highlightPseudocode("bfs", 3) // mark start as visited
-    highlightPseudocode("bfs", 4) // Q.enqueue(start)
+    steps.push({
+      currentNode: startNode,
+      visitedNodes: [],
+      queue: [...queue],
+      description: `Created queue and marked ${startNode} as visited`,
+      highlightedEdges: [],
+      distances: { ...distances },
+      codeLine: 3,
+    })
 
     let found = false
 
     while (queue.length > 0) {
-      highlightPseudocode("bfs", 5) // while Q is not empty
       const currentNode = queue.shift()!
       visited.add(currentNode)
 
-      highlightPseudocode("bfs", 6) // node = Q.dequeue()
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
         queue: [...queue],
-        description: `Visiting node ${currentNode}`,
+        description: `Dequeued and visiting node ${currentNode}`,
         highlightedEdges: [],
         distances: { ...distances },
+        codeLine: 6,
       })
 
-      // Find neighbors
-      const neighbors = edges
-        .filter((edge) => edge.from === currentNode)
-        .map((edge) => edge.to)
+      // Use the helper function to get neighbors - THIS IS THE FIX
+      const neighbors = getNeighbors(currentNode, edges, isDirected)
         .filter((neighbor) => !visited.has(neighbor) && !queue.includes(neighbor))
 
+      steps.push({
+        currentNode,
+        visitedNodes: Array.from(visited),
+        queue: [...queue],
+        description: `Checking neighbors of node ${currentNode}`,
+        highlightedEdges: [],
+        distances: { ...distances },
+        codeLine: 7,
+      })
+
       for (const neighbor of neighbors) {
-        highlightPseudocode("bfs", 7) // for each neighbor of node
-        highlightPseudocode("bfs", 8) // if neighbor not visited
         queue.push(neighbor)
         distances[neighbor] = distances[currentNode] + 1
         parent[neighbor] = currentNode
-        highlightPseudocode("bfs", 9) // mark neighbor as visited
-        highlightPseudocode("bfs", 10) // Q.enqueue(neighbor)
 
         steps.push({
           currentNode,
           visitedNodes: Array.from(visited),
           queue: [...queue],
-          description: `Added ${neighbor} to queue`,
+          description: `Added ${neighbor} to queue (neighbor not visited)`,
           highlightedEdges: [`${currentNode}-${neighbor}`],
           distances: { ...distances },
+          codeLine: 9,
         })
       }
 
@@ -373,6 +400,7 @@ export default function GraphVisualizerPage() {
           description: `Found target node ${targetNode}!`,
           highlightedEdges: [],
           distances: { ...distances },
+          codeLine: 6,
         })
         break
       }
@@ -387,19 +415,17 @@ export default function GraphVisualizerPage() {
       steps.push({
         ...lastStep,
         description: "Final path highlighted in green.",
-        // Add a new property for path nodes
         highlightedEdges: lastStep.highlightedEdges,
-        // Add a new property for path nodes
-        // We'll use this in the renderGraph function
         pathNodes: path,
+        codeLine: -1,
       } as any)
     }
 
     setTraversalSteps(steps)
     setCurrentPseudocode(pseudocodeDefinitions.bfs)
-    setCurrentCodeLine(-1)
   }
 
+  // --- Modified DFS to use getNeighbors helper and track code lines ---
   const performDFS = () => {
     if (!startNode) return
 
@@ -407,56 +433,64 @@ export default function GraphVisualizerPage() {
     const visited = new Set<string>()
     const stack = [startNode]
 
-    highlightPseudocode("dfs", 1) // function DFS(start)
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
       stack: [...stack],
       description: `Starting DFS from node ${startNode}`,
       highlightedEdges: [],
+      codeLine: 1,
     })
 
-    highlightPseudocode("dfs", 2) // create stack S
-    highlightPseudocode("dfs", 3) // S.push(start)
+    steps.push({
+      currentNode: startNode,
+      visitedNodes: [],
+      stack: [...stack],
+      description: `Created stack and pushed ${startNode}`,
+      highlightedEdges: [],
+      codeLine: 3,
+    })
 
     while (stack.length > 0) {
-      highlightPseudocode("dfs", 4) // while S is not empty
       const currentNode = stack.pop()!
 
       if (visited.has(currentNode)) continue
 
-      highlightPseudocode("dfs", 5) // node = S.pop()
-      highlightPseudocode("dfs", 6) // if node not visited
       visited.add(currentNode)
-      highlightPseudocode("dfs", 7) // mark node as visited
 
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
         stack: [...stack],
-        description: `Visiting node ${currentNode}`,
+        description: `Popped and visiting node ${currentNode}`,
         highlightedEdges: [],
+        codeLine: 7,
       })
 
-      // Find neighbors (add in reverse order for correct DFS behavior)
-      const neighbors = edges
-        .filter((edge) => edge.from === currentNode)
-        .map((edge) => edge.to)
+      // Use the helper function to get neighbors - THIS IS THE FIX
+      const neighbors = getNeighbors(currentNode, edges, isDirected)
         .filter((neighbor) => !visited.has(neighbor))
         .reverse()
 
+      steps.push({
+        currentNode,
+        visitedNodes: Array.from(visited),
+        stack: [...stack],
+        description: `Checking neighbors of node ${currentNode}`,
+        highlightedEdges: [],
+        codeLine: 8,
+      })
+
       for (const neighbor of neighbors) {
-        highlightPseudocode("dfs", 8) // for each neighbor of node
-        highlightPseudocode("dfs", 9) // if neighbor not visited
         stack.push(neighbor)
-        highlightPseudocode("dfs", 10) // S.push(neighbor)
 
         steps.push({
           currentNode,
           visitedNodes: Array.from(visited),
           stack: [...stack],
-          description: `Added ${neighbor} to stack`,
+          description: `Pushed ${neighbor} to stack (neighbor not visited)`,
           highlightedEdges: [`${currentNode}-${neighbor}`],
+          codeLine: 10,
         })
       }
 
@@ -467,6 +501,7 @@ export default function GraphVisualizerPage() {
           stack: [...stack],
           description: `Found target node ${targetNode}!`,
           highlightedEdges: [],
+          codeLine: 7,
         })
         break
       }
@@ -474,7 +509,6 @@ export default function GraphVisualizerPage() {
 
     setTraversalSteps(steps)
     setCurrentPseudocode(pseudocodeDefinitions.dfs)
-    setCurrentCodeLine(-1)
   }
 
   const startAlgorithm = () => {
@@ -531,6 +565,16 @@ export default function GraphVisualizerPage() {
       setIsPlaying(false)
     }
   }, [isPlaying, currentStep, traversalSteps.length])
+
+  // Update pseudocode line highlighting when step changes
+  useEffect(() => {
+    if (traversalSteps.length > 0 && traversalSteps[currentStep]) {
+      const codeLine = traversalSteps[currentStep].codeLine
+      if (codeLine !== undefined) {
+        setCurrentCodeLine(codeLine)
+      }
+    }
+  }, [currentStep, traversalSteps])
 
   // --- Modified renderGraph to color path nodes green ---
   const renderGraph = (): JSX.Element => {
@@ -723,6 +767,16 @@ export default function GraphVisualizerPage() {
     setCurrentPseudocode(pseudocodeDefinitions[algorithm])
     setCurrentCodeLine(-1)
   }, [algorithm])
+
+  // Update pseudocode line highlighting when step changes
+  useEffect(() => {
+    if (traversalSteps.length > 0 && traversalSteps[currentStep]) {
+      const codeLine = traversalSteps[currentStep].codeLine
+      if (codeLine !== undefined) {
+        setCurrentCodeLine(codeLine)
+      }
+    }
+  }, [currentStep, traversalSteps])
 
   // Handler for editing edge weight
   const handleEditEdgeWeight = () => {
@@ -1065,7 +1119,7 @@ export default function GraphVisualizerPage() {
                     placeholder="Weight"
                     value={editEdgeWeight}
                     onChange={(e) => setEditEdgeWeight(e.target.value)}
-                    className="w-36 text-base px-4 py-2" // Increased width and font size
+                    className="w-36 text-base px-4 py-2"
                   />
                   <Button
                     onClick={handleEditEdgeWeight}
