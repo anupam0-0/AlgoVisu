@@ -80,6 +80,16 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/mst/page.js"
+    ],
+    "/visualizers/applications/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/applications/loading.js"
+    ],
+    "/visualizers/applications/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/applications/page.js"
     ]
   }
 }

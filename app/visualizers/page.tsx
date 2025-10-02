@@ -79,6 +79,14 @@ export default function VisualizersPage() {
       topics: ["Kruskal's", "Prim's"],
       available: true,
     },
+    {
+      id: "applications",
+      title: "Applications of Data Structures",
+      description: "Real-world applications and case studies",
+      icon: <ArrowLeft className="h-6 w-6" />,
+      topics: ["Real-World", "Case Studies"],
+      available: false,
+    },
   ]
 
   const getDifficultyColor = (difficulty: string) => {
