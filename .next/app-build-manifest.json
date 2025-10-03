@@ -16,70 +16,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
-    "/visualizers/stack/page": [
+    "/visualizers/graph/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/stack/page.js"
+      "static/chunks/app/visualizers/graph/loading.js"
     ],
-    "/visualizers/array/loading": [
+    "/visualizers/graph/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/array/loading.js"
-    ],
-    "/visualizers/array/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/array/page.js"
-    ],
-    "/visualizers/sorting/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sorting/loading.js"
-    ],
-    "/visualizers/sorting/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sorting/page.js"
-    ],
-    "/visualizers/queue/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/queue/loading.js"
-    ],
-    "/visualizers/queue/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/queue/page.js"
-    ],
-    "/visualizers/linked-list/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/linked-list/loading.js"
-    ],
-    "/visualizers/linked-list/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/linked-list/page.js"
-    ],
-    "/visualizers/tree/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/tree/loading.js"
-    ],
-    "/visualizers/tree/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/tree/page.js"
-    ],
-    "/visualizers/mst/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst/loading.js"
-    ],
-    "/visualizers/mst/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst/page.js"
+      "static/chunks/app/visualizers/graph/page.js"
     ],
     "/visualizers/applications/loading": [
       "static/chunks/webpack.js",

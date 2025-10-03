@@ -2,397 +2,764 @@
 import { useState, useEffect, useRef } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
+import { Input } from "../../../components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
-import { Shuffle } from "lucide-react"
+import { Label } from "../../../components/ui/label"
+import { Plus, Shuffle, X, Upload, Download } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
-interface CityNode {
+interface Person {
   id: string
-  label: string
+  name: string
   x: number
   y: number
-  isMST?: boolean
-  isTSP?: boolean
+  connections: number
+  color?: string
+  community?: number
+  influence?: number
+  betweenness?: number
+  clustering?: number
 }
 
-interface WeightedEdge {
+interface Connection {
   from: string
   to: string
   weight: number
-  isInMST?: boolean
-  isInTSP?: boolean
+  isHighlighted?: boolean
+  type?: string // 'professional' | 'personal' | 'other'
 }
 
-interface MSTStep {
-  description: string
-  mstEdges: string[]
-  visitedNodes?: string[]
-  codeLine?: number
+interface Community {
+  id: number
+  members: string[]
+  color: string
 }
 
-const pseudocode = [
-  "function MST_TSP_Approx(cities):",
-  "  // Step 1: Create complete graph with Euclidean distances",
-  "  for each pair of cities (u, v):",
-  "    weight(u, v) = distance(u, v)",
-  "  // Step 2: Build MST using Prim's algorithm",
-  "  MST = Prim(start=cities[0])",
-  "  // Step 3: Preorder traversal of MST → TSP tour",
-  "  tour = PreorderDFS(MST, root=cities[0])",
-  "  return tour",
-]
+type AnalysisMode = "friends" | "community" | "influence" | "advanced"
 
-const usaCitiesData = [
-  { id: "NYC", label: "NYC", lat: 40.7128, lng: -74.0060 },
-  { id: "LA", label: "LA", lat: 34.0522, lng: -118.2437 },
-  { id: "CHI", label: "CHI", lat: 41.8781, lng: -87.6298 },
-  { id: "MIA", label: "MIA", lat: 25.7617, lng: -80.1918 },
-  { id: "SEA", label: "SEA", lat: 47.6062, lng: -122.3321 },
-  { id: "DEN", label: "DEN", lat: 39.7392, lng: -104.9903 },
-]
+const connectionTypes = ["professional", "personal", "other"]
 
-// Scale lat/lng to fit 600x300 canvas
-function scaleCitiesToCanvas(cities: { id: string; label: string; lat: number; lng: number }[]): CityNode[] {
-  const lats = cities.map(c => c.lat)
-  const lngs = cities.map(c => c.lng)
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats)
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs)
-
-  return cities.map(city => {
-    const x = 50 + ((city.lng - minLng) / (maxLng - minLng)) * 500
-    const y = 50 + ((maxLat - city.lat) / (maxLat - minLat)) * 200
-    return { id: city.id, label: city.label, x, y }
+export default function SocialNetworkAnalyzer() {
+  const [people, setPeople] = useState<Person[]>([])
+  const [connections, setConnections] = useState<Connection[]>([])
+  const [communities, setCommunities] = useState<Community[]>([])
+  const [selectedPerson, setSelectedPerson] = useState<string>("")
+  const [recommendations, setRecommendations] = useState<string[]>([])
+  const [influencers, setInfluencers] = useState<{ id: string; score: number }[]>([])
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("friends")
+  const [networkStats, setNetworkStats] = useState({
+    density: 0,
+    avgClustering: 0,
+    maxBetweenness: 0
   })
-}
 
-function euclideanDistance(a: CityNode, b: CityNode): number {
-  const dx = a.x - b.x
-  const dy = a.y - b.y
-  return Math.round(Math.sqrt(dx * dx + dy * dy))
-}
+  const [newPersonName, setNewPersonName] = useState("")
+  const [connectFrom, setConnectFrom] = useState("")
+  const [connectTo, setConnectTo] = useState("")
+  const [interactionWeight, setInteractionWeight] = useState("7")
+  const [connectionType, setConnectionType] = useState("professional")
+  const [deletePersonId, setDeletePersonId] = useState("")
+  const [deleteConnFrom, setDeleteConnFrom] = useState("")
+  const [deleteConnTo, setDeleteConnTo] = useState("")
 
-function getNeighbors(nodeId: string, edges: WeightedEdge[]): string[] {
-  const neighbors: string[] = []
-  for (const edge of edges) {
-    if (edge.from === nodeId) neighbors.push(edge.to)
-    else if (edge.to === nodeId) neighbors.push(edge.from)
-  }
-  return neighbors
-}
-
-export default function TSPMSTApproxPage() {
-  const [nodes, setNodes] = useState<CityNode[]>([])
-  const [edges, setEdges] = useState<WeightedEdge[]>([])
-  const [mstSteps, setMstSteps] = useState<MSTStep[]>([])
-  const [currentStep, setCurrentStep] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
-  const [tspTour, setTspTour] = useState<string[]>([])
-  const [mstCost, setMstCost] = useState(0)
-  const [tspCost, setTspCost] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [draggedPersonId, setDraggedPersonId] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const svgRef = useRef<SVGSVGElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const applications = [
-    {
-      title: "Logistics & Delivery",
-      description: "MST-based TSP approximations optimize delivery routes for packages, food, or services",
-      examples: ["UPS/FedEx routing", "Pizza delivery", "Ride-sharing pickups"],
-    },
-    {
-      title: "Circuit Design",
-      description: "Minimizing wire length in circuit boards using MST heuristics",
-      examples: ["PCB layout", "Chip design", "Network cabling"],
-    },
-    {
-      title: "Approximation Algorithms",
-      description: "MST provides a provable 2-approximation for metric TSP",
-      examples: ["Traveling Salesman heuristic", "Facility location"],
-    },
-  ]
-
-  // Initialize with US cities
+  // Initialize sample network
   useEffect(() => {
-    loadExample("usa6")
+    const samplePeople: Person[] = [
+      { id: "Alice", name: "Alice", x: 200, y: 150, connections: 0 },
+      { id: "Bob", name: "Bob", x: 400, y: 100, connections: 0 },
+      { id: "Carol", name: "Carol", x: 600, y: 150, connections: 0 },
+      { id: "David", name: "David", x: 200, y: 300, connections: 0 },
+      { id: "Eve", name: "Eve", x: 400, y: 350, connections: 0 },
+      { id: "Frank", name: "Frank", x: 600, y: 300, connections: 0 },
+    ]
+
+    const sampleConnections: Connection[] = [
+      { from: "Alice", to: "Bob", weight: 8, type: "professional" },
+      { from: "Alice", to: "David", weight: 6, type: "professional" },
+      { from: "Bob", to: "Carol", weight: 9, type: "personal" },
+      { from: "Bob", to: "Eve", weight: 5, type: "professional" },
+      { from: "Carol", to: "Frank", weight: 7, type: "personal" },
+      { from: "David", to: "Eve", weight: 8, type: "professional" },
+      { from: "Eve", to: "Frank", weight: 7, type: "personal" },
+    ]
+
+    setPeople(samplePeople)
+    setConnections(sampleConnections)
+    setSelectedPerson("Alice")
   }, [])
 
-  const loadExample = (key: string) => {
-    let cities: CityNode[] = []
-    if (key === "usa6") {
-      cities = scaleCitiesToCanvas(usaCitiesData)
-    } else {
-      // Random points
-      cities = Array.from({ length: 6 }, (_, i) => ({
-        id: String.fromCharCode(65 + i),
-        label: String.fromCharCode(65 + i),
-        x: 100 + Math.random() * 400,
-        y: 50 + Math.random() * 200,
+  // Update connection counts and run analysis
+  useEffect(() => {
+    const counts = new Map<string, number>()
+    connections.forEach((conn) => {
+      counts.set(conn.from, (counts.get(conn.from) || 0) + 1)
+      counts.set(conn.to, (counts.get(conn.to) || 0) + 1)
+    })
+
+    setPeople((prev) =>
+      prev.map((p) => ({
+        ...p,
+        connections: counts.get(p.id) || 0,
       }))
-    }
-    setNodes(cities)
-    generateCompleteGraph(cities)
-    setMstSteps([])
-    setCurrentStep(0)
-    setTspTour([])
-    setMstCost(0)
-    setTspCost(0)
-  }
+    )
+  }, [connections])
 
-  const generateCompleteGraph = (cities: CityNode[]) => {
-    const newEdges: WeightedEdge[] = []
-    for (let i = 0; i < cities.length; i++) {
-      for (let j = i + 1; j < cities.length; j++) {
-        const w = euclideanDistance(cities[i], cities[j])
-        newEdges.push({ from: cities[i].id, to: cities[j].id, weight: w })
+  // Run analysis when mode or selection changes
+  useEffect(() => {
+    setConnections((prev) => prev.map((c) => ({ ...c, isHighlighted: false })))
+
+    if (analysisMode === "friends" && selectedPerson) {
+      findFriendRecommendations(selectedPerson)
+    } else if (analysisMode === "community") {
+      detectCommunities()
+    } else if (analysisMode === "influence") {
+      calculateInfluence()
+    } else if (analysisMode === "advanced") {
+      calculateAdvancedMetrics()
+    }
+  }, [selectedPerson, analysisMode, connections.length])
+
+  // Friend Recommendations
+  const findFriendRecommendations = (personId: string) => {
+    const directFriends = new Set<string>()
+    const commonNeighbors = new Map<string, number>()
+
+    connections.forEach((conn) => {
+      if (conn.from === personId) directFriends.add(conn.to)
+      if (conn.to === personId) directFriends.add(conn.from)
+    })
+
+    connections.forEach((conn) => {
+      if (directFriends.has(conn.from) && conn.to !== personId && !directFriends.has(conn.to)) {
+        commonNeighbors.set(conn.to, (commonNeighbors.get(conn.to) || 0) + 1)
       }
-    }
-    setEdges(newEdges)
+      if (directFriends.has(conn.to) && conn.from !== personId && !directFriends.has(conn.from)) {
+        commonNeighbors.set(conn.from, (commonNeighbors.get(conn.from) || 0) + 1)
+      }
+    })
+
+    const sorted = Array.from(commonNeighbors.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([id]) => id)
+
+    setRecommendations(sorted)
+
+    setConnections((prev) =>
+      prev.map((c) => ({
+        ...c,
+        isHighlighted: sorted.includes(c.from) || sorted.includes(c.to),
+      }))
+    )
   }
 
-  const performMSTThenTSP = () => {
-    if (nodes.length === 0) return
-    const start = nodes[0].id
-    const steps: MSTStep[] = []
-    const mstEdges: string[] = []
+  // Community Detection
+  const detectCommunities = () => {
     const visited = new Set<string>()
-    const key: { [id: string]: number } = {}
-    const parent: { [id: string]: string | null } = {}
-    const inQueue = new Set(nodes.map(n => n.id))
+    const communitiesList: Community[] = []
+    const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
 
-    for (const node of nodes) {
-      key[node.id] = node.id === start ? 0 : Infinity
-      parent[node.id] = null
-    }
+    people.forEach((person) => {
+      if (!visited.has(person.id)) {
+        const community: string[] = []
+        const queue = [person.id]
 
-    steps.push({ description: `Initialize MST from ${start}`, mstEdges: [], codeLine: 5 })
+        while (queue.length > 0) {
+          const current = queue.shift()!
+          if (visited.has(current)) continue
 
-    while (inQueue.size > 0) {
-      let minNode = ""
-      let minKey = Infinity
-      for (const id of inQueue) {
-        if (key[id] < minKey) {
-          minKey = key[id]
-          minNode = id
+          visited.add(current)
+          community.push(current)
+
+          connections.forEach((conn) => {
+            if (conn.from === current && !visited.has(conn.to) && conn.weight >= 6) {
+              queue.push(conn.to)
+            }
+            if (conn.to === current && !visited.has(conn.from) && conn.weight >= 6) {
+              queue.push(conn.from)
+            }
+          })
+        }
+
+        if (community.length > 0) {
+          communitiesList.push({
+            id: communitiesList.length,
+            members: community,
+            color: colors[communitiesList.length % colors.length],
+          })
         }
       }
-      if (minKey === Infinity) break
+    })
 
-      inQueue.delete(minNode)
-      visited.add(minNode)
+    setCommunities(communitiesList)
 
-      if (parent[minNode] !== null) {
-        const e = `${parent[minNode]}-${minNode}`
-        mstEdges.push(e)
-        steps.push({ description: `Add edge ${e} to MST`, mstEdges: [...mstEdges], codeLine: 6 })
-      } else {
-        steps.push({ description: `Start MST at ${minNode}`, mstEdges: [], codeLine: 6 })
+    setPeople((prev) =>
+      prev.map((p) => {
+        const community = communitiesList.find((c) => c.members.includes(p.id))
+        return {
+          ...p,
+          community: community?.id,
+          color: community?.color,
+        }
+      })
+    )
+  }
+
+  // Influence Calculation (PageRank)
+  const calculateInfluence = () => {
+    const scores = new Map<string, number>()
+    people.forEach((p) => scores.set(p.id, 1.0))
+
+    for (let i = 0; i < 10; i++) {
+      const newScores = new Map<string, number>()
+
+      people.forEach((person) => {
+        let score = 0.15
+
+        connections.forEach((conn) => {
+          if (conn.to === person.id) {
+            const fromConnections = connections.filter((c) => c.from === conn.from).length
+            score += 0.85 * (scores.get(conn.from) || 0) * (conn.weight / 10) / Math.max(fromConnections, 1)
+          }
+        })
+
+        newScores.set(person.id, score)
+      })
+
+      newScores.forEach((score, id) => scores.set(id, score))
+    }
+
+    const ranked = Array.from(scores.entries())
+      .map(([id, score]) => ({ id, score }))
+      .sort((a, b) => b.score - a.score)
+
+    setInfluencers(ranked)
+
+    setPeople((prev) =>
+      prev.map((p) => ({
+        ...p,
+        influence: scores.get(p.id),
+      }))
+    )
+  }
+
+  // Advanced Metrics Calculation
+  const calculateAdvancedMetrics = () => {
+    // Calculate Betweenness Centrality using Brandes algorithm
+    const betweenness = new Map<string, number>()
+    people.forEach(p => betweenness.set(p.id, 0))
+    
+    // For each node as source
+    people.forEach(source => {
+      const S: string[] = []
+      const P: Record<string, string[]> = {}
+      const sigma: Record<string, number> = {}
+      const d: Record<string, number> = {}
+      
+      people.forEach(p => {
+        P[p.id] = []
+        sigma[p.id] = 0
+        d[p.id] = -1
+      })
+      
+      sigma[source.id] = 1
+      d[source.id] = 0
+      
+      const Q: string[] = [source.id]
+      
+      while (Q.length > 0) {
+        const v = Q.shift()!
+        S.push(v)
+        
+        // Get neighbors
+        const neighbors = connections
+          .filter(c => c.from === v || c.to === v)
+          .map(c => c.from === v ? c.to : c.from)
+        
+        neighbors.forEach(w => {
+          if (d[w] < 0) {
+            Q.push(w)
+            d[w] = d[v] + 1
+          }
+          if (d[w] === d[v] + 1) {
+            sigma[w] += sigma[v]
+            P[w].push(v)
+          }
+        })
       }
-
-      const neighbors = getNeighbors(minNode, edges)
-      for (const v of neighbors) {
-        if (inQueue.has(v)) {
-          const edge = edges.find(e =>
-            (e.from === minNode && e.to === v) || (e.from === v && e.to === minNode)
+      
+      const delta: Record<string, number> = {}
+      people.forEach(p => delta[p.id] = 0)
+      
+      while (S.length > 0) {
+        const w = S.pop()!
+        P[w].forEach(v => {
+          const coeff = (sigma[v] / sigma[w]) * (1 + delta[w])
+          delta[v] += coeff
+        })
+        if (w !== source.id) {
+          betweenness.set(w, (betweenness.get(w) || 0) + delta[w])
+        }
+      }
+    })
+    
+    // Normalize betweenness
+    const maxB = Math.max(...Array.from(betweenness.values()))
+    const normalizedBetweenness = new Map<string, number>()
+    betweenness.forEach((val, key) => {
+      normalizedBetweenness.set(key, maxB > 0 ? val / maxB : 0)
+    })
+    
+    // Calculate Clustering Coefficient
+    const clustering = new Map<string, number>()
+    people.forEach(person => {
+      const neighbors = connections
+        .filter(c => c.from === person.id || c.to === person.id)
+        .map(c => c.from === person.id ? c.to : c.from)
+      
+      if (neighbors.length < 2) {
+        clustering.set(person.id, 0)
+        return
+      }
+      
+      let triangles = 0
+      for (let i = 0; i < neighbors.length; i++) {
+        for (let j = i + 1; j < neighbors.length; j++) {
+          const exists = connections.some(c => 
+            (c.from === neighbors[i] && c.to === neighbors[j]) || 
+            (c.from === neighbors[j] && c.to === neighbors[i])
           )
-          if (edge && edge.weight < key[v]) {
-            key[v] = edge.weight
-            parent[v] = minNode
+          if (exists) triangles++
+        }
+      }
+      
+      const possible = neighbors.length * (neighbors.length - 1) / 2
+      clustering.set(person.id, possible > 0 ? triangles / possible : 0)
+    })
+    
+    // Calculate Network Density
+    const n = people.length
+    const possibleConnections = n * (n - 1) / 2
+    const density = possibleConnections > 0 ? connections.length / possibleConnections : 0
+    
+    // Update state
+    setPeople(prev => 
+      prev.map(p => ({
+        ...p,
+        betweenness: normalizedBetweenness.get(p.id) || 0,
+        clustering: clustering.get(p.id) || 0
+      }))
+    )
+    
+    setNetworkStats({
+      density,
+      avgClustering: Array.from(clustering.values()).reduce((a, b) => a + b, 0) / (clustering.size || 1),
+      maxBetweenness: maxB
+    })
+  }
+
+  // Person Management
+  const addPerson = () => {
+    if (!newPersonName.trim()) return
+    const id = newPersonName.trim()
+    if (people.find((p) => p.id === id)) return
+
+    const newPerson: Person = {
+      id,
+      name: id,
+      x: Math.random() * 600 + 100,
+      y: Math.random() * 300 + 50,
+      connections: 0,
+    }
+    setPeople([...people, newPerson])
+    setNewPersonName("")
+  }
+
+  const removePerson = (personId: string) => {
+    setPeople(people.filter((p) => p.id !== personId))
+    setConnections(connections.filter((c) => c.from !== personId && c.to !== personId))
+    if (selectedPerson === personId) setSelectedPerson(people[0]?.id || "")
+  }
+
+  // Connection Management
+  const addConnection = () => {
+    if (!connectFrom || !connectTo || connectFrom === connectTo) return
+    const weight = parseInt(interactionWeight) || 5
+
+    const exists = connections.find(
+      (c) => (c.from === connectFrom && c.to === connectTo) || (c.from === connectTo && c.to === connectFrom)
+    )
+
+    if (!exists) {
+      setConnections([...connections, { 
+        from: connectFrom, 
+        to: connectTo, 
+        weight,
+        type: connectionType
+      }])
+      setConnectFrom("")
+      setConnectTo("")
+      setInteractionWeight("7")
+      setConnectionType("professional")
+    }
+  }
+
+  const removeConnection = (from: string, to: string) => {
+    setConnections(
+      connections.filter(
+        (c) => !(c.from === from && c.to === to) && !(c.from === to && c.to === from)
+      )
+    )
+  }
+
+  // Random Network Generation
+  const generateRandomNetwork = () => {
+    const nodeCount = 8
+    const newPeople: Person[] = []
+    const newConnections: Connection[] = []
+
+    for (let i = 0; i < nodeCount; i++) {
+      const angle = (i * 2 * Math.PI) / nodeCount
+      const radius = 150
+      const centerX = 400
+      const centerY = 200
+      newPeople.push({
+        id: String.fromCharCode(65 + i),
+        name: String.fromCharCode(65 + i),
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle),
+        connections: 0,
+      })
+    }
+
+    for (let i = 0; i < nodeCount; i++) {
+      const connectionCount = Math.floor(Math.random() * 3) + 2
+      for (let j = 0; j < connectionCount; j++) {
+        const targetIndex = Math.floor(Math.random() * nodeCount)
+        if (targetIndex !== i) {
+          const weight = Math.floor(Math.random() * 5) + 5
+          const type = connectionTypes[Math.floor(Math.random() * connectionTypes.length)]
+          const conn: Connection = {
+            from: newPeople[i].id,
+            to: newPeople[targetIndex].id,
+            weight,
+            type
+          }
+          if (!newConnections.find((e) => e.from === conn.from && e.to === conn.to)) {
+            newConnections.push(conn)
           }
         }
       }
     }
 
-    // Preorder DFS for TSP tour
-    const adj: { [id: string]: string[] } = {}
-    for (const e of mstEdges) {
-      const [u, v] = e.split('-')
-      if (!adj[u]) adj[u] = []
-      if (!adj[v]) adj[v] = []
-      adj[u].push(v)
-      adj[v].push(u)
-    }
+    setPeople(newPeople)
+    setConnections(newConnections)
+    setSelectedPerson(newPeople[0]?.id || "")
+  }
 
-    const tour: string[] = []
-    const visitedTour = new Set<string>()
-    const dfs = (node: string) => {
-      visitedTour.add(node)
-      tour.push(node)
-      for (const neighbor of adj[node] || []) {
-        if (!visitedTour.has(neighbor)) {
-          dfs(neighbor)
+  // CSV Import/Export
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      parseCSV(text)
+    }
+    reader.readAsText(file)
+  }
+
+  const parseCSV = (csvText: string) => {
+    try {
+      const lines = csvText.trim().split('\n');
+      if (lines.length === 0) {
+        throw new Error("Empty file");
+      }
+
+      // Parse header
+      const headers = lines[0].split(',').map(h => h.trim());
+      const requiredHeaders = ['person1', 'person2', 'interaction_strength'];
+      
+      // Validate headers
+      if (!requiredHeaders.every(h => headers.includes(h))) {
+        throw new Error(`CSV must contain headers: ${requiredHeaders.join(', ')}`);
+      }
+
+      const newPeopleMap = new Map<string, Person>();
+      const newConnections: Connection[] = [];
+
+      // Process data rows
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const values = line.split(',').map(v => v.trim());
+        if (values.length < 3) continue;
+
+        const person1 = values[headers.indexOf('person1')];
+        const person2 = values[headers.indexOf('person2')];
+        const weight = parseInt(values[headers.indexOf('interaction_strength')]) || 5;
+        const type = headers.includes('type') 
+          ? values[headers.indexOf('type')] || 'other'
+          : 'other';
+
+        if (!person1 || !person2) continue;
+
+        // Add people if not exists
+        if (!newPeopleMap.has(person1)) {
+          newPeopleMap.set(person1, {
+            id: person1,
+            name: person1,
+            x: Math.random() * 600 + 100,
+            y: Math.random() * 300 + 50,
+            connections: 0
+          });
         }
+        if (!newPeopleMap.has(person2)) {
+          newPeopleMap.set(person2, {
+            id: person2,
+            name: person2,
+            x: Math.random() * 600 + 100,
+            y: Math.random() * 300 + 50,
+            connections: 0
+          });
+        }
+
+        // Add connection
+        newConnections.push({
+          from: person1,
+          to: person2,
+          weight,
+          type
+        });
+      }
+
+      if (newPeopleMap.size === 0) {
+        throw new Error("No valid data found in CSV");
+      }
+
+      setPeople(Array.from(newPeopleMap.values()));
+      setConnections(newConnections);
+      setSelectedPerson(Array.from(newPeopleMap.keys())[0]);
+    } catch (error) {
+      console.error("Error parsing CSV:", error);
+      alert(`Invalid CSV format. Error: ${(error as Error).message}`);
+    }
+  }
+
+  const exportCSV = () => {
+    const headers = ["person1", "person2", "interaction_strength", "type"]
+    const rows = connections.map(conn => 
+      [conn.from, conn.to, conn.weight, conn.type || "other"].join(",")
+    )
+    const csvContent = [headers.join(","), ...rows].join("\n")
+    
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "social_network.csv"
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
+
+  // Drag handlers
+  const handleMouseDown = (personId: string, e: React.MouseEvent) => {
+    const person = people.find((p) => p.id === personId)
+    if (!person) return
+    setIsDragging(true)
+    setDraggedPersonId(personId)
+    const svgRect = svgRef.current?.getBoundingClientRect()
+    if (svgRect) {
+      setDragOffset({
+        x: e.clientX - svgRect.left - person.x,
+        y: e.clientY - svgRect.top - person.y,
+      })
+    }
+    e.preventDefault()
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !draggedPersonId || !svgRef.current) return
+    const svgRect = svgRef.current.getBoundingClientRect()
+    const newX = e.clientX - svgRect.left - dragOffset.x
+    const newY = e.clientY - svgRect.top - dragOffset.y
+
+    setPeople((prev) =>
+      prev.map((person) =>
+        person.id === draggedPersonId
+          ? { ...person, x: Math.max(30, Math.min(770, newX)), y: Math.max(30, Math.min(370, newY)) }
+          : person
+      )
+    )
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+    setDraggedPersonId(null)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        if (!svgRef.current) return
+        const svgRect = svgRef.current.getBoundingClientRect()
+        const newX = e.clientX - svgRect.left - dragOffset.x
+        const newY = e.clientY - svgRect.top - dragOffset.y
+
+        setPeople((prev) =>
+          prev.map((person) =>
+            person.id === draggedPersonId
+              ? { ...person, x: Math.max(30, Math.min(770, newX)), y: Math.max(30, Math.min(370, newY)) }
+              : person
+          )
+        )
+      }
+
+      const handleGlobalMouseUp = () => {
+        setIsDragging(false)
+        setDraggedPersonId(null)
+      }
+
+      window.addEventListener("mousemove", handleGlobalMouseMove)
+      window.addEventListener("mouseup", handleGlobalMouseUp)
+
+      return () => {
+        window.removeEventListener("mousemove", handleGlobalMouseMove)
+        window.removeEventListener("mouseup", handleGlobalMouseUp)
       }
     }
-    dfs(start)
-    tour.push(start) // return to start
+  }, [isDragging, draggedPersonId, dragOffset])
 
-    // Compute costs
-    let mstTotal = 0
-    for (const e of mstEdges) {
-      const edge = edges.find(ed =>
-        (ed.from === e.split('-')[0] && ed.to === e.split('-')[1]) ||
-        (ed.from === e.split('-')[1] && ed.to === e.split('-')[0])
-      )
-      if (edge) mstTotal += edge.weight
-    }
-
-    let tspTotal = 0
-    for (let i = 0; i < tour.length - 1; i++) {
-      const edge = edges.find(ed =>
-        (ed.from === tour[i] && ed.to === tour[i + 1]) ||
-        (ed.from === tour[i + 1] && ed.to === tour[i])
-      )
-      if (edge) tspTotal += edge.weight
-    }
-
-    setMstCost(mstTotal)
-    setTspCost(tspTotal)
-    setTspTour(tour)
-    setMstSteps(steps)
-    setCurrentCodeLine(-1)
-  }
-
-  const startAlgorithm = () => {
-    setCurrentStep(0)
-    setIsPlaying(false)
-    performMSTThenTSP()
-  }
-
-  const stepForward = () => {
-    if (currentStep < mstSteps.length - 1) setCurrentStep(currentStep + 1)
-  }
-
-  const stepBack = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1)
-  }
-
-  const play = () => {
-    if (mstSteps.length === 0) startAlgorithm()
-    setIsPlaying(true)
-  }
-
-  const pause = () => setIsPlaying(false)
-
-  const reset = () => {
-    setMstSteps([])
-    setCurrentStep(0)
-    setIsPlaying(false)
-    setTspTour([])
-  }
-
-  useEffect(() => {
-    if (isPlaying && currentStep < mstSteps.length - 1) {
-      const timer = setTimeout(stepForward, 1200)
-      return () => clearTimeout(timer)
-    } else if (currentStep >= mstSteps.length - 1) {
-      setIsPlaying(false)
-    }
-  }, [isPlaying, currentStep, mstSteps.length])
-
-  useEffect(() => {
-    if (mstSteps[currentStep]?.codeLine !== undefined) {
-      setCurrentCodeLine(mstSteps[currentStep].codeLine)
-    }
-  }, [currentStep, mstSteps])
-
-  const renderGraph = (): JSX.Element => {
-    const current = mstSteps[currentStep] || { mstEdges: [] }
-    const mstEdgeSet = new Set(current.mstEdges)
-    const tspEdgeSet = new Set<string>()
-    for (let i = 0; i < tspTour.length - 1; i++) {
-      const a = tspTour[i], b = tspTour[i + 1]
-      tspEdgeSet.add(`${a}-${b}`)
-      tspEdgeSet.add(`${b}-${a}`)
-    }
-
+  const renderNetwork = () => {
     return (
-      <svg ref={svgRef} width="600" height="300" className="border rounded-lg bg-white">
-        {/* MST Edges */}
-        {edges.map((edge, idx) => {
-          const from = nodes.find(n => n.id === edge.from)
-          const to = nodes.find(n => n.id === edge.to)
-          if (!from || !to) return null
+      <svg
+        ref={svgRef}
+        width="800"
+        height="400"
+        className="border rounded-lg bg-white"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+      >
+        {connections.map((conn, idx) => {
+          const fromPerson = people.find((p) => p.id === conn.from)
+          const toPerson = people.find((p) => p.id === conn.to)
+          if (!fromPerson || !toPerson) return null
 
-          const dx = to.x - from.x
-          const dy = to.y - from.y
+          const dx = toPerson.x - fromPerson.x
+          const dy = toPerson.y - fromPerson.y
           const len = Math.sqrt(dx * dx + dy * dy)
-          const offset = 20
           const normX = dx / len
           const normY = dy / len
-          const startX = from.x + normX * offset
-          const startY = from.y + normY * offset
-          const endX = to.x - normX * offset
-          const endY = to.y - normY * offset
 
-          const edgeKey1 = `${edge.from}-${edge.to}`
-          const edgeKey2 = `${edge.to}-${edge.from}`
-          const isInMST = mstEdgeSet.has(edgeKey1) || mstEdgeSet.has(edgeKey2)
-          const isInTSP = tspEdgeSet.has(edgeKey1)
+          // Color based on connection type
+          let strokeColor = "#e5e7eb"
+          if (conn.type === "professional") strokeColor = "#3b82f6"
+          else if (conn.type === "personal") strokeColor = "#10b981"
+          else if (conn.type === "other") strokeColor = "#f59e0b"
+          
+          if (conn.isHighlighted) strokeColor = "#22c55e"
 
           return (
             <g key={idx}>
-              {/* TSP Tour (dashed purple) */}
-              {isInTSP && (
-                <line
-                  x1={startX}
-                  y1={startY}
-                  x2={endX}
-                  y2={endY}
-                  stroke="#8b5cf6"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
-                  style={{ transition: "opacity 0.3s" }}
-                />
-              )}
-              {/* MST (solid green) */}
-              {isInMST && (
-                <line
-                  x1={startX}
-                  y1={startY}
-                  x2={endX}
-                  y2={endY}
-                  stroke="#22c55e"
-                  strokeWidth="4"
-                  style={{ transition: "stroke 0.3s" }}
-                />
-              )}
-              {/* Weight label */}
+              <line
+                x1={fromPerson.x}
+                y1={fromPerson.y}
+                x2={toPerson.x}
+                y2={toPerson.y}
+                stroke={strokeColor}
+                strokeWidth={conn.isHighlighted ? "3" : "2"}
+                style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
+              />
               <text
-                x={(startX + endX) / 2 + 10 * -normY}
-                y={(startY + endY) / 2 + 10 * normX}
+                x={(fromPerson.x + toPerson.x) / 2 + 10 * -normY}
+                y={(fromPerson.y + toPerson.y) / 2 + 10 * normX}
                 textAnchor="middle"
                 className="text-xs font-bold fill-blue-600"
+                style={{ userSelect: "none" }}
               >
-                {edge.weight}
+                {conn.weight}
               </text>
             </g>
           )
         })}
 
-        {/* Nodes */}
-        {nodes.map(node => {
-          const isInMST = current.mstEdges?.some(e => e.includes(node.id))
-          const isInTSP = tspTour.includes(node.id)
+        {people.map((person) => {
+          const isSelected = person.id === selectedPerson
+          const isRecommended = recommendations.includes(person.id)
+          const radius = 20
+
+          let fillColor = "#ffffff"
+          let strokeColor = "#6b7280"
+
+          if (analysisMode === "community" && person.color) {
+            fillColor = person.color
+            strokeColor = person.color
+          } else if (analysisMode === "influence" && person.influence) {
+            const maxInfluence = Math.max(...people.map((p) => p.influence || 0))
+            const intensity = (person.influence! / maxInfluence) * 100
+            fillColor = intensity > 50 ? "#f59e0b" : "#ffffff"
+            strokeColor = "#f59e0b"
+          } else if (analysisMode === "advanced" && person.betweenness) {
+            const intensity = person.betweenness * 100
+            fillColor = `hsl(${240 - intensity * 2.4}, 70%, 60%)`
+            strokeColor = "#4f46e5"
+          } else if (isSelected) {
+            fillColor = "#22c55e"
+            strokeColor = "#16a34a"
+          } else if (isRecommended) {
+            fillColor = "#6366f1"
+            strokeColor = "#4f46e5"
+          }
+
           return (
-            <g key={node.id}>
+            <g key={person.id}>
               <circle
-                cx={node.x}
-                cy={node.y}
-                r="20"
-                fill={isInTSP ? "#8b5cf6" : isInMST ? "#22c55e" : "#ffffff"}
-                stroke={isInTSP ? "#7c3aed" : isInMST ? "#16a34a" : "#6b7280"}
+                cx={person.x}
+                cy={person.y}
+                r={radius}
+                fill={fillColor}
+                stroke={strokeColor}
                 strokeWidth="2"
+                className="cursor-move"
+                onMouseDown={(e) => handleMouseDown(person.id, e)}
+                style={{ transition: "fill 0.3s, stroke 0.3s" }}
               />
               <text
-                x={node.x}
-                y={node.y + 5}
+                x={person.x}
+                y={person.y + 5}
                 textAnchor="middle"
-                className="text-sm font-bold"
-                fill={isInTSP || isInMST ? "#ffffff" : "#374151"}
+                className="text-sm font-bold pointer-events-none"
+                fill={fillColor === "#ffffff" ? "#374151" : "#ffffff"}
               >
-                {node.label}
+                {person.name}
               </text>
+              {analysisMode === "influence" && person.influence && (
+                <text x={person.x} y={person.y - 30} textAnchor="middle" className="text-xs font-bold fill-blue-600">
+                  {person.influence.toFixed(2)}
+                </text>
+              )}
+              {analysisMode === "advanced" && (
+                <g>
+                  <text x={person.x} y={person.y - 30} textAnchor="middle" className="text-xs font-bold fill-purple-600">
+                    B: {person.betweenness?.toFixed(2)}
+                  </text>
+                  <text x={person.x} y={person.y - 15} textAnchor="middle" className="text-xs font-bold fill-orange-600">
+                    C: {person.clustering?.toFixed(2)}
+                  </text>
+                </g>
+              )}
             </g>
           )
         })}
@@ -400,119 +767,417 @@ export default function TSPMSTApproxPage() {
     )
   }
 
+  // Reset function
+  const reset = () => {
+    setConnections((prev) => prev.map((c) => ({ ...c, isHighlighted: false })))
+    setPeople((prev) =>
+      prev.map((p) => ({
+        ...p,
+        color: undefined,
+        community: undefined,
+        influence: undefined,
+        betweenness: undefined,
+        clustering: undefined
+      }))
+    )
+    setRecommendations([])
+    setInfluencers([])
+    setCommunities([])
+  }
+
+  const modeInfo = {
+    friends: { name: "Friend Recommendations", time: "O(V + E)", space: "O(V)" },
+    community: { name: "Community Detection", time: "O(V + E)", space: "O(V)" },
+    influence: { name: "Influence Measurement", time: "O(k·E)", space: "O(V)" },
+    advanced: { name: "Advanced Metrics", time: "O(V·E)", space: "O(V²)" },
+  }
+
+  const currentMode = modeInfo[analysisMode]
+
   return (
     <VisualizerLayout
-      title="MST-Based TSP Approximation"
-      description="Visualize how MSTs provide a 2-approximation for the Traveling Salesman Problem"
-      difficulty="Advanced"
-      isPlaying={isPlaying}
-      onPlay={play}
-      onPause={pause}
-      onStepBack={stepBack}
-      onStepForward={stepForward}
+      title="Social Network Analyzer"
+      description="Discover connections, communities, and influencers in social graphs with advanced metrics"
+      difficulty="Intermediate"
+      isPlaying={false}
+      onPlay={() => {}}
+      onPause={() => {}}
+      onStepBack={() => {}}
+      onStepForward={() => {}}
       onReset={reset}
-      currentStep={currentStep}
-      totalSteps={mstSteps.length}
+      currentStep={0}
+      totalSteps={0}
       complexity={{
-        time: "O(V²)",
-        space: "O(V²)",
+        time: currentMode.time,
+        space: currentMode.space,
       }}
-      applications={applications}
+      applications={[]}
     >
       <div className="w-full space-y-6">
-        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderGraph()}</div>
+        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderNetwork()}</div>
 
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">Pseudocode</CardTitle>
-          </CardHeader>
-          <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
-            {pseudocode.map((line, index) => (
-              <div
-                key={index}
-                className={`
-                  py-1 px-2 rounded
-                  ${currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                  }
-                `}
-              >
-                <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
-                {line || "\u00A0"}
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Example</CardTitle>
+              <CardTitle className="text-lg">Analysis Mode</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Select onValueChange={loadExample} defaultValue="usa6">
+            <CardContent className="space-y-3">
+              <Select value={analysisMode} onValueChange={(value) => setAnalysisMode(value as AnalysisMode)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="usa6">6 US Cities</SelectItem>
-                  <SelectItem value="random">Random Points</SelectItem>
+                  <SelectItem value="friends">Friend Recommendations</SelectItem>
+                  <SelectItem value="community">Community Detection</SelectItem>
+                  <SelectItem value="influence">Influence Measurement</SelectItem>
+                  <SelectItem value="advanced">Advanced Metrics</SelectItem>
                 </SelectContent>
               </Select>
+
+              {analysisMode === "friends" && (
+                <>
+                  <Label>Select Person</Label>
+                  <Select value={selectedPerson} onValueChange={setSelectedPerson}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {people.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Generate</CardTitle>
+              <CardTitle className="text-lg">Add Person</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Button onClick={startAlgorithm} className="w-full">
-                <Shuffle className="h-4 w-4 mr-2" />
-                Run MST → TSP
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Person name"
+                value={newPersonName}
+                onChange={(e) => setNewPersonName(e.target.value)}
+              />
+              <Button onClick={addPerson} disabled={!newPersonName} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Person
               </Button>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">MST Cost</CardTitle>
+              <CardTitle className="text-lg">Data Management</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{mstCost}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">TSP Tour Cost</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{tspCost}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                ≤ 2 × MST (guaranteed for metric TSP)
+            <CardContent className="space-y-3">
+              <Button onClick={generateRandomNetwork} className="w-full">
+                <Shuffle className="h-4 w-4 mr-2" />
+                Random Network
+              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import CSV
+                </Button>
+                <Button onClick={exportCSV} variant="outline">
+                  <Download className="h-4 w-4" />
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".csv"
+                  className="hidden"
+                />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {tspTour.length > 0 && (
+        <div className="grid md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">TSP Tour</CardTitle>
+              <CardTitle className="text-lg">Add Connection</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {tspTour.map((city, i) => (
-                  <Badge key={i} variant={i === 0 || i === tspTour.length - 1 ? "default" : "secondary"}>
-                    {city}
-                  </Badge>
-                ))}
-              </div>
-              <div className="text-sm text-muted-foreground mt-2">
-                Generated by preorder traversal of MST. Returns to start.
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Select value={connectFrom} onValueChange={setConnectFrom}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="From" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {people.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={connectTo} onValueChange={setConnectTo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="To" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {people.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  placeholder="Weight"
+                  value={interactionWeight}
+                  onChange={(e) => setInteractionWeight(e.target.value)}
+                  className="w-20"
+                  min="1"
+                  max="10"
+                />
+                <Select value={connectionType} onValueChange={setConnectionType}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {connectionTypes.map(type => (
+                      <SelectItem key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={addConnection} disabled={!connectFrom || !connectTo}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>
-        )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Delete Connection</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Select value={deleteConnFrom} onValueChange={setDeleteConnFrom}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="From" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {people.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={deleteConnTo} onValueChange={setDeleteConnTo}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="To" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {people.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (deleteConnFrom && deleteConnTo) {
+                      removeConnection(deleteConnFrom, deleteConnTo)
+                      setDeleteConnFrom("")
+                      setDeleteConnTo("")
+                    }
+                  }}
+                  disabled={!deleteConnFrom || !deleteConnTo}
+                >
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Delete Person</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Select value={deletePersonId} onValueChange={setDeletePersonId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select person" />
+                </SelectTrigger>
+                <SelectContent>
+                  {people.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (deletePersonId) {
+                    removePerson(deletePersonId)
+                    setDeletePersonId("")
+                  }
+                }}
+                disabled={!deletePersonId}
+              >
+                Delete
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Analysis Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analysisMode === "friends" && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Recommended friends for <strong>{selectedPerson}</strong> based on mutual connections:
+                </p>
+                {recommendations.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {recommendations.map((personId) => (
+                      <Badge key={personId} variant="outline">
+                        {personId}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No recommendations available</p>
+                )}
+              </div>
+            )}
+
+            {analysisMode === "community" && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Detected <strong>{communities.length}</strong> communities:
+                </p>
+                {communities.map((community) => (
+                  <div key={community.id} className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: community.color }} />
+                    <div className="flex flex-wrap gap-1">
+                      {community.members.map((memberId) => (
+                        <Badge key={memberId} variant="secondary">
+                          {memberId}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {analysisMode === "influence" && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Top influencers by network centrality:
+                </p>
+                {influencers.slice(0, 5).map((inf, idx) => (
+                  <div key={inf.id} className="flex items-center justify-between p-2 bg-muted/10 rounded">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">#{idx + 1}</Badge>
+                      <span className="font-medium">{inf.id}</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">{inf.score.toFixed(3)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {analysisMode === "advanced" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-muted/20 p-3 rounded">
+                    <div className="text-sm text-muted-foreground">Network Density</div>
+                    <div className="text-xl font-bold">{networkStats.density.toFixed(3)}</div>
+                  </div>
+                  <div className="bg-muted/20 p-3 rounded">
+                    <div className="text-sm text-muted-foreground">Avg Clustering</div>
+                    <div className="text-xl font-bold">{networkStats.avgClustering.toFixed(3)}</div>
+                  </div>
+                  <div className="bg-muted/20 p-3 rounded">
+                    <div className="text-sm text-muted-foreground">Max Betweenness</div>
+                    <div className="text-xl font-bold">{networkStats.maxBetweenness.toFixed(1)}</div>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Top connectors (Betweenness Centrality):
+                  </p>
+                  {people
+                    .filter(p => p.betweenness !== undefined)
+                    .sort((a, b) => (b.betweenness || 0) - (a.betweenness || 0))
+                    .slice(0, 5)
+                    .map((person, idx) => (
+                      <div key={person.id} className="flex items-center justify-between p-2 bg-muted/10 rounded">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">#{idx + 1}</Badge>
+                          <span className="font-medium">{person.name}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">{(person.betweenness || 0).toFixed(3)}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Network Statistics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-accent">{people.length}</div>
+                <div className="text-sm text-muted-foreground">People</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-accent">{connections.length}</div>
+                <div className="text-sm text-muted-foreground">Connections</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-accent">
+                  {(connections.reduce((sum, c) => sum + c.weight, 0) / connections.length || 0).toFixed(1)}
+                </div>
+                <div className="text-sm text-muted-foreground">Avg Strength</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-accent">
+                  {`${connections.filter(c => c.type === 'professional').length}/
+                    ${connections.filter(c => c.type === 'personal').length}/
+                    ${connections.filter(c => c.type === 'other').length}`.replace(/\s+/g, '')}
+                </div>
+                <div className="text-sm text-muted-foreground">Prof/Per/Other</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -521,14 +1186,42 @@ export default function TSPMSTApproxPage() {
           <CardContent>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span>MST Edge / Node</span>
+                <div className="w-4 h-4 bg-white border-2 border-gray-400 rounded-full"></div>
+                <span>Regular Person</span>
               </div>
               <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 16 16">
-                  <line x1="0" y1="8" x2="16" y2="8" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="3,3" />
-                </svg>
-                <span>TSP Tour (Approximate)</span>
+                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                <span>Selected Person</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                <span>Recommended Friend</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                <span>High Influence</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+                <span>High Betweenness</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                <span>High Clustering</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm mt-3">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-blue-500"></div>
+                <span>Professional</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-green-500"></div>
+                <span>Personal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-amber-500"></div>
+                <span>Other</span>
               </div>
             </div>
           </CardContent>
