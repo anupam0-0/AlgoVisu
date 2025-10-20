@@ -15,6 +15,7 @@ export default function VisualizersPage() {
       difficulty: "Beginner",
       topics: ["Arrays", "Linear Search", "Binary Search"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "stack",
@@ -24,6 +25,7 @@ export default function VisualizersPage() {
       difficulty: "Beginner",
       topics: ["Stack", "LIFO", "Expression Evaluation"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "queue",
@@ -33,6 +35,7 @@ export default function VisualizersPage() {
       difficulty: "Beginner",
       topics: ["Queue", "FIFO", "Expression Evaluation"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "sorting",
@@ -42,6 +45,7 @@ export default function VisualizersPage() {
       difficulty: "Intermediate",
       topics: ["Bubble Sort", "Selection Sort", "Insertion Sort"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "tree",
@@ -51,6 +55,7 @@ export default function VisualizersPage() {
       difficulty: "Intermediate",
       topics: ["Binary Tree", "BST", "Traversals", "Insert/Delete"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "graph",
@@ -60,32 +65,37 @@ export default function VisualizersPage() {
       difficulty: "Advanced",
       topics: ["BFS", "DFS", "Graph Traversal", "Shortest Path"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "linked-list",
       title: "Linked List Visualizer",
-      description: "Singlt, doubly, and circular linked lists",
+      description: "Single, doubly, and circular linked lists",
       icon: <Network className="h-6 w-6" />,
       difficulty: "Advanced",
       topics: ["Single", "Double", "Circular"],
       available: true,
+      type: "visualizer"
     },
     {
       id: "mst",
-      title: "Mininum Spanning Tree Visualizer",
+      title: "Minimum Spanning Tree Visualizer",
       description: "Kruskal's and Prim's algorithms",
       icon: <Network className="h-6 w-6" />,
       difficulty: "Advanced",
       topics: ["Kruskal's", "Prim's"],
       available: true,
+      type: "visualizer"
     },
     {
-      id: "applications",
-      title: "Applications of Data Structures",
+      id: "sna",
+      title: "Social Network Analyzer",
       description: "Real-world applications and case studies",
-      icon: <ArrowLeft className="h-6 w-6" />,
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
       topics: ["Real-World", "Case Studies"],
-      available: false,
+      available: true,
+      type: "application"
     },
   ]
 
@@ -116,53 +126,122 @@ export default function VisualizersPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visualizers.map((visualizer) => (
-            <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : ""}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
-                      {visualizer.icon}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
-                      <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
-                        {visualizer.difficulty}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {visualizer.topics.map((topic, index) => (
-                    <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
-                      {topic}
-                    </Badge>
-                  ))}
-                </div>
-                {visualizer.available ? (
-                  <Button asChild className="w-full">
-                    <Link href={`/visualizers/${visualizer.id}`}>
-                      <Play className="h-4 w-4 mr-2" />
-                      Start Learning
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button disabled className="w-full">
-                    Coming Soon
-                  </Button>
-                )}
-              </CardContent>
-              {!visualizer.available && (
-                <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
-                  <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl " >Coming Soon</h1>
-                </div>
-              )}
-            </Card>
-          ))}
+        <div className="space-y-12">
+          {/* Visualizers Section */}
+          <div>
+            <h2 className="text-3xl font-bold mb-6 text-primary flex items-center">
+              <BarChart3 className="h-8 w-8 mr-2" />
+              Data Structure Visualizers
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visualizers
+                .filter(v => v.type === 'visualizer')
+                .map((visualizer) => (
+                  <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : "hover:shadow-lg transition-shadow"}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                            {visualizer.icon}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
+                            <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
+                              {visualizer.difficulty}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {visualizer.topics.map((topic, index) => (
+                          <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                      {visualizer.available ? (
+                        <Button asChild className="w-full">
+                          <Link href={`/visualizers/${visualizer.id}`}>
+                            <Play className="h-4 w-4 mr-2" />
+                            Start Learning
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button disabled className="w-full">
+                          Coming Soon
+                        </Button>
+                      )}
+                    </CardContent>
+                    {!visualizer.available && (
+                      <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
+                        <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl">Coming Soon</h1>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+            </div>
+          </div>
+
+          {/* Applications Section */}
+          <div>
+            <h2 className="text-3xl font-bold mb-6 text-primary flex items-center">
+              <Layers className="h-8 w-8 mr-2" />
+              Applications
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visualizers
+                .filter(v => v.type === 'application')
+                .map((visualizer) => (
+                  <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : "hover:shadow-lg transition-shadow"}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                            {visualizer.icon}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
+                            <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
+                              {visualizer.difficulty}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {visualizer.topics.map((topic, index) => (
+                          <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                      {visualizer.available ? (
+                        <Button asChild className="w-full">
+                          <Link href={`/visualizers/${visualizer.id}`}>
+                            <Play className="h-4 w-4 mr-2" />
+                            Start Learning
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button disabled className="w-full">
+                          Coming Soon
+                        </Button>
+                      )}
+                    </CardContent>
+                    {!visualizer.available && (
+                      <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
+                        <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl">Coming Soon</h1>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+            </div>
+          </div>
         </div>
 
         {/* Learning Tips */}

@@ -16,25 +16,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
-    "/visualizers/graph/loading": [
+    "/visualizers/sna/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/graph/loading.js"
+      "static/chunks/app/visualizers/sna/loading.js"
     ],
-    "/visualizers/graph/page": [
+    "/visualizers/sna/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/graph/page.js"
-    ],
-    "/visualizers/applications/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/applications/loading.js"
-    ],
-    "/visualizers/applications/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/applications/page.js"
+      "static/chunks/app/visualizers/sna/page.js"
     ]
   }
 }

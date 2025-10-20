@@ -1,4 +1,4 @@
-// File: /workspaces/AlgoVisu/app/visualizers/page.tsx
+// File: D:\Capstone\AlgoVisu\app\visualizers\page.tsx
 import * as entry from '../../../../app/visualizers/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
