@@ -16,65 +16,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
-    "/visualizers/music-playlist/loading": [
+    "/visualizers/array/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/music-playlist/loading.js"
+      "static/chunks/app/visualizers/array/loading.js"
     ],
-    "/visualizers/music-playlist/page": [
+    "/visualizers/array/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/music-playlist/page.js"
+      "static/chunks/app/visualizers/array/page.js"
     ],
-    "/visualizers/lru-cache/loading": [
+    "/visualizers/stack/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/lru-cache/loading.js"
+      "static/chunks/app/visualizers/stack/page.js"
     ],
-    "/visualizers/lru-cache/page": [
+    "/visualizers/prefix-search-visualizer/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/lru-cache/page.js"
+      "static/chunks/app/visualizers/prefix-search-visualizer/loading.js"
     ],
-    "/visualizers/sna/loading": [
+    "/visualizers/prefix-search-visualizer/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sna/loading.js"
-    ],
-    "/visualizers/sna/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sna/page.js"
-    ],
-    "/visualizers/navigation-system/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/navigation-system/loading.js"
-    ],
-    "/visualizers/navigation-system/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/navigation-system/page.js"
-    ],
-    "/visualizers/mst/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst/loading.js"
-    ],
-    "/visualizers/mst/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst/page.js"
-    ],
-    "/visualizers/mst-clustering/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst-clustering/loading.js"
-    ],
-    "/visualizers/mst-clustering/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst-clustering/page.js"
+      "static/chunks/app/visualizers/prefix-search-visualizer/page.js"
     ]
   }
 }

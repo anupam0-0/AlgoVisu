@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
-import { Search, Plus, Trash2 } from "lucide-react"
+import { Search, Plus, Trash2, ArrowUpDown, Code } from "lucide-react"
 
 interface ArrayElement {
   value: number
@@ -16,22 +16,48 @@ interface ArrayElement {
   isComparing?: boolean
 }
 
+const DEFAULT_ARRAY: ArrayElement[] = [
+  { value: 64, index: 0 },
+  { value: 34, index: 1 },
+  { value: 25, index: 2 },
+  { value: 12, index: 3 },
+  { value: 22, index: 4 },
+  { value: 11, index: 5 },
+  { value: 90, index: 6 },
+]
+
+// Pseudocode definitions
+const PSEUDOCODE = {
+  linear: [
+    "function linearSearch(array, target):",
+    "  for i from 0 to length(array) - 1:",
+    "    if array[i] == target:",
+    "      return i",
+    "  return -1",
+  ],
+  binary: [
+    "function binarySearch(sortedArray, target):",
+    "  left = 0",
+    "  right = length(sortedArray) - 1",
+    "  while left <= right:",
+    "    mid = floor((left + right) / 2)",
+    "    if sortedArray[mid] == target:",
+    "      return mid",
+    "    else if sortedArray[mid] < target:",
+    "      left = mid + 1",
+    "    else:",
+    "      right = mid - 1",
+    "  return -1",
+  ],
+}
+
 export default function ArrayVisualizerPage() {
-  const [array, setArray] = useState<ArrayElement[]>([
-    { value: 64, index: 0 },
-    { value: 34, index: 1 },
-    { value: 25, index: 2 },
-    { value: 12, index: 3 },
-    { value: 22, index: 4 },
-    { value: 11, index: 5 },
-    { value: 90, index: 6 },
-  ])
+  const [array, setArray] = useState<ArrayElement[]>(DEFAULT_ARRAY)
   const [searchValue, setSearchValue] = useState("")
   const [newValue, setNewValue] = useState("")
   const [isSearching, setIsSearching] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
   const [searchSteps, setSearchSteps] = useState<string[]>([])
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentStepIndex, setCurrentStepIndex] = useState(-1)
   const [algorithm, setAlgorithm] = useState<"linear" | "binary">("linear")
 
   const applications = [
@@ -57,21 +83,38 @@ export default function ArrayVisualizerPage() {
     },
   ]
 
+  const isSorted = useCallback((arr: ArrayElement[]) => {
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i - 1].value > arr[i].value) return false
+    }
+    return true
+  }, [])
+
+  const resetHighlights = useCallback((arr: ArrayElement[]): ArrayElement[] => {
+    return arr.map(el => ({
+      ...el,
+      isHighlighted: false,
+      isFound: false,
+      isComparing: false,
+    }))
+  }, [])
+
   const resetArray = () => {
-    setArray(array.map((el, idx) => ({ value: el.value, index: idx })))
-    setCurrentStep(0)
+    setArray(DEFAULT_ARRAY)
     setSearchSteps([])
-    setIsSearching(false)
-    setIsPlaying(false)
+    setCurrentStepIndex(-1)
+    setSearchValue("")
+    setNewValue("")
   }
 
   const addElement = () => {
-    if (newValue && !isNaN(Number(newValue))) {
+    const num = Number(newValue)
+    if (newValue.trim() !== "" && !isNaN(num)) {
       const newElement: ArrayElement = {
-        value: Number(newValue),
+        value: num,
         index: array.length,
       }
-      setArray([...array, newElement])
+      setArray(prev => [...prev, newElement])
       setNewValue("")
     }
   }
@@ -79,190 +122,211 @@ export default function ArrayVisualizerPage() {
   const removeElement = (index: number) => {
     const newArray = array.filter((_, i) => i !== index)
     setArray(newArray.map((el, idx) => ({ ...el, index: idx })))
-    resetArray()
+    if (searchSteps.length > 0) resetArray()
+  }
+
+  const sortArray = () => {
+    setArray(prev =>
+      [...prev]
+        .sort((a, b) => a.value - b.value)
+        .map((el, idx) => ({ ...el, index: idx }))
+    )
+    if (searchSteps.length > 0) resetArray()
   }
 
   const linearSearch = async (target: number) => {
     const steps = [`Starting linear search for ${target}`]
-    const newArray = [...array]
+    let newArray = resetHighlights(array)
 
     for (let i = 0; i < newArray.length; i++) {
+      newArray = newArray.map((el, idx) => ({
+        ...el,
+        isComparing: idx === i,
+      }))
+      setArray([...newArray])
       steps.push(`Checking index ${i}: ${newArray[i].value}`)
+      setCurrentStepIndex(steps.length - 1)
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       if (newArray[i].value === target) {
-        steps.push(`Found ${target} at index ${i}!`)
-        newArray[i].isFound = true
-        break
-      }
-      if (i === newArray.length - 1) {
-        steps.push(`${target} not found in array`)
+        newArray = newArray.map((el, idx) => ({
+          ...el,
+          isComparing: false,
+          isFound: idx === i,
+        }))
+        setArray([...newArray])
+        steps.push(`✅ Found ${target} at index ${i}!`)
+        setCurrentStepIndex(steps.length - 1)
+        return steps
       }
     }
 
-    setSearchSteps(steps)
-    return newArray
+    steps.push(`❌ ${target} not found in array`)
+    setCurrentStepIndex(steps.length - 1)
+    setArray(resetHighlights(array))
+    return steps
   }
 
   const binarySearch = async (target: number) => {
-    const steps = [`Starting binary search for ${target}`]
-    const sortedArray = [...array].sort((a, b) => a.value - b.value).map((el, idx) => ({ ...el, index: idx }))
-    let left = 0
-    let right = sortedArray.length - 1
+    if (!isSorted(array)) {
+      const msg = "❌ Array is not sorted! Binary search requires a sorted array."
+      setSearchSteps([msg])
+      setCurrentStepIndex(0)
+      return [msg]
+    }
 
-    steps.push("Array must be sorted for binary search")
+    const steps = [`Starting binary search for ${target}`]
+    const sortedWithOriginal = array.map((el, i) => ({ ...el, originalIndex: i }))
+    sortedWithOriginal.sort((a, b) => a.value - b.value)
+
+    let left = 0
+    let right = sortedWithOriginal.length - 1
+    let currentArray = resetHighlights(array)
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2)
-      steps.push(`Checking middle element at index ${mid}: ${sortedArray[mid].value}`)
+      const midValue = sortedWithOriginal[mid].value
+      const originalIndex = sortedWithOriginal[mid].originalIndex
 
-      if (sortedArray[mid].value === target) {
-        steps.push(`Found ${target} at index ${mid}!`)
-        sortedArray[mid].isFound = true
-        break
-      } else if (sortedArray[mid].value < target) {
-        steps.push(`${sortedArray[mid].value} < ${target}, search right half`)
+      currentArray = resetHighlights(array).map((el, idx) => ({
+        ...el,
+        isComparing: idx === originalIndex,
+      }))
+      setArray([...currentArray])
+      steps.push(`Checking middle element at original index ${originalIndex}: ${midValue}`)
+      setCurrentStepIndex(steps.length - 1)
+      await new Promise(resolve => setTimeout(resolve, 600))
+
+      if (midValue === target) {
+        currentArray = resetHighlights(array).map((el, idx) => ({
+          ...el,
+          isFound: idx === originalIndex,
+        }))
+        setArray([...currentArray])
+        steps.push(`✅ Found ${target} at original index ${originalIndex}!`)
+        setCurrentStepIndex(steps.length - 1)
+        return steps
+      } else if (midValue < target) {
+        steps.push(`${midValue} < ${target} → search right half`)
+        setCurrentStepIndex(steps.length - 1)
         left = mid + 1
       } else {
-        steps.push(`${sortedArray[mid].value} > ${target}, search left half`)
+        steps.push(`${midValue} > ${target} → search left half`)
+        setCurrentStepIndex(steps.length - 1)
         right = mid - 1
-      }
-
-      if (left > right) {
-        steps.push(`${target} not found in array`)
       }
     }
 
-    setSearchSteps(steps)
-    return sortedArray
+    steps.push(`❌ ${target} not found in array`)
+    setCurrentStepIndex(steps.length - 1)
+    setArray(resetHighlights(array))
+    return steps
   }
 
   const startSearch = async () => {
-    if (!searchValue || isNaN(Number(searchValue))) return
+    const target = Number(searchValue)
+    if (searchValue.trim() === "" || isNaN(target)) return
 
     setIsSearching(true)
-    setCurrentStep(0)
-    const target = Number(searchValue)
+    setSearchSteps([])
+    setCurrentStepIndex(-1)
 
-    const resultArray = algorithm === "linear" ? await linearSearch(target) : await binarySearch(target)
+    const steps = algorithm === "linear"
+      ? await linearSearch(target)
+      : await binarySearch(target)
 
-    setArray(resultArray)
+    setSearchSteps(steps)
+    setIsSearching(false)
   }
-
-  const stepForward = () => {
-    if (currentStep < searchSteps.length - 1) {
-      setCurrentStep(currentStep + 1)
-    }
-  }
-
-  const stepBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
-
-  const play = () => {
-    setIsPlaying(true)
-  }
-
-  const pause = () => {
-    setIsPlaying(false)
-  }
-
-  useEffect(() => {
-    if (isPlaying && currentStep < searchSteps.length - 1) {
-      const timer = setTimeout(() => {
-        setCurrentStep(currentStep + 1)
-      }, 1000)
-      return () => clearTimeout(timer)
-    } else if (currentStep >= searchSteps.length - 1) {
-      setIsPlaying(false)
-    }
-  }, [isPlaying, currentStep, searchSteps.length])
 
   return (
     <VisualizerLayout
       title="Array Visualizer"
-      description="Learn array operations and search algorithms"
+      description="Visualize array search algorithms with pseudocode and step-by-step execution"
       difficulty="Beginner"
-      isPlaying={isPlaying}
-      onPlay={play}
-      onPause={pause}
-      onStepBack={stepBack}
-      onStepForward={stepForward}
-      onReset={resetArray}
-      currentStep={currentStep}
-      totalSteps={searchSteps.length}
       complexity={{
         time: algorithm === "linear" ? "O(n)" : "O(log n)",
         space: "O(1)",
       }}
       applications={applications}
     >
-      <div className="w-full space-y-6">
-        {/* Array Visualization */}
-        <div className="flex flex-wrap gap-2 justify-center min-h-[120px] items-center">
-          {array.map((element, index) => (
-            <div key={index} className="relative">
-              <div
-                className={`
-                  w-16 h-16 border-2 rounded-lg flex flex-col items-center justify-center
-                  transition-all duration-300 cursor-pointer group
-                  ${
-                    element.isFound
-                      ? "bg-green-100 border-green-500 text-green-800"
-                      : element.isHighlighted
-                        ? "bg-accent/20 border-accent"
+      <div className="w-full space-y-8">
+        {/* Array Visualization — Enlarged */}
+        <div className="flex flex-wrap justify-center gap-4 min-h-[200px] items-center p-6 bg-gradient-to-br from-muted/30 to-background rounded-2xl border border-border shadow-sm">
+          {array.length === 0 ? (
+            <p className="text-muted-foreground italic text-lg">Array is empty</p>
+          ) : (
+            array.map((element) => (
+              <div key={element.index} className="relative group">
+                <div
+                  className={`
+                    w-20 h-20 md:w-24 md:h-24 border-2 rounded-xl flex flex-col items-center justify-center
+                    transition-all duration-300 shadow-md font-bold
+                    ${
+                      element.isFound
+                        ? "bg-green-100 border-green-600 text-green-900 shadow-lg scale-105"
                         : element.isComparing
-                          ? "bg-yellow-100 border-yellow-500"
-                          : "bg-card border-border hover:border-accent/50"
-                  }
-                `}
-              >
-                <span className="font-mono font-bold text-sm">{element.value}</span>
-                <span className="text-xs text-muted-foreground">[{element.index}]</span>
+                          ? "bg-yellow-100 border-yellow-500 text-yellow-900 animate-pulse"
+                          : "bg-background border-border hover:border-primary/60"
+                    }
+                  `}
+                >
+                  <span className="text-lg md:text-xl font-mono">{element.value}</span>
+                  <span className="text-xs text-muted-foreground mt-1">[{element.index}]</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute -top-2 -right-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-background border rounded-full"
+                  onClick={() => removeElement(element.index)}
+                  aria-label={`Remove element at index ${element.index}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeElement(index)}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Controls */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <Card>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Add Element</CardTitle>
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Element
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   type="number"
-                  placeholder="Enter number"
+                  placeholder="Enter a number"
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addElement()}
                 />
-                <Button onClick={addElement} disabled={!newValue}>
-                  <Plus className="h-4 w-4" />
+                <Button onClick={addElement} disabled={!newValue.trim()}>
+                  Add
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg">Search</CardTitle>
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Search
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-2 mb-2">
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant={algorithm === "linear" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setAlgorithm("linear")}
+                  className="flex-1 min-w-[100px]"
                 >
                   Linear
                 </Button>
@@ -270,53 +334,104 @@ export default function ArrayVisualizerPage() {
                   variant={algorithm === "binary" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setAlgorithm("binary")}
+                  className="flex-1 min-w-[100px]"
+                  disabled={!isSorted(array)}
                 >
                   Binary
                 </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={sortArray}
+                  disabled={isSorted(array) || isSearching}
+                  className="flex items-center gap-1"
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  Sort
+                </Button>
               </div>
+
+              {algorithm === "binary" && !isSorted(array) && (
+                <Badge variant="outline" className="text-yellow-600 border-yellow-400">
+                  ⚠️ Sort array first for binary search
+                </Badge>
+              )}
+
               <div className="flex gap-2">
                 <Input
                   type="number"
                   placeholder="Search value"
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && startSearch()}
                 />
-                <Button onClick={startSearch} disabled={!searchValue || isSearching}>
-                  <Search className="h-4 w-4" />
+                <Button
+                  onClick={startSearch}
+                  disabled={
+                    !searchValue.trim() ||
+                    isNaN(Number(searchValue)) ||
+                    (algorithm === "binary" && !isSorted(array)) ||
+                    isSearching
+                  }
+                >
+                  <Search className="h-4 w-4 mr-1" />
+                  Search
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Algorithm Steps */}
-        {searchSteps.length > 0 && (
-          <Card className="" >
-            <CardHeader>
-              <CardTitle className="text-lg">Algorithm Steps</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {searchSteps.map((step, index) => (
-                  <div
-                    key={index}
-                    className={`text-sm p-2 rounded ${
-                      index === currentStep
-                        ? "bg-accent/20 border border-accent"
-                        : index < currentStep
-                          ? "bg-muted/50 text-muted-foreground"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    <Badge variant="outline" className="mr-2 text-xs">
-                      {index + 1}
-                    </Badge>
-                    {step}
+        {/* Pseudocode + Steps Side-by-Side */}
+        {(searchSteps.length > 0 || true) && (
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Pseudocode */}
+            <Card className="bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Code className="h-4 w-4" />
+                  {algorithm === "linear" ? "Linear Search" : "Binary Search"} Pseudocode
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-sm p-3 bg-muted/30 rounded-lg overflow-x-auto font-mono leading-relaxed">
+                  {PSEUDOCODE[algorithm].map((line, i) => (
+                    <div key={i} className="text-muted-foreground">
+                      {line}
+                    </div>
+                  ))}
+                </pre>
+              </CardContent>
+            </Card>
+
+            {/* Search Steps */}
+            {searchSteps.length > 0 && (
+              <Card className="bg-card/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">Execution Steps</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-72 overflow-y-auto p-2">
+                    {searchSteps.map((step, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-lg text-sm transition-all ${
+                          index === currentStepIndex
+                            ? "bg-primary/10 border border-primary/30 font-medium text-primary"
+                            : "bg-background border border-border"
+                        }`}
+                      >
+                        <Badge variant="outline" className="mr-2">
+                          {index + 1}
+                        </Badge>
+                        {step}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
       </div>
     </VisualizerLayout>

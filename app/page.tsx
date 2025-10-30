@@ -1,21 +1,21 @@
-import { FaGithub } from "react-icons/fa";
+// app/page.tsx
+import { Badge } from "@/components/ui/badge";
+import { AuroraText } from "@/components/ui/aurora-text";
+import { RainbowButton } from "@/components/ui/rainbow-button";
+import Header from "@/components/header";
+import AnimatedFeaturesSection from "@/components/AnimatedFeaturesSection";
+import DSAInfoBubble from "@/components/DSAInfoBubble";
+import Footer from "@/components/Footer";
+import Link from "next/link";
+import { ArrowRight, BookOpen, Code, Zap, Users } from "lucide-react";
 
-import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import Link from "next/link";
-import { ArrowRight, BookOpen, Code, Zap, Users } from "lucide-react";
-
-import { AuroraText } from "@/components/ui/aurora-text";
-import { RainbowButton } from "@/components/ui/rainbow-button";
-import Header from "@/components/header"
-
+} from "@/components/ui/card";
 
 export default function HomePage() {
   const features = [
@@ -64,134 +64,121 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen ">
-      
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <Header />
 
-      {/* Hero Section */}
-        <section className="py-28 px-4 w-full relative overflow-hidden ">
-           {/* <Particles color="#00f" className='absolute' /> */}
+      {/* Main Content */}
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="py-28 px-4 w-full relative overflow-hidden">
           <div className="container mx-auto text-center max-w-4xl">
             <Badge variant="secondary" className="mb-4">
               Interactive Learning Tool
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-extrabold text-primary  text-balance mb-8">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-primary text-balance mb-8">
               Visualization Tool for Real-Time <AuroraText>Algorithm</AuroraText> and Comprehensive
               Exploration
             </h1>
-            <p className="text-xl text-muted-foreground font-medium mb-8 max-w-2xl text-pretty  mx-auto">
+            <p className="text-xl text-muted-foreground font-medium mb-8 max-w-2xl text-pretty mx-auto">
               Transform complex computer science concepts into clear,
               interactive animations. Perfect for students, educators, and
               anyone learning DSA fundamentals.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <RainbowButton size="lg" >
-
-                <Link href="/visualizers" className='inline-flex'>
+              <RainbowButton size="lg">
+                <Link href="/visualizers" className="inline-flex items-center">
                   Start Visualizing <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
-                 </RainbowButton>
-
-               <RainbowButton size="lg" variant="outline" className='text-primary'><Link href="/about">Learn More</Link></RainbowButton>
+              </RainbowButton>
+              <RainbowButton size="lg" variant="outline" className="text-primary">
+                <Link href="/about">Learn More</Link>
+              </RainbowButton>
             </div>
           </div>
         </section>
 
-      {/* Features Section */}
-      <section className="py-24 px-4 border-2 border-primary bg-orange-200">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">
-              Why Choose out DSA Visualizer?
-            </h2>
-            <p className="text-primary/60 tracking-wide text-lg max-w-2xl mx-auto">
-              Our interactive approach makes complex algorithms easy to
-              understand and remember
-            </p>
+        {/* Features Section — WITH ORANGE BACKGROUND & FLOATING BUBBLES */}
+        <section className="py-24 px-4 bg-orange-200 relative overflow-hidden">
+          <DSAInfoBubble />
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold mb-4">Why Choose Our DSA Visualizer?</h2>
+              <p className="text-primary/60 tracking-wide text-lg max-w-2xl mx-auto">
+                Our interactive approach makes complex algorithms easy to understand and remember.
+              </p>
+            </div>
+            <AnimatedFeaturesSection features={features} />
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <Card key={index} className="text-center border-2 border-primary relative">
+        </section>
+
+        {/* What You'll Learn Section */}
+        <section className="py-16 px-4">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">What You'll Learn</h2>
+              <p className="text-muted-foreground text-lg">
+                Comprehensive coverage of fundamental computer science concepts
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card>
                 <CardHeader>
-                  <div className="mx-auto h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600">
-                    {feature.icon}
-                  </div>                  
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-chart-1 rounded-full"></div>
+                    Data Structures
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardTitle className="text-lg pb-2 ">{feature.title}</CardTitle>
-                  <CardDescription className=" text-primary/80  ">{feature.description}</CardDescription>
+                  <div className="flex flex-wrap gap-2">
+                    {dataStructures.map((ds, index) => (
+                      <Badge key={index} variant="outline">
+                        {ds}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardContent>
-                {/* <div className="absolute h-full w-full rounded-2xl  bg-primary -right-2 -bottom-2 -z-[10]" ></div> */}
               </Card>
-            ))}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-chart-2 rounded-full"></div>
+                    Algorithms
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {algorithms.map((algo, index) => (
+                      <Badge key={index} variant="outline">
+                        {algo}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* What You'll Learn Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">What You'll Learn</h2>
-            <p className="text-muted-foreground text-lg">
-              Comprehensive coverage of fundamental computer science concepts
+        {/* CTA Section */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto text-center max-w-6xl py-28 bg-primary rounded-2xl">
+            <h2 className="text-3xl font-bold mb-4 text-secondary">Ready to Start Learning?</h2>
+            <p className="text-secondary/60 text-lg mb-16">
+              Join thousands of students who have improved their understanding of
+              data structures and algorithms
             </p>
+            <RainbowButton size="lg">
+              <Link href="/visualizers" className="inline-flex items-center">
+                Explore Visualizers <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </RainbowButton>
           </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="h-2 w-2 bg-chart-1 rounded-full"></div>
-                  Data Structures
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {dataStructures.map((ds, index) => (
-                    <Badge key={index} variant="outline">
-                      {ds}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="h-2 w-2 bg-chart-2 rounded-full"></div>
-                  Algorithms
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {algorithms.map((algo, index) => (
-                    <Badge key={index} variant="outline">
-                      {algo}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 ">
-        <div className="container mx-auto text-center max-w-6xl py-28 bg-primary rounded-2xl">
-          <h2 className="text-3xl font-bold mb-4 text-secondary">Ready to Start Learning?</h2>
-          <p className="text-secondary/60 text-lg mb-16">
-            Join thousands of students who have improved their understanding of
-            data structures and algorithms
-          </p>
-          <RainbowButton size="lg" >
-                <Link href="/visualizers" className='inline-flex'>
-                  Explore Visualizers <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-                 </RainbowButton>
-        </div>
-      </section>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

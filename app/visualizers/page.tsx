@@ -3,7 +3,7 @@ import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import Link from "next/link"
 import Header from "@/components/header"
-import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, ImageIcon, Shuffle } from "lucide-react"
+import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, ImageIcon, Search, Shuffle } from "lucide-react"
 
 export default function VisualizersPage() {
   const visualizers = [
@@ -134,6 +134,16 @@ export default function VisualizersPage() {
       icon: <GitBranch className="h-6 w-6" />,
       difficulty: "Intermediate",
       topics: ["Clustering", "Graph Algorithms", "Data Analysis"],
+      available: true,
+      type: "application"
+    },
+    {
+      id: "prefix-search-visualizer",
+      title: "Prefix Search Visualizer",
+      description: "How linear search over arrays powers real-time autocomplete systems in search engines, IDEs, and command-line tools",
+      icon: <Search className="h-6 w-6" />,
+      difficulty: "Beginner",
+      topics: ["String Algorithms", "User Experience", "Data Structures"],
       available: true,
       type: "application"
     }
