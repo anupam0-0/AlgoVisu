@@ -3,7 +3,7 @@ import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import Link from "next/link"
 import Header from "@/components/header"
-import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, ImageIcon, Search, Shuffle } from "lucide-react"
+import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, ImageIcon, Printer, Search, Shuffle } from "lucide-react"
 
 export default function VisualizersPage() {
   const visualizers = [
@@ -146,7 +146,17 @@ export default function VisualizersPage() {
       topics: ["String Algorithms", "User Experience", "Data Structures"],
       available: true,
       type: "application"
-    }
+    },
+    {
+  id: "print-queue",
+  title: "Print Job Queue Visualizer",
+  description: "How linear (FIFO) queues manage document printing order in operating systems, ensuring fair and sequential processing in shared printers",
+  icon: <Printer className="h-6 w-6" />,
+  difficulty: "Beginner",
+  topics: ["Queues", "Operating Systems", "Real-World Algorithms"],
+  available: true,
+  type: "application"
+}
   ]
 
   const getDifficultyColor = (difficulty: string) => {
