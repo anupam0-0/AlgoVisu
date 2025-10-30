@@ -16,6 +16,26 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
+    "/visualizers/music-playlist/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/music-playlist/loading.js"
+    ],
+    "/visualizers/music-playlist/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/music-playlist/page.js"
+    ],
+    "/visualizers/lru-cache/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/lru-cache/loading.js"
+    ],
+    "/visualizers/lru-cache/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/lru-cache/page.js"
+    ],
     "/visualizers/sna/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -25,6 +45,36 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/sna/page.js"
+    ],
+    "/visualizers/navigation-system/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/navigation-system/loading.js"
+    ],
+    "/visualizers/navigation-system/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/navigation-system/page.js"
+    ],
+    "/visualizers/mst/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/mst/loading.js"
+    ],
+    "/visualizers/mst/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/mst/page.js"
+    ],
+    "/visualizers/mst-clustering/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/mst-clustering/loading.js"
+    ],
+    "/visualizers/mst-clustering/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/mst-clustering/page.js"
     ]
   }
 }

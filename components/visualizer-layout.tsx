@@ -63,12 +63,14 @@ export function VisualizerLayout({
     }
   }
 
+  // ✅ NEW: Check if algorithm controls should be shown
+  const hasAlgorithmControls = !!(onPlay && onPause && onStepBack && onStepForward && onReset)
   const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
 
   return (
     <div className="min-h-screen bg-orange-200">
       {/* Enhanced Header */}
-         <header className="border-y-4 border-primary bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+      <header className="border-y-4 border-primary bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -79,10 +81,9 @@ export function VisualizerLayout({
               </Button>
               <div>
                 <div className="flex gap-4">
-
-                <h1 className="text-xl font-bold text-foreground">{title}</h1>
+                  <h1 className="text-xl font-bold text-foreground">{title}</h1>
                   <Badge className={`text-xs border ${getDifficultyColor(difficulty)}`}>{difficulty}</Badge>
-</div>
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-sm text-primary/60">{description}</span>
                 </div>
@@ -103,8 +104,8 @@ export function VisualizerLayout({
             {/* Enhanced Visualization Card */}
             <Card className="mb-6 shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
               <CardContent className="p-0 ">
-                {/* Progress Bar */}
-                {totalSteps > 0 && (
+                {/* Progress Bar — only show if steps exist AND algorithm controls are active */}
+                {(hasAlgorithmControls && totalSteps > 0) && (
                   <div className="px-6 pt-6 pb-2">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-muted-foreground">Progress</span>
@@ -125,66 +126,68 @@ export function VisualizerLayout({
               </CardContent>
             </Card>
 
-            {/* Enhanced Controls */}
-            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Play className="h-5 w-5 text-blue-600" />
-                  Algorithm Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center gap-3 mb-6">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onStepBack}
-                    disabled={currentStep === 0}
-                    className="hover:bg-blue-50 disabled:opacity-50 border border-2 border-primary bg-transparent"
-                  >
-                    <SkipBack className="h-4 w-4" />
-                  </Button>
-                  {isPlaying ? (
-                    <Button onClick={onPause} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 shadow-md">
-                      <Pause className="h-4 w-4 mr-2" />
-                      Pause
+            {/* ✅ Conditionally render Algorithm Controls */}
+            {hasAlgorithmControls && (
+              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Play className="h-5 w-5 text-blue-600" />
+                    Algorithm Controls
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onStepBack}
+                      disabled={currentStep === 0}
+                      className="hover:bg-blue-50 disabled:opacity-50 border border-2 border-primary bg-transparent"
+                    >
+                      <SkipBack className="h-4 w-4" />
                     </Button>
-                  ) : (
-                    <Button onClick={onPlay} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 shadow-md">
-                      <Play className="h-4 w-4 mr-2" />
-                      Play
+                    {isPlaying ? (
+                      <Button onClick={onPause} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 shadow-md">
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pause
+                      </Button>
+                    ) : (
+                      <Button onClick={onPlay} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 shadow-md">
+                        <Play className="h-4 w-4 mr-2" />
+                        Play
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onStepForward}
+                      disabled={currentStep >= totalSteps}
+                      className="hover:bg-blue-50 border border-2 border-primary disabled:opacity-50"
+                    >
+                      <SkipForward className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onStepForward}
-                    disabled={currentStep >= totalSteps}
-                    className="hover:bg-blue-50 border border-2 border-primary disabled:opacity-50"
-                  >
-                    <SkipForward className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onReset}
-                    className="hover:bg-red-50 hover:border-red-200 border border-2 border-primary hover:text-red-600 bg-transparent"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* Status Indicator */}
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-sm">
-                    <div
-                      className={`w-2 h-2 rounded-full ${isPlaying ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
-                    ></div>
-                    {isPlaying ? "Running" : "Paused"}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onReset}
+                      className="hover:bg-red-50 hover:border-red-200 border border-2 border-primary hover:text-red-600 bg-transparent"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  {/* Status Indicator */}
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-sm">
+                      <div
+                        className={`w-2 h-2 rounded-full ${isPlaying ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+                      ></div>
+                      {isPlaying ? "Running" : "Paused"}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Enhanced Sidebar */}
@@ -221,17 +224,19 @@ export function VisualizerLayout({
               </Card>
             )}
 
-            {/* Algorithm Steps */}
-            <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Algorithm Steps</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-primary/80 p-3 bg-slate-50 rounded-lg border-2 border-slate-200">
-                  Step-by-step explanation will appear here as you progress through the algorithm.
-                </div>
-              </CardContent>
-            </Card>
+            {/* Algorithm Steps — only show if controls exist */}
+            {hasAlgorithmControls && (
+              <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg">Algorithm Steps</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-primary/80 p-3 bg-slate-50 rounded-lg border-2 border-slate-200">
+                    Step-by-step explanation will appear here as you progress through the algorithm.
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Real-world Applications */}
             {applications.length > 0 && (

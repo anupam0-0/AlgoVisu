@@ -72,10 +72,46 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../app/visualizers/lru-cache/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/lru-cache">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/lru-cache/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/visualizers/mst-clustering/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/mst-clustering">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/mst-clustering/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/visualizers/mst/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/visualizers/mst">> = Specific
   const handler = {} as typeof import("../../app/visualizers/mst/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/visualizers/music-playlist/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/music-playlist">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/music-playlist/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/visualizers/navigation-system/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/navigation-system">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/navigation-system/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

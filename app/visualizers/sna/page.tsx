@@ -54,7 +54,6 @@ export default function SocialNetworkAnalyzer() {
     avgClustering: 0,
     maxBetweenness: 0
   })
-
   const [newPersonName, setNewPersonName] = useState("")
   const [connectFrom, setConnectFrom] = useState("")
   const [connectTo, setConnectTo] = useState("")
@@ -63,7 +62,6 @@ export default function SocialNetworkAnalyzer() {
   const [deletePersonId, setDeletePersonId] = useState("")
   const [deleteConnFrom, setDeleteConnFrom] = useState("")
   const [deleteConnTo, setDeleteConnTo] = useState("")
-
   const [isDragging, setIsDragging] = useState(false)
   const [draggedPersonId, setDraggedPersonId] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
@@ -80,7 +78,6 @@ export default function SocialNetworkAnalyzer() {
       { id: "Eve", name: "Eve", x: 400, y: 350, connections: 0 },
       { id: "Frank", name: "Frank", x: 600, y: 300, connections: 0 },
     ]
-
     const sampleConnections: Connection[] = [
       { from: "Alice", to: "Bob", weight: 8, type: "professional" },
       { from: "Alice", to: "David", weight: 6, type: "professional" },
@@ -90,7 +87,6 @@ export default function SocialNetworkAnalyzer() {
       { from: "David", to: "Eve", weight: 8, type: "professional" },
       { from: "Eve", to: "Frank", weight: 7, type: "personal" },
     ]
-
     setPeople(samplePeople)
     setConnections(sampleConnections)
     setSelectedPerson("Alice")
@@ -103,7 +99,6 @@ export default function SocialNetworkAnalyzer() {
       counts.set(conn.from, (counts.get(conn.from) || 0) + 1)
       counts.set(conn.to, (counts.get(conn.to) || 0) + 1)
     })
-
     setPeople((prev) =>
       prev.map((p) => ({
         ...p,
@@ -115,7 +110,6 @@ export default function SocialNetworkAnalyzer() {
   // Run analysis when mode or selection changes
   useEffect(() => {
     setConnections((prev) => prev.map((c) => ({ ...c, isHighlighted: false })))
-
     if (analysisMode === "friends" && selectedPerson) {
       findFriendRecommendations(selectedPerson)
     } else if (analysisMode === "community") {
@@ -131,12 +125,10 @@ export default function SocialNetworkAnalyzer() {
   const findFriendRecommendations = (personId: string) => {
     const directFriends = new Set<string>()
     const commonNeighbors = new Map<string, number>()
-
     connections.forEach((conn) => {
       if (conn.from === personId) directFriends.add(conn.to)
       if (conn.to === personId) directFriends.add(conn.from)
     })
-
     connections.forEach((conn) => {
       if (directFriends.has(conn.from) && conn.to !== personId && !directFriends.has(conn.to)) {
         commonNeighbors.set(conn.to, (commonNeighbors.get(conn.to) || 0) + 1)
@@ -145,14 +137,11 @@ export default function SocialNetworkAnalyzer() {
         commonNeighbors.set(conn.from, (commonNeighbors.get(conn.from) || 0) + 1)
       }
     })
-
     const sorted = Array.from(commonNeighbors.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
       .map(([id]) => id)
-
     setRecommendations(sorted)
-
     setConnections((prev) =>
       prev.map((c) => ({
         ...c,
@@ -166,19 +155,15 @@ export default function SocialNetworkAnalyzer() {
     const visited = new Set<string>()
     const communitiesList: Community[] = []
     const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
-
     people.forEach((person) => {
       if (!visited.has(person.id)) {
         const community: string[] = []
         const queue = [person.id]
-
         while (queue.length > 0) {
           const current = queue.shift()!
           if (visited.has(current)) continue
-
           visited.add(current)
           community.push(current)
-
           connections.forEach((conn) => {
             if (conn.from === current && !visited.has(conn.to) && conn.weight >= 6) {
               queue.push(conn.to)
@@ -188,7 +173,6 @@ export default function SocialNetworkAnalyzer() {
             }
           })
         }
-
         if (community.length > 0) {
           communitiesList.push({
             id: communitiesList.length,
@@ -198,9 +182,7 @@ export default function SocialNetworkAnalyzer() {
         }
       }
     })
-
     setCommunities(communitiesList)
-
     setPeople((prev) =>
       prev.map((p) => {
         const community = communitiesList.find((c) => c.members.includes(p.id))
@@ -217,32 +199,24 @@ export default function SocialNetworkAnalyzer() {
   const calculateInfluence = () => {
     const scores = new Map<string, number>()
     people.forEach((p) => scores.set(p.id, 1.0))
-
     for (let i = 0; i < 10; i++) {
       const newScores = new Map<string, number>()
-
       people.forEach((person) => {
         let score = 0.15
-
         connections.forEach((conn) => {
           if (conn.to === person.id) {
             const fromConnections = connections.filter((c) => c.from === conn.from).length
             score += 0.85 * (scores.get(conn.from) || 0) * (conn.weight / 10) / Math.max(fromConnections, 1)
           }
         })
-
         newScores.set(person.id, score)
       })
-
       newScores.forEach((score, id) => scores.set(id, score))
     }
-
     const ranked = Array.from(scores.entries())
       .map(([id, score]) => ({ id, score }))
       .sort((a, b) => b.score - a.score)
-
     setInfluencers(ranked)
-
     setPeople((prev) =>
       prev.map((p) => ({
         ...p,
@@ -256,34 +230,27 @@ export default function SocialNetworkAnalyzer() {
     // Calculate Betweenness Centrality using Brandes algorithm
     const betweenness = new Map<string, number>()
     people.forEach(p => betweenness.set(p.id, 0))
-    
     // For each node as source
     people.forEach(source => {
       const S: string[] = []
       const P: Record<string, string[]> = {}
       const sigma: Record<string, number> = {}
       const d: Record<string, number> = {}
-      
       people.forEach(p => {
         P[p.id] = []
         sigma[p.id] = 0
         d[p.id] = -1
       })
-      
       sigma[source.id] = 1
       d[source.id] = 0
-      
       const Q: string[] = [source.id]
-      
       while (Q.length > 0) {
         const v = Q.shift()!
         S.push(v)
-        
         // Get neighbors
         const neighbors = connections
           .filter(c => c.from === v || c.to === v)
           .map(c => c.from === v ? c.to : c.from)
-        
         neighbors.forEach(w => {
           if (d[w] < 0) {
             Q.push(w)
@@ -295,10 +262,8 @@ export default function SocialNetworkAnalyzer() {
           }
         })
       }
-      
       const delta: Record<string, number> = {}
       people.forEach(p => delta[p.id] = 0)
-      
       while (S.length > 0) {
         const w = S.pop()!
         P[w].forEach(v => {
@@ -310,26 +275,22 @@ export default function SocialNetworkAnalyzer() {
         }
       }
     })
-    
     // Normalize betweenness
     const maxB = Math.max(...Array.from(betweenness.values()))
     const normalizedBetweenness = new Map<string, number>()
     betweenness.forEach((val, key) => {
       normalizedBetweenness.set(key, maxB > 0 ? val / maxB : 0)
     })
-    
     // Calculate Clustering Coefficient
     const clustering = new Map<string, number>()
     people.forEach(person => {
       const neighbors = connections
         .filter(c => c.from === person.id || c.to === person.id)
         .map(c => c.from === person.id ? c.to : c.from)
-      
       if (neighbors.length < 2) {
         clustering.set(person.id, 0)
         return
       }
-      
       let triangles = 0
       for (let i = 0; i < neighbors.length; i++) {
         for (let j = i + 1; j < neighbors.length; j++) {
@@ -340,16 +301,13 @@ export default function SocialNetworkAnalyzer() {
           if (exists) triangles++
         }
       }
-      
       const possible = neighbors.length * (neighbors.length - 1) / 2
       clustering.set(person.id, possible > 0 ? triangles / possible : 0)
     })
-    
     // Calculate Network Density
     const n = people.length
     const possibleConnections = n * (n - 1) / 2
     const density = possibleConnections > 0 ? connections.length / possibleConnections : 0
-    
     // Update state
     setPeople(prev => 
       prev.map(p => ({
@@ -358,7 +316,6 @@ export default function SocialNetworkAnalyzer() {
         clustering: clustering.get(p.id) || 0
       }))
     )
-    
     setNetworkStats({
       density,
       avgClustering: Array.from(clustering.values()).reduce((a, b) => a + b, 0) / (clustering.size || 1),
@@ -371,7 +328,6 @@ export default function SocialNetworkAnalyzer() {
     if (!newPersonName.trim()) return
     const id = newPersonName.trim()
     if (people.find((p) => p.id === id)) return
-
     const newPerson: Person = {
       id,
       name: id,
@@ -393,11 +349,9 @@ export default function SocialNetworkAnalyzer() {
   const addConnection = () => {
     if (!connectFrom || !connectTo || connectFrom === connectTo) return
     const weight = parseInt(interactionWeight) || 5
-
     const exists = connections.find(
       (c) => (c.from === connectFrom && c.to === connectTo) || (c.from === connectTo && c.to === connectFrom)
     )
-
     if (!exists) {
       setConnections([...connections, { 
         from: connectFrom, 
@@ -425,7 +379,6 @@ export default function SocialNetworkAnalyzer() {
     const nodeCount = 8
     const newPeople: Person[] = []
     const newConnections: Connection[] = []
-
     for (let i = 0; i < nodeCount; i++) {
       const angle = (i * 2 * Math.PI) / nodeCount
       const radius = 150
@@ -439,7 +392,6 @@ export default function SocialNetworkAnalyzer() {
         connections: 0,
       })
     }
-
     for (let i = 0; i < nodeCount; i++) {
       const connectionCount = Math.floor(Math.random() * 3) + 2
       for (let j = 0; j < connectionCount; j++) {
@@ -459,7 +411,6 @@ export default function SocialNetworkAnalyzer() {
         }
       }
     }
-
     setPeople(newPeople)
     setConnections(newConnections)
     setSelectedPerson(newPeople[0]?.id || "")
@@ -469,7 +420,6 @@ export default function SocialNetworkAnalyzer() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target?.result as string
@@ -484,36 +434,28 @@ export default function SocialNetworkAnalyzer() {
       if (lines.length === 0) {
         throw new Error("Empty file");
       }
-
       // Parse header
       const headers = lines[0].split(',').map(h => h.trim());
       const requiredHeaders = ['person1', 'person2', 'interaction_strength'];
-      
       // Validate headers
       if (!requiredHeaders.every(h => headers.includes(h))) {
         throw new Error(`CSV must contain headers: ${requiredHeaders.join(', ')}`);
       }
-
       const newPeopleMap = new Map<string, Person>();
       const newConnections: Connection[] = [];
-
       // Process data rows
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-
         const values = line.split(',').map(v => v.trim());
         if (values.length < 3) continue;
-
         const person1 = values[headers.indexOf('person1')];
         const person2 = values[headers.indexOf('person2')];
         const weight = parseInt(values[headers.indexOf('interaction_strength')]) || 5;
         const type = headers.includes('type') 
           ? values[headers.indexOf('type')] || 'other'
           : 'other';
-
         if (!person1 || !person2) continue;
-
         // Add people if not exists
         if (!newPeopleMap.has(person1)) {
           newPeopleMap.set(person1, {
@@ -533,7 +475,6 @@ export default function SocialNetworkAnalyzer() {
             connections: 0
           });
         }
-
         // Add connection
         newConnections.push({
           from: person1,
@@ -542,11 +483,9 @@ export default function SocialNetworkAnalyzer() {
           type
         });
       }
-
       if (newPeopleMap.size === 0) {
         throw new Error("No valid data found in CSV");
       }
-
       setPeople(Array.from(newPeopleMap.values()));
       setConnections(newConnections);
       setSelectedPerson(Array.from(newPeopleMap.keys())[0]);
@@ -562,7 +501,6 @@ export default function SocialNetworkAnalyzer() {
       [conn.from, conn.to, conn.weight, conn.type || "other"].join(",")
     )
     const csvContent = [headers.join(","), ...rows].join("\n")
-    
     const blob = new Blob([csvContent], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -595,7 +533,6 @@ export default function SocialNetworkAnalyzer() {
     const svgRect = svgRef.current.getBoundingClientRect()
     const newX = e.clientX - svgRect.left - dragOffset.x
     const newY = e.clientY - svgRect.top - dragOffset.y
-
     setPeople((prev) =>
       prev.map((person) =>
         person.id === draggedPersonId
@@ -617,7 +554,6 @@ export default function SocialNetworkAnalyzer() {
         const svgRect = svgRef.current.getBoundingClientRect()
         const newX = e.clientX - svgRect.left - dragOffset.x
         const newY = e.clientY - svgRect.top - dragOffset.y
-
         setPeople((prev) =>
           prev.map((person) =>
             person.id === draggedPersonId
@@ -626,15 +562,12 @@ export default function SocialNetworkAnalyzer() {
           )
         )
       }
-
       const handleGlobalMouseUp = () => {
         setIsDragging(false)
         setDraggedPersonId(null)
       }
-
       window.addEventListener("mousemove", handleGlobalMouseMove)
       window.addEventListener("mouseup", handleGlobalMouseUp)
-
       return () => {
         window.removeEventListener("mousemove", handleGlobalMouseMove)
         window.removeEventListener("mouseup", handleGlobalMouseUp)
@@ -656,21 +589,17 @@ export default function SocialNetworkAnalyzer() {
           const fromPerson = people.find((p) => p.id === conn.from)
           const toPerson = people.find((p) => p.id === conn.to)
           if (!fromPerson || !toPerson) return null
-
           const dx = toPerson.x - fromPerson.x
           const dy = toPerson.y - fromPerson.y
           const len = Math.sqrt(dx * dx + dy * dy)
           const normX = dx / len
           const normY = dy / len
-
           // Color based on connection type
           let strokeColor = "#e5e7eb"
           if (conn.type === "professional") strokeColor = "#3b82f6"
           else if (conn.type === "personal") strokeColor = "#10b981"
           else if (conn.type === "other") strokeColor = "#f59e0b"
-          
           if (conn.isHighlighted) strokeColor = "#22c55e"
-
           return (
             <g key={idx}>
               <line
@@ -694,15 +623,12 @@ export default function SocialNetworkAnalyzer() {
             </g>
           )
         })}
-
         {people.map((person) => {
           const isSelected = person.id === selectedPerson
           const isRecommended = recommendations.includes(person.id)
           const radius = 20
-
           let fillColor = "#ffffff"
           let strokeColor = "#6b7280"
-
           if (analysisMode === "community" && person.color) {
             fillColor = person.color
             strokeColor = person.color
@@ -722,7 +648,6 @@ export default function SocialNetworkAnalyzer() {
             fillColor = "#6366f1"
             strokeColor = "#4f46e5"
           }
-
           return (
             <g key={person.id}>
               <circle
@@ -796,17 +721,10 @@ export default function SocialNetworkAnalyzer() {
 
   return (
     <VisualizerLayout
-      title="Social Network Analyzer"
+      title="Social Network Analysis"
       description="Discover connections, communities, and influencers in social graphs with advanced metrics"
       difficulty="Intermediate"
-      isPlaying={false}
-      onPlay={() => {}}
-      onPause={() => {}}
-      onStepBack={() => {}}
-      onStepForward={() => {}}
-      onReset={reset}
-      currentStep={0}
-      totalSteps={0}
+      
       complexity={{
         time: currentMode.time,
         space: currentMode.space,
@@ -814,8 +732,21 @@ export default function SocialNetworkAnalyzer() {
       applications={[]}
     >
       <div className="w-full space-y-6">
-        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderNetwork()}</div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Social Network Analysis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              This application demonstrates real-world graph algorithms on social networks:
+              friend recommendations (common neighbors), community detection (connected components with edge thresholds),
+              influence ranking (PageRank), and advanced metrics like betweenness centrality and clustering coefficient.
+              These techniques power recommendation systems, fraud detection, marketing, and organizational analysis.
+            </p>
+          </CardContent>
+        </Card>
 
+        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderNetwork()}</div>
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
@@ -833,7 +764,6 @@ export default function SocialNetworkAnalyzer() {
                   <SelectItem value="advanced">Advanced Metrics</SelectItem>
                 </SelectContent>
               </Select>
-
               {analysisMode === "friends" && (
                 <>
                   <Label>Select Person</Label>
@@ -853,7 +783,6 @@ export default function SocialNetworkAnalyzer() {
               )}
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Add Person</CardTitle>
@@ -870,7 +799,6 @@ export default function SocialNetworkAnalyzer() {
               </Button>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Data Management</CardTitle>
@@ -903,7 +831,6 @@ export default function SocialNetworkAnalyzer() {
             </CardContent>
           </Card>
         </div>
-
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
@@ -962,7 +889,6 @@ export default function SocialNetworkAnalyzer() {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Delete Connection</CardTitle>
@@ -1010,7 +936,6 @@ export default function SocialNetworkAnalyzer() {
             </CardContent>
           </Card>
         </div>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Delete Person</CardTitle>
@@ -1044,7 +969,6 @@ export default function SocialNetworkAnalyzer() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Analysis Results</CardTitle>
@@ -1068,7 +992,6 @@ export default function SocialNetworkAnalyzer() {
                 )}
               </div>
             )}
-
             {analysisMode === "community" && (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
@@ -1088,7 +1011,6 @@ export default function SocialNetworkAnalyzer() {
                 ))}
               </div>
             )}
-
             {analysisMode === "influence" && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground mb-2">
@@ -1105,7 +1027,6 @@ export default function SocialNetworkAnalyzer() {
                 ))}
               </div>
             )}
-
             {analysisMode === "advanced" && (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
@@ -1122,7 +1043,6 @@ export default function SocialNetworkAnalyzer() {
                     <div className="text-xl font-bold">{networkStats.maxBetweenness.toFixed(1)}</div>
                   </div>
                 </div>
-                
                 <div className="mt-4">
                   <p className="text-sm text-muted-foreground mb-2">
                     Top connectors (Betweenness Centrality):
@@ -1146,7 +1066,6 @@ export default function SocialNetworkAnalyzer() {
             )}
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Network Statistics</CardTitle>
@@ -1178,7 +1097,6 @@ export default function SocialNetworkAnalyzer() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Legend</CardTitle>

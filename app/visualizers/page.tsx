@@ -3,7 +3,7 @@ import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import Link from "next/link"
 import Header from "@/components/header"
-import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Shuffle } from "lucide-react"
+import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, ImageIcon, Shuffle } from "lucide-react"
 
 export default function VisualizersPage() {
   const visualizers = [
@@ -97,6 +97,46 @@ export default function VisualizersPage() {
       available: true,
       type: "application"
     },
+    {
+      id: "navigation-system",
+      title: "Navigation System Analyzer",
+      description: "Real-world applications and case studies",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["Real-World", "Case Studies"],
+      available: true,
+      type: "application"
+    },
+    {
+      id: "music-playlist",
+      title: "Music Playlist Manager",
+      description: "How linked lists enable dynamic song insertion, deletion, and seamless looping in music apps",
+      icon: <Music className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Real-World", "Media Apps", "User Experience"],
+      available: true,
+      type: "application"
+    },
+    {
+      id: "lru-cache",
+      title: "LRU Cache Simulator",
+      description: "How doubly linked lists + hash maps enable O(1) caching in systems like Redis and browsers",
+      icon: <Zap className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["Systems Design", "Caching", "Performance"],
+      available: true,
+      type: "application"
+    },
+    {
+      id: "mst-clustering",
+      title: "MST Clustering Visualizer",
+      description: "How Minimum Spanning Trees enable single-linkage hierarchical clustering and outlier detection in data",
+      icon: <GitBranch className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Clustering", "Graph Algorithms", "Data Analysis"],
+      available: true,
+      type: "application"
+    }
   ]
 
   const getDifficultyColor = (difficulty: string) => {
