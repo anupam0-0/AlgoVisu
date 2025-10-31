@@ -88,6 +88,46 @@ export default function VisualizersPage() {
       type: "visualizer"
     },
     {
+      id: "hash-table",
+      title: "Hash Table Visualizer",
+      description: "Explore key-value storage, hash functions, and collision resolution strategies like chaining and open addressing",
+      icon: <Sigma className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Hashing", "Collision Resolution", "Load Factor", "Chaining", "Open Addressing"],
+      available: true,
+      type: "visualizer"
+    },
+    {
+      id: "trie",
+      title: "Trie Visualizer",
+      description: "Visualize prefix trees used in autocomplete, spell checkers, and IP routing with dynamic insertion and search",
+      icon: <Search className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Trie", "Prefix Search", "Autocomplete", "String Algorithms"],
+      available: true,
+      type: "visualizer"
+    },
+    {
+      id: "heap",
+      title: "Heap Visualizer",
+      description: "Understand min-heaps and max-heaps, heapify operations, and priority queue implementations",
+      icon: <BarChart3 className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Min-Heap", "Max-Heap", "Heapify", "Priority Queue", "Heap Sort"],
+      available: true,
+      type: "visualizer"
+    },
+    {
+      id: "avl",
+      title: "AVL Tree Visualizer",
+      description: "Self-balancing binary search trees with automatic rotations to maintain O(log n) height",
+      icon: <GitBranch className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["AVL Tree", "Tree Rotations", "Balance Factor", "Self-Balancing BST"],
+      available: true,
+      type: "visualizer"
+    },
+    {
       id: "sna",
       title: "Social Network Analyzer",
       description: "Real-world applications and case studies",
@@ -175,11 +215,11 @@ export default function VisualizersPage() {
   // Group visualizers by structure type
   const linearVisualizers = visualizers
     .filter(v => v.type === 'visualizer')
-    .filter(v => ['array', 'stack', 'queue', 'sorting', 'linked-list'].includes(v.id))
+    .filter(v => ['array', 'stack', 'queue', 'sorting', 'linked-list', 'hash-table'].includes(v.id))
 
   const nonLinearVisualizers = visualizers
     .filter(v => v.type === 'visualizer')
-    .filter(v => ['tree', 'graph', 'mst'].includes(v.id))
+    .filter(v => ['tree', 'avl', 'trie', 'graph', 'mst', 'heap'].includes(v.id))
 
   return (
     <div className="min-h-screen bg-orange-200">

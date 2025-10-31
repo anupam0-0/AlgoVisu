@@ -3,12 +3,12 @@ import { useState, useEffect, useRef } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
 import { Switch } from "../../../components/ui/switch"
 import { Label } from "../../../components/ui/label"
-import { Plus, Shuffle, X } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
+import { Plus, Shuffle, X, GitBranch, Route, Network } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
 interface GraphNode {
@@ -22,6 +22,7 @@ interface GraphNode {
   isTargetNode?: boolean
   distance?: number
 }
+
 interface GraphEdge {
   from: string
   to: string
@@ -29,17 +30,21 @@ interface GraphEdge {
   isHighlighted?: boolean
   isInPath?: boolean
 }
+
 interface TraversalStep {
-  currentNode: string
+  currentNode?: string
   visitedNodes: string[]
   queue?: string[]
   stack?: string[]
   description: string
   highlightedEdges: string[]
-  distances?: { [key: string]: number }
+  distances?: { [key: string]: number | string } // string for "∞"
   codeLine?: number
+  pathNodes?: string[]
+  allDistances?: { [key: string]: { [key: string]: number | string } } // for Floyd-Warshall
 }
-type AlgorithmType = "bfs" | "dfs" | "dijkstra"
+
+type AlgorithmType = "bfs" | "dfs" | "dijkstra" | "bellman-ford" | "floyd-warshall"
 
 // --- Pseudocode Definitions ---
 const pseudocodeDefinitions = {
@@ -80,6 +85,26 @@ const pseudocodeDefinitions = {
     "      if alt < distance[v]:",
     "        distance[v] = alt",
     "        Q.decreaseKey(v, alt)",
+  ],
+  "bellman-ford": [
+    "function BellmanFord(start):",
+    "  for each node v: distance[v] = ∞",
+    "  distance[start] = 0",
+    "  for i = 1 to |V| - 1:",
+    "    for each edge (u, v):",
+    "      if distance[u] + weight(u, v) < distance[v]:",
+    "        distance[v] = distance[u] + weight(u, v)",
+    "  // Optional: check for negative cycles",
+  ],
+  "floyd-warshall": [
+    "function FloydWarshall():",
+    "  for each node i: dist[i][i] = 0",
+    "  for each edge (i, j): dist[i][j] = weight(i, j)",
+    "  for k from 1 to |V|:",
+    "    for i from 1 to |V|:",
+    "      for j from 1 to |V|:",
+    "        if dist[i][k] + dist[k][j] < dist[i][j]:",
+    "          dist[i][j] = dist[i][k] + dist[k][j]",
   ],
 }
 
@@ -138,7 +163,6 @@ export default function GraphVisualizerPage() {
   const [editEdgeFrom, setEditEdgeFrom] = useState<string>("")
   const [editEdgeTo, setEditEdgeTo] = useState<string>("")
   const [editEdgeWeight, setEditEdgeWeight] = useState<string>("")
-
   // Drag state
   const [isDragging, setIsDragging] = useState(false)
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null)
@@ -171,12 +195,12 @@ export default function GraphVisualizerPage() {
   // Initialize with sample graph
   useEffect(() => {
     const sampleNodes: GraphNode[] = [
-      { id: "A", label: "A", x: 150, y: 100 },
-      { id: "B", label: "B", x: 300, y: 50 },
-      { id: "C", label: "C", x: 450, y: 100 },
-      { id: "D", label: "D", x: 150, y: 250 },
-      { id: "E", label: "E", x: 300, y: 200 },
-      { id: "F", label: "F", x: 450, y: 250 },
+      { id: "A", label: "A", x: 200, y: 150 },
+      { id: "B", label: "B", x: 400, y: 100 },
+      { id: "C", label: "C", x: 600, y: 150 },
+      { id: "D", label: "D", x: 200, y: 350 },
+      { id: "E", label: "E", x: 400, y: 300 },
+      { id: "F", label: "F", x: 600, y: 350 },
     ]
     const sampleEdges: GraphEdge[] = [
       { from: "A", to: "B", weight: 4 },
@@ -198,8 +222,8 @@ export default function GraphVisualizerPage() {
     const newNode: GraphNode = {
       id: newNodeLabel.toUpperCase(),
       label: newNodeLabel.toUpperCase(),
-      x: Math.random() * 400 + 100,
-      y: Math.random() * 200 + 100,
+      x: Math.random() * 600 + 100,
+      y: Math.random() * 300 + 100,
     }
     if (!nodes.find((n) => n.id === newNode.id)) {
       setNodes([...nodes, newNode])
@@ -241,9 +265,9 @@ export default function GraphVisualizerPage() {
     const newEdges: GraphEdge[] = []
     for (let i = 0; i < nodeCount; i++) {
       const angle = (i * 2 * Math.PI) / nodeCount
-      const radius = 120
-      const centerX = 300
-      const centerY = 150
+      const radius = 150
+      const centerX = 400
+      const centerY = 250
       newNodes.push({
         id: String.fromCharCode(65 + i),
         label: String.fromCharCode(65 + i),
@@ -296,6 +320,7 @@ export default function GraphVisualizerPage() {
     setCurrentCodeLine(line)
   }
 
+  // === BFS ===
   const performBFS = () => {
     if (!startNode) return
     const steps: TraversalStep[] = []
@@ -376,7 +401,6 @@ export default function GraphVisualizerPage() {
     if (found) {
       const path = reconstructPath(edges, startNode, targetNode, parent)
       const lastStep = steps[steps.length - 1]
-      const pathSet = new Set(path)
       steps.push({
         ...lastStep,
         description: "Final path highlighted in green.",
@@ -389,6 +413,7 @@ export default function GraphVisualizerPage() {
     setCurrentPseudocode(pseudocodeDefinitions.bfs)
   }
 
+  // === DFS ===
   const performDFS = () => {
     if (!startNode) return
     const steps: TraversalStep[] = []
@@ -460,6 +485,217 @@ export default function GraphVisualizerPage() {
     setCurrentPseudocode(pseudocodeDefinitions.dfs)
   }
 
+  // === Dijkstra ===
+  const performDijkstra = () => {
+    if (!startNode) return
+    const steps: TraversalStep[] = []
+    const distances: { [key: string]: number } = {}
+    const visited = new Set<string>()
+    const parent: { [key: string]: string } = {}
+
+    // Initialize distances
+    for (const node of nodes) {
+      distances[node.id] = node.id === startNode ? 0 : Infinity
+    }
+
+    // Priority queue simulation (array sorted by distance)
+    let pq: { node: string; dist: number }[] = [{ node: startNode, dist: 0 }]
+
+    steps.push({
+      visitedNodes: [],
+      description: `Initialize distances: ${startNode}=0, others=∞`,
+      highlightedEdges: [],
+      distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+      codeLine: 2,
+    })
+
+    while (pq.length > 0) {
+      // Extract min
+      pq.sort((a, b) => a.dist - b.dist)
+      const { node: u } = pq.shift()!
+      if (visited.has(u)) continue
+      visited.add(u)
+
+      steps.push({
+        currentNode: u,
+        visitedNodes: Array.from(visited),
+        description: `Processing node ${u} (min distance)`,
+        highlightedEdges: [],
+        distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+        codeLine: 7,
+      })
+
+      // Relax edges
+      const neighbors = getNeighbors(u, edges, isDirected)
+      for (const v of neighbors) {
+        const edge = edges.find(e => e.from === u && e.to === v) ||
+                     (!isDirected && edges.find(e => e.to === u && e.from === v))
+        if (!edge || edge.weight === undefined) continue
+
+        const alt = distances[u] + edge.weight
+        if (alt < distances[v]) {
+          distances[v] = alt
+          parent[v] = u
+          pq.push({ node: v, dist: alt })
+
+          steps.push({
+            currentNode: u,
+            visitedNodes: Array.from(visited),
+            description: `Relax edge ${u}→${v}: ${alt} < ${distances[v] === Infinity ? "∞" : distances[v]} → update`,
+            highlightedEdges: [`${u}-${v}`],
+            distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+            codeLine: 10,
+          })
+        }
+      }
+    }
+
+    // Final path
+    if (targetNode && distances[targetNode] !== Infinity) {
+      const path = reconstructPath(edges, startNode, targetNode, parent)
+      const lastStep = steps[steps.length - 1]
+      steps.push({
+        ...lastStep,
+        description: `Shortest path to ${targetNode}: [${path.join(" → ")}] (distance: ${distances[targetNode]})`,
+        pathNodes: path,
+        codeLine: -1,
+      } as any)
+    }
+
+    setTraversalSteps(steps)
+    setCurrentPseudocode(pseudocodeDefinitions.dijkstra)
+  }
+
+  // === Bellman-Ford ===
+  const performBellmanFord = () => {
+    if (!startNode) return
+    const steps: TraversalStep[] = []
+    const distances: { [key: string]: number } = {}
+
+    for (const node of nodes) {
+      distances[node.id] = node.id === startNode ? 0 : Infinity
+    }
+
+    steps.push({
+      visitedNodes: [],
+      description: `Initialize: ${startNode}=0, others=∞`,
+      highlightedEdges: [],
+      distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+      codeLine: 2,
+    })
+
+    const V = nodes.length
+    for (let i = 1; i <= V - 1; i++) {
+      let updated = false
+      steps.push({
+        visitedNodes: [],
+        description: `Iteration ${i} of ${V - 1}`,
+        highlightedEdges: [],
+        distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+        codeLine: 4,
+      })
+
+      for (const edge of edges) {
+        const u = edge.from
+        const v = edge.to
+        if (distances[u] !== Infinity && edge.weight !== undefined) {
+          const alt = distances[u] + edge.weight
+          if (alt < distances[v]) {
+            distances[v] = alt
+            updated = true
+            steps.push({
+              visitedNodes: [],
+              description: `Relax edge ${u}→${v}: ${alt} < ${distances[v] === Infinity ? "∞" : distances[v]} → update`,
+              highlightedEdges: [`${u}-${v}`],
+              distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+              codeLine: 6,
+            })
+          }
+        }
+        // For undirected, also check reverse
+        if (!isDirected && distances[v] !== Infinity && edge.weight !== undefined) {
+          const alt = distances[v] + edge.weight
+          if (alt < distances[u]) {
+            distances[u] = alt
+            updated = true
+            steps.push({
+              visitedNodes: [],
+              description: `Relax edge ${v}→${u}: ${alt} < ${distances[u] === Infinity ? "∞" : distances[u]} → update`,
+              highlightedEdges: [`${v}-${u}`],
+              distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
+              codeLine: 6,
+            })
+          }
+        }
+      }
+      if (!updated) break
+    }
+
+    setTraversalSteps(steps)
+    setCurrentPseudocode(pseudocodeDefinitions["bellman-ford"])
+  }
+
+  // === Floyd-Warshall ===
+  const performFloydWarshall = () => {
+    const steps: TraversalStep[] = []
+    const nodeIds = nodes.map(n => n.id)
+    const dist: { [i: string]: { [j: string]: number | string } } = {}
+
+    // Initialize
+    for (const i of nodeIds) {
+      dist[i] = {}
+      for (const j of nodeIds) {
+        if (i === j) dist[i][j] = 0
+        else dist[i][j] = "∞"
+      }
+    }
+    for (const edge of edges) {
+      dist[edge.from][edge.to] = edge.weight ?? 1
+      if (!isDirected) dist[edge.to][edge.from] = edge.weight ?? 1
+    }
+
+    steps.push({
+      visitedNodes: [],
+      description: "Initialize distance matrix",
+      highlightedEdges: [],
+      allDistances: JSON.parse(JSON.stringify(dist)),
+      codeLine: 2,
+    })
+
+    for (const k of nodeIds) {
+      steps.push({
+        visitedNodes: [],
+        description: `Intermediate node: ${k}`,
+        highlightedEdges: [],
+        allDistances: JSON.parse(JSON.stringify(dist)),
+        codeLine: 4,
+      })
+      for (const i of nodeIds) {
+        for (const j of nodeIds) {
+          const distIK = dist[i][k]
+          const distKJ = dist[k][j]
+          if (distIK !== "∞" && distKJ !== "∞") {
+            const newDist = (typeof distIK === 'number' ? distIK : 0) + (typeof distKJ === 'number' ? distKJ : 0)
+            const current = dist[i][j]
+            if (current === "∞" || newDist < (typeof current === 'number' ? current : Infinity)) {
+              dist[i][j] = newDist
+              steps.push({
+                visitedNodes: [],
+                description: `Update dist[${i}][${j}] via ${k}: ${newDist}`,
+                highlightedEdges: [`${i}-${k}`, `${k}-${j}`],
+                allDistances: JSON.parse(JSON.stringify(dist)),
+                codeLine: 7,
+              })
+            }
+          }
+        }
+      }
+    }
+
+    setTraversalSteps(steps)
+    setCurrentPseudocode(pseudocodeDefinitions["floyd-warshall"])
+  }
+
   const startAlgorithm = () => {
     resetGraph()
     setCurrentStep(0)
@@ -471,6 +707,13 @@ export default function GraphVisualizerPage() {
         performDFS()
         break
       case "dijkstra":
+        performDijkstra()
+        break
+      case "bellman-ford":
+        performBellmanFord()
+        break
+      case "floyd-warshall":
+        performFloydWarshall()
         break
     }
   }
@@ -535,7 +778,6 @@ export default function GraphVisualizerPage() {
         y: e.clientY - svgRect.top - node.y,
       })
     }
-    // Prevent text selection
     e.preventDefault()
   }
 
@@ -544,11 +786,10 @@ export default function GraphVisualizerPage() {
     const svgRect = svgRef.current.getBoundingClientRect()
     const newX = e.clientX - svgRect.left - dragOffset.x
     const newY = e.clientY - svgRect.top - dragOffset.y
-
     setNodes(prev =>
       prev.map(node =>
         node.id === draggedNodeId
-          ? { ...node, x: Math.max(20, Math.min(580, newX)), y: Math.max(20, Math.min(280, newY)) }
+          ? { ...node, x: Math.max(20, Math.min(780, newX)), y: Math.max(20, Math.min(480, newY)) }
           : node
       )
     )
@@ -566,24 +807,20 @@ export default function GraphVisualizerPage() {
         const svgRect = svgRef.current.getBoundingClientRect()
         const newX = e.clientX - svgRect.left - dragOffset.x
         const newY = e.clientY - svgRect.top - dragOffset.y
-
         setNodes(prev =>
           prev.map(node =>
             node.id === draggedNodeId
-              ? { ...node, x: Math.max(20, Math.min(580, newX)), y: Math.max(20, Math.min(280, newY)) }
+              ? { ...node, x: Math.max(20, Math.min(780, newX)), y: Math.max(20, Math.min(480, newY)) }
               : node
           )
         )
       }
-
       const handleGlobalMouseUp = () => {
         setIsDragging(false)
         setDraggedNodeId(null)
       }
-
       window.addEventListener('mousemove', handleGlobalMouseMove)
       window.addEventListener('mouseup', handleGlobalMouseUp)
-
       return () => {
         window.removeEventListener('mousemove', handleGlobalMouseMove)
         window.removeEventListener('mouseup', handleGlobalMouseUp)
@@ -594,12 +831,11 @@ export default function GraphVisualizerPage() {
   const renderGraph = (): JSX.Element => {
     const currentStepData = traversalSteps[currentStep]
     const pathNodes: string[] = (currentStepData as any)?.pathNodes || []
-
     return (
       <svg
         ref={svgRef}
-        width="600"
-        height="300"
+        width="800"
+        height="500"
         className="border rounded-lg bg-white"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -637,7 +873,6 @@ export default function GraphVisualizerPage() {
           const isPathEdge =
             pathNodes.length > 1 &&
             pathNodes.some((id, idx) => idx < pathNodes.length - 1 && pathNodes[idx] === edge.from && pathNodes[idx + 1] === edge.to)
-
           return (
             <g key={index}>
               <line
@@ -677,7 +912,6 @@ export default function GraphVisualizerPage() {
           const isTarget = node.id === targetNode
           const distance = currentStepData?.distances?.[node.id]
           const isPathNode = pathNodes.includes(node.id)
-
           return (
             <g key={node.id}>
               <circle
@@ -759,9 +993,21 @@ export default function GraphVisualizerPage() {
     },
     dijkstra: {
       name: "Dijkstra's Algorithm",
-      description: "Finds shortest paths from source to all other vertices",
+      description: "Finds shortest paths from source to all other vertices (non-negative weights)",
       timeComplexity: "O((V + E) log V)",
       spaceComplexity: "O(V)",
+    },
+    "bellman-ford": {
+      name: "Bellman-Ford Algorithm",
+      description: "Finds shortest paths and detects negative cycles",
+      timeComplexity: "O(V × E)",
+      spaceComplexity: "O(V)",
+    },
+    "floyd-warshall": {
+      name: "Floyd-Warshall Algorithm",
+      description: "Finds shortest paths between all pairs of vertices",
+      timeComplexity: "O(V³)",
+      spaceComplexity: "O(V²)",
     },
   }
 
@@ -806,8 +1052,53 @@ export default function GraphVisualizerPage() {
       applications={applications}
     >
       <div className="w-full space-y-6">
-        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderGraph()}</div>
+        {/* Graph Information Card */}
+        <Card className="bg-orange-50 border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Network className="h-5 w-5" />
+              What is a Graph?
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="space-y-2 text-sm">
+              <p>
+                A <strong>graph</strong> is a non-linear data structure consisting of <strong>nodes (vertices)</strong> connected by <strong>edges</strong>.
+                It models pairwise relationships and is used in social networks, maps, networks, and more.
+              </p>
+              <p>
+                <strong>Implementation:</strong> This visualizer uses an <em>edge list</em> to represent the graph.
+                Each edge stores its source, destination, and optional weight.
+              </p>
+              <p>
+                <strong>Types:</strong> Graphs can be <em>directed</em> (edges have direction) or <em>undirected</em>,
+                and <em>weighted</em> (edges have costs) or <em>unweighted</em>.
+              </p>
+            </CardDescription>
+          </CardContent>
+        </Card>
 
+        {/* Algorithm Toggle Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {(["bfs", "dfs", "dijkstra", "bellman-ford", "floyd-warshall"] as AlgorithmType[]).map((algo) => (
+            <Button
+              key={algo}
+              variant={algorithm === algo ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAlgorithm(algo)}
+              className="capitalize"
+            >
+              {algorithmInfo[algo].name}
+            </Button>
+          ))}
+        </div>
+
+        {/* Visualization Area - Larger */}
+        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">
+          {renderGraph()}
+        </div>
+
+        {/* Pseudocode Panel */}
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -835,6 +1126,7 @@ export default function GraphVisualizerPage() {
           </div>
         </Card>
 
+        {/* Rest of controls remain unchanged... */}
         {/* Graph Controls */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -850,23 +1142,6 @@ export default function GraphVisualizerPage() {
                 <Switch id="weighted" checked={isWeighted} onCheckedChange={setIsWeighted} />
                 <Label htmlFor="weighted">Weighted</Label>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Algorithm</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select value={algorithm} onValueChange={(value: AlgorithmType) => setAlgorithm(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bfs">BFS</SelectItem>
-                  <SelectItem value="dfs">DFS</SelectItem>
-                  <SelectItem value="dijkstra">Dijkstra</SelectItem>
-                </SelectContent>
-              </Select>
             </CardContent>
           </Card>
           <Card>
@@ -908,6 +1183,16 @@ export default function GraphVisualizerPage() {
               <Button onClick={generateRandomGraph} className="w-full">
                 <Shuffle className="h-4 w-4 mr-2" />
                 Random Graph
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Run Algorithm</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={startAlgorithm} className="w-full">
+                Start Algorithm
               </Button>
             </CardContent>
           </Card>
@@ -1141,7 +1426,7 @@ export default function GraphVisualizerPage() {
                 <div className="text-lg font-bold text-accent">
                   {traversalSteps[currentStep]?.queue?.length || traversalSteps[currentStep]?.stack?.length || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">{algorithm === "bfs" ? "Queue" : "Stack"}</div>
+                <div className="text-sm text-muted-foreground">{algorithm === "bfs" ? "Queue" : algorithm === "dfs" ? "Stack" : "—"}</div>
               </div>
             </div>
           </CardContent>
