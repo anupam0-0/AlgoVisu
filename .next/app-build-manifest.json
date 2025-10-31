@@ -16,6 +16,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
+    "/visualizers/array/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/array/loading.js"
+    ],
+    "/visualizers/array/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/array/page.js"
+    ],
     "/visualizers/queue/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -26,45 +36,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/queue/page.js"
     ],
-    "/visualizers/prefix-search-visualizer/loading": [
+    "/visualizers/stack/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/prefix-search-visualizer/loading.js"
+      "static/chunks/app/visualizers/stack/page.js"
     ],
-    "/visualizers/prefix-search-visualizer/page": [
+    "/visualizers/sorting/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/prefix-search-visualizer/page.js"
+      "static/chunks/app/visualizers/sorting/loading.js"
     ],
-    "/visualizers/print-queue/loading": [
+    "/visualizers/sorting/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/print-queue/loading.js"
+      "static/chunks/app/visualizers/sorting/page.js"
     ],
-    "/visualizers/print-queue/page": [
+    "/visualizers/tree/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/print-queue/page.js"
+      "static/chunks/app/visualizers/tree/loading.js"
     ],
-    "/visualizers/navigation-system/loading": [
+    "/visualizers/tree/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/navigation-system/loading.js"
-    ],
-    "/visualizers/navigation-system/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/navigation-system/page.js"
-    ],
-    "/visualizers/sna/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sna/loading.js"
-    ],
-    "/visualizers/sna/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/sna/page.js"
+      "static/chunks/app/visualizers/tree/page.js"
     ]
   }
 }

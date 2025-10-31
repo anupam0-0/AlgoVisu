@@ -1,8 +1,7 @@
 {
-  "/visualizers/queue/page": "app/visualizers/queue/page.js",
+  "/page": "app/page.js",
   "/visualizers/page": "app/visualizers/page.js",
-  "/visualizers/prefix-search-visualizer/page": "app/visualizers/prefix-search-visualizer/page.js",
-  "/visualizers/print-queue/page": "app/visualizers/print-queue/page.js",
-  "/visualizers/navigation-system/page": "app/visualizers/navigation-system/page.js",
-  "/visualizers/sna/page": "app/visualizers/sna/page.js"
+  "/visualizers/stack/page": "app/visualizers/stack/page.js",
+  "/visualizers/sorting/page": "app/visualizers/sorting/page.js",
+  "/visualizers/tree/page": "app/visualizers/tree/page.js"
 }

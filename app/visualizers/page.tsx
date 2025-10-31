@@ -48,6 +48,16 @@ export default function VisualizersPage() {
       type: "visualizer"
     },
     {
+      id: "linked-list",
+      title: "Linked List Visualizer",
+      description: "Single, doubly, and circular linked lists",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["Single", "Double", "Circular"],
+      available: true,
+      type: "visualizer"
+    },
+    {
       id: "tree",
       title: "Tree Visualizer",
       description: "Binary trees, BST, and tree traversals",
@@ -64,16 +74,6 @@ export default function VisualizersPage() {
       icon: <Network className="h-6 w-6" />,
       difficulty: "Advanced",
       topics: ["BFS", "DFS", "Graph Traversal", "Shortest Path"],
-      available: true,
-      type: "visualizer"
-    },
-    {
-      id: "linked-list",
-      title: "Linked List Visualizer",
-      description: "Single, doubly, and circular linked lists",
-      icon: <Network className="h-6 w-6" />,
-      difficulty: "Advanced",
-      topics: ["Single", "Double", "Circular"],
       available: true,
       type: "visualizer"
     },
@@ -148,15 +148,15 @@ export default function VisualizersPage() {
       type: "application"
     },
     {
-  id: "print-queue",
-  title: "Print Job Queue Visualizer",
-  description: "How linear (FIFO) queues manage document printing order in operating systems, ensuring fair and sequential processing in shared printers",
-  icon: <Printer className="h-6 w-6" />,
-  difficulty: "Beginner",
-  topics: ["Queues", "Operating Systems", "Real-World Algorithms"],
-  available: true,
-  type: "application"
-}
+      id: "print-queue",
+      title: "Print Job Queue Visualizer",
+      description: "How linear (FIFO) queues manage document printing order in operating systems, ensuring fair and sequential processing in shared printers",
+      icon: <Printer className="h-6 w-6" />,
+      difficulty: "Beginner",
+      topics: ["Queues", "Operating Systems", "Real-World Algorithms"],
+      available: true,
+      type: "application"
+    }
   ]
 
   const getDifficultyColor = (difficulty: string) => {
@@ -171,6 +171,15 @@ export default function VisualizersPage() {
         return "bg-gray-100 text-gray-800"
     }
   }
+
+  // Group visualizers by structure type
+  const linearVisualizers = visualizers
+    .filter(v => v.type === 'visualizer')
+    .filter(v => ['array', 'stack', 'queue', 'sorting', 'linked-list'].includes(v.id))
+
+  const nonLinearVisualizers = visualizers
+    .filter(v => v.type === 'visualizer')
+    .filter(v => ['tree', 'graph', 'mst'].includes(v.id))
 
   return (
     <div className="min-h-screen bg-orange-200">
@@ -187,16 +196,21 @@ export default function VisualizersPage() {
         </div>
 
         <div className="space-y-12">
-          {/* Visualizers Section */}
+          {/* Visualizers Section - Split into Linear & Non-Linear */}
           <div>
             <h2 className="text-3xl font-bold mb-6 text-primary flex items-center">
               <BarChart3 className="h-8 w-8 mr-2" />
               Data Structure Visualizers
             </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visualizers
-                .filter(v => v.type === 'visualizer')
-                .map((visualizer) => (
+
+            {/* Linear Data Structures */}
+            <div className="mb-12">
+              <h3 className="text-2xl font-semibold mb-4 text-primary flex items-center">
+                <Layers className="h-6 w-6 mr-2" />
+                Linear Data Structures
+              </h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {linearVisualizers.map((visualizer) => (
                   <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : "hover:shadow-lg transition-shadow"}`}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -242,10 +256,67 @@ export default function VisualizersPage() {
                     )}
                   </Card>
                 ))}
+              </div>
+            </div>
+
+            {/* Non-Linear Data Structures */}
+            <div>
+              <h3 className="text-2xl font-semibold mb-4 text-primary flex items-center">
+                <GitBranch className="h-6 w-6 mr-2" />
+                Non-Linear Data Structures
+              </h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {nonLinearVisualizers.map((visualizer) => (
+                  <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : "hover:shadow-lg transition-shadow"}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                            {visualizer.icon}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
+                            <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
+                              {visualizer.difficulty}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {visualizer.topics.map((topic, index) => (
+                          <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
+                            {topic}
+                          </Badge>
+                        ))}
+                      </div>
+                      {visualizer.available ? (
+                        <Button asChild className="w-full">
+                          <Link href={`/visualizers/${visualizer.id}`}>
+                            <Play className="h-4 w-4 mr-2" />
+                            Start Learning
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button disabled className="w-full">
+                          Coming Soon
+                        </Button>
+                      )}
+                    </CardContent>
+                    {!visualizer.available && (
+                      <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
+                        <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl">Coming Soon</h1>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Applications Section */}
+          {/* Applications Section (unchanged) */}
           <div>
             <h2 className="text-3xl font-bold mb-6 text-primary flex items-center">
               <Layers className="h-8 w-8 mr-2" />
@@ -304,7 +375,7 @@ export default function VisualizersPage() {
           </div>
         </div>
 
-        {/* Learning Tips */}
+        {/* Learning Tips (unchanged) */}
         <div className="mt-16 bg-orange-100 rounded-lg p-6 ">
           <h2 className="text-xl font-semibold mb-4 ">Learning Tips</h2>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
