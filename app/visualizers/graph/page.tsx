@@ -8,7 +8,7 @@ import { Badge } from "../../../components/ui/badge"
 import { Switch } from "../../../components/ui/switch"
 import { Label } from "../../../components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
-import { Plus, Shuffle, X, GitBranch, Route, Network } from "lucide-react"
+import { Plus, Shuffle, Network } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
 interface GraphNode {
@@ -47,7 +47,7 @@ interface TraversalStep {
 type AlgorithmType = "bfs" | "dfs" | "dijkstra" | "bellman-ford" | "floyd-warshall"
 
 // --- Pseudocode Definitions ---
-const pseudocodeDefinitions = {
+const pseudocodeDefinitions: Record<AlgorithmType, string[]> = {
   bfs: [
     "function BFS(start):",
     "  create queue Q",
@@ -108,7 +108,167 @@ const pseudocodeDefinitions = {
   ],
 }
 
-// Helper to reconstruct path from BFS/DFS traversal
+// --- Rich Explanations for Each Algorithm ---
+const algorithmDetails: Record<
+  AlgorithmType,
+  {
+    name: string
+    overview: string
+    bestFor: string[]
+    requirements: string[]
+    limitations: string[]
+    guarantees: string[]
+    steps: string[]
+    complexity: { time: string; space: string }
+    pitfalls: string[]
+    tips: string[]
+    example: string
+  }
+> = {
+  bfs: {
+    name: "Breadth-First Search (BFS)",
+    overview:
+      "BFS explores a graph level-by-level outward from the start node using a queue. In unweighted graphs, BFS yields the shortest path by number of edges.",
+    bestFor: [
+      "Finding shortest paths on unweighted graphs",
+      "Layered exploration (e.g., friend-of-a-friend in social networks)",
+      "Checking connectivity and computing levels",
+    ],
+    requirements: [
+      "Works for directed or undirected graphs",
+      "Unweighted graphs (or treat all edges as weight 1)",
+    ],
+    limitations: [
+      "Does not handle weighted shortest paths (use Dijkstra/Bellman–Ford)",
+      "Can use O(V) memory for the queue",
+    ],
+    guarantees: ["Finds a shortest path in terms of number of edges (if one exists) on unweighted graphs"],
+    steps: [
+      "Initialize queue with start; mark start visited (distance = 0).",
+      "While queue non-empty: dequeue node u.",
+      "For each neighbor v not visited: mark visited, set parent[v]=u, enqueue v.",
+    ],
+    complexity: { time: "O(V + E)", space: "O(V)" },
+    pitfalls: [
+      "For weighted graphs, BFS result is not the minimum total weight.",
+      "Remember to mark ‘visited’ when enqueuing, not when dequeuing (prevents duplicates).",
+    ],
+    tips: ["Keep a parent map to reconstruct the path.", "Use levels to compute distances in edges."],
+    example: "Routing in an unweighted grid/maze: BFS finds the fewest moves from start to goal.",
+  },
+  dfs: {
+    name: "Depth-First Search (DFS)",
+    overview:
+      "DFS explores as deep as possible along each branch before backtracking, typically using a stack or recursion.",
+    bestFor: [
+      "Topological sort (DAGs), cycle detection",
+      "Finding connected components",
+      "Exploring/Generating paths and backtracking problems",
+    ],
+    requirements: ["Works for directed or undirected graphs", "Weights are irrelevant to traversal order"],
+    limitations: [
+      "Not guaranteed to find shortest (fewest edges) paths",
+      "On deep/large graphs, recursion depth may be an issue",
+    ],
+    guarantees: ["Visits all vertices reachable from start"],
+    steps: [
+      "Push start to stack.",
+      "While stack non-empty: pop u.",
+      "If u not visited: mark visited and push its unvisited neighbors.",
+    ],
+    complexity: { time: "O(V + E)", space: "O(V)" },
+    pitfalls: ["Order of pushing neighbors changes traversal tree.", "Recursion may overflow on very deep graphs."],
+    tips: ["Reverse neighbors before pushing to control visual order.", "Use timestamps for discovery/finish times."],
+    example:
+      "Cycle detection in a directed graph: if you discover a back-edge during DFS, there is a cycle.",
+  },
+  dijkstra: {
+    name: "Dijkstra’s Algorithm",
+    overview:
+      "Computes shortest paths from a single source to all nodes on graphs with non-negative edge weights using a priority queue.",
+    bestFor: [
+      "Road networks with non-negative distances",
+      "Weighted graphs where you need shortest paths from one source",
+    ],
+    requirements: ["All edge weights must be non-negative", "Directed or undirected graphs are OK"],
+    limitations: [
+      "Fails with negative edges (distances can be incorrect)",
+      "Priority queue decrease-key may be tricky; using insert again is acceptable with a visited set",
+    ],
+    guarantees: ["Finds optimal shortest paths when all edges have non-negative weights"],
+    steps: [
+      "Set dist[start]=0; others=∞.",
+      "Push start in min-priority queue by dist.",
+      "Extract min u; for each edge u→v, relax: if dist[u]+w(u,v)<dist[v], update dist[v] and push v.",
+      "Repeat until queue empty.",
+    ],
+    complexity: { time: "O((V + E) log V) with binary heap", space: "O(V)" },
+    pitfalls: [
+      "Using Dijkstra with negative weights gives wrong answers.",
+      "For dense graphs, a Fibonacci heap can improve asymptotics, but complexity of implementation increases.",
+    ],
+    tips: [
+      "Maintain a parent map to rebuild paths.",
+      "Skip a node u from the queue if it is already visited (lazy deletion).",
+    ],
+    example:
+      "GPS routing without toll penalties as negative numbers: Dijkstra gives lowest total distance/time path.",
+  },
+  "bellman-ford": {
+    name: "Bellman–Ford Algorithm",
+    overview:
+      "Single-source shortest paths allowing negative edge weights (but no negative cycles reachable from the source). It repeatedly relaxes all edges.",
+    bestFor: [
+      "Graphs with negative weights",
+      "Detecting negative cycles reachable from the source",
+    ],
+    requirements: ["Handles negative weights; works for directed/undirected graphs"],
+    limitations: [
+      "Slower than Dijkstra on non-negative graphs",
+      "Does not produce meaningful shortest paths when negative cycles are reachable (distances drop unbounded)",
+    ],
+    guarantees: [
+      "After |V|−1 passes, all shortest paths (without negative cycles) are found",
+      "An additional pass that still relaxes an edge reveals a negative cycle",
+    ],
+    steps: [
+      "Initialize dist[start]=0; others=∞.",
+      "Repeat |V|−1 times: for each edge u→v, relax dist[v] with dist[u]+w(u,v).",
+      "Optional: 1 more pass; if any distance improves, a negative cycle exists.",
+    ],
+    complexity: { time: "O(V × E)", space: "O(V)" },
+    pitfalls: ["Inefficient on large dense graphs.", "Needs careful handling of ‘∞’ in code."],
+    tips: ["Early stop if an iteration does not change any distance.", "Record predecessors for path reconstruction."],
+    example:
+      "Currency arbitrage detection (as negative log exchange rates): Bellman–Ford reveals negative cycles (profit loops).",
+  },
+  "floyd-warshall": {
+    name: "Floyd–Warshall Algorithm",
+    overview:
+      "All-pairs shortest paths via dynamic programming. It progressively allows intermediate vertices and updates dist[i][j].",
+    bestFor: [
+      "Small/medium graphs where all-pairs distances are needed",
+      "Dense graphs or when you need distances between every pair",
+    ],
+    requirements: ["Works on negative edges if no negative cycles exist"],
+    limitations: [
+      "O(V³) time and O(V²) space can be too heavy for large V",
+      "If a negative cycle exists, distances become undefined for affected pairs",
+    ],
+    guarantees: ["Computes shortest distances between all vertex pairs (if no negative cycles)"],
+    steps: [
+      "Initialize dist[i][i]=0; dist[i][j]=w(i,j) if edge exists; otherwise ∞.",
+      "For each k: for each i, j: dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]).",
+    ],
+    complexity: { time: "O(V³)", space: "O(V²)", },
+    pitfalls: ["Memory can be high for big V.", "Must detect/report negative cycles for correctness."],
+    tips: ["Keep a ‘next’ matrix to reconstruct actual paths.", "Great for precomputing distances for many queries."],
+    example:
+      "Computing every city-to-city driving time for quick query responses in a small network.",
+  },
+}
+
+// Helper to reconstruct path from BFS/DFS/Dijkstra traversal
 function reconstructPath(
   edges: GraphEdge[],
   start: string,
@@ -155,11 +315,11 @@ export default function GraphVisualizerPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(pseudocodeDefinitions.bfs)
   const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
-  // New state for delete controls
+  // Delete controls
   const [deleteVertexId, setDeleteVertexId] = useState<string>("")
   const [deleteEdgeFrom, setDeleteEdgeFrom] = useState<string>("")
   const [deleteEdgeTo, setDeleteEdgeTo] = useState<string>("")
-  // State for editing edge weight
+  // Edit edge weight
   const [editEdgeFrom, setEditEdgeFrom] = useState<string>("")
   const [editEdgeTo, setEditEdgeTo] = useState<string>("")
   const [editEdgeWeight, setEditEdgeWeight] = useState<string>("")
@@ -219,9 +379,10 @@ export default function GraphVisualizerPage() {
 
   const addNode = () => {
     if (!newNodeLabel.trim()) return
+    const id = newNodeLabel.trim().toUpperCase().slice(0, 1)
     const newNode: GraphNode = {
-      id: newNodeLabel.toUpperCase(),
-      label: newNodeLabel.toUpperCase(),
+      id,
+      label: id,
       x: Math.random() * 600 + 100,
       y: Math.random() * 300 + 100,
     }
@@ -241,13 +402,9 @@ export default function GraphVisualizerPage() {
   const addEdge = () => {
     if (!edgeFrom || !edgeTo || edgeFrom === edgeTo) return
     const weight = isWeighted ? Number.parseInt(edgeWeight) || 1 : undefined
-    const newEdge: GraphEdge = {
-      from: edgeFrom,
-      to: edgeTo,
-      weight,
-    }
-    const existingEdge = edges.find((e) => e.from === edgeFrom && e.to === edgeTo)
-    if (!existingEdge) {
+    const newEdge: GraphEdge = { from: edgeFrom, to: edgeTo, weight }
+    const exists = edges.find((e) => e.from === edgeFrom && e.to === edgeTo)
+    if (!exists) {
       setEdges([...edges, newEdge])
       setEdgeFrom("")
       setEdgeTo("")
@@ -268,9 +425,10 @@ export default function GraphVisualizerPage() {
       const radius = 150
       const centerX = 400
       const centerY = 250
+      const id = String.fromCharCode(65 + i)
       newNodes.push({
-        id: String.fromCharCode(65 + i),
-        label: String.fromCharCode(65 + i),
+        id,
+        label: id,
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
       })
@@ -296,11 +454,12 @@ export default function GraphVisualizerPage() {
     setEdges(newEdges)
     setStartNode(newNodes[0]?.id || "")
     setTargetNode(newNodes[nodeCount - 1]?.id || "")
+    resetGraph()
   }
 
   const resetGraph = () => {
-    setNodes(
-      nodes.map((node) => ({
+    setNodes((prev) =>
+      prev.map((node) => ({
         ...node,
         isVisited: false,
         isCurrentNode: false,
@@ -309,10 +468,11 @@ export default function GraphVisualizerPage() {
         distance: undefined,
       })),
     )
-    setEdges(edges.map((edge) => ({ ...edge, isHighlighted: false, isInPath: false })))
+    setEdges((prev) => prev.map((edge) => ({ ...edge, isHighlighted: false, isInPath: false })))
     setTraversalSteps([])
     setCurrentStep(0)
     setIsPlaying(false)
+    setCurrentCodeLine(-1)
   }
 
   const highlightPseudocode = (algo: AlgorithmType, line: number) => {
@@ -328,6 +488,7 @@ export default function GraphVisualizerPage() {
     const queue = [startNode]
     const distances: { [key: string]: number } = { [startNode]: 0 }
     const parent: { [key: string]: string } = {}
+
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -346,6 +507,7 @@ export default function GraphVisualizerPage() {
       distances: { ...distances },
       codeLine: 3,
     })
+
     let found = false
     while (queue.length > 0) {
       const currentNode = queue.shift()!
@@ -359,8 +521,10 @@ export default function GraphVisualizerPage() {
         distances: { ...distances },
         codeLine: 6,
       })
+
       const neighbors = getNeighbors(currentNode, edges, isDirected)
         .filter((neighbor) => !visited.has(neighbor) && !queue.includes(neighbor))
+
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -370,6 +534,7 @@ export default function GraphVisualizerPage() {
         distances: { ...distances },
         codeLine: 7,
       })
+
       for (const neighbor of neighbors) {
         queue.push(neighbor)
         distances[neighbor] = distances[currentNode] + 1
@@ -384,6 +549,7 @@ export default function GraphVisualizerPage() {
           codeLine: 9,
         })
       }
+
       if (targetNode && currentNode === targetNode) {
         found = true
         steps.push({
@@ -398,6 +564,7 @@ export default function GraphVisualizerPage() {
         break
       }
     }
+
     if (found) {
       const path = reconstructPath(edges, startNode, targetNode, parent)
       const lastStep = steps[steps.length - 1]
@@ -409,6 +576,7 @@ export default function GraphVisualizerPage() {
         codeLine: -1,
       } as any)
     }
+
     setTraversalSteps(steps)
     setCurrentPseudocode(pseudocodeDefinitions.bfs)
   }
@@ -419,6 +587,7 @@ export default function GraphVisualizerPage() {
     const steps: TraversalStep[] = []
     const visited = new Set<string>()
     const stack = [startNode]
+
     steps.push({
       currentNode: startNode,
       visitedNodes: [],
@@ -435,6 +604,7 @@ export default function GraphVisualizerPage() {
       highlightedEdges: [],
       codeLine: 3,
     })
+
     while (stack.length > 0) {
       const currentNode = stack.pop()!
       if (visited.has(currentNode)) continue
@@ -447,9 +617,11 @@ export default function GraphVisualizerPage() {
         highlightedEdges: [],
         codeLine: 7,
       })
+
       const neighbors = getNeighbors(currentNode, edges, isDirected)
         .filter((neighbor) => !visited.has(neighbor))
         .reverse()
+
       steps.push({
         currentNode,
         visitedNodes: Array.from(visited),
@@ -458,6 +630,7 @@ export default function GraphVisualizerPage() {
         highlightedEdges: [],
         codeLine: 8,
       })
+
       for (const neighbor of neighbors) {
         stack.push(neighbor)
         steps.push({
@@ -469,6 +642,7 @@ export default function GraphVisualizerPage() {
           codeLine: 10,
         })
       }
+
       if (targetNode && currentNode === targetNode) {
         steps.push({
           currentNode,
@@ -481,6 +655,7 @@ export default function GraphVisualizerPage() {
         break
       }
     }
+
     setTraversalSteps(steps)
     setCurrentPseudocode(pseudocodeDefinitions.dfs)
   }
@@ -493,12 +668,8 @@ export default function GraphVisualizerPage() {
     const visited = new Set<string>()
     const parent: { [key: string]: string } = {}
 
-    // Initialize distances
-    for (const node of nodes) {
-      distances[node.id] = node.id === startNode ? 0 : Infinity
-    }
+    for (const node of nodes) distances[node.id] = node.id === startNode ? 0 : Infinity
 
-    // Priority queue simulation (array sorted by distance)
     let pq: { node: string; dist: number }[] = [{ node: startNode, dist: 0 }]
 
     steps.push({
@@ -510,38 +681,34 @@ export default function GraphVisualizerPage() {
     })
 
     while (pq.length > 0) {
-      // Extract min
       pq.sort((a, b) => a.dist - b.dist)
-      const { node: u } = pq.shift()!
+      const { node: u, dist } = pq.shift()!
       if (visited.has(u)) continue
       visited.add(u)
 
       steps.push({
         currentNode: u,
         visitedNodes: Array.from(visited),
-        description: `Processing node ${u} (min distance)`,
+        description: `Processing node ${u} (min distance = ${dist})`,
         highlightedEdges: [],
         distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
         codeLine: 7,
       })
 
-      // Relax edges
       const neighbors = getNeighbors(u, edges, isDirected)
       for (const v of neighbors) {
         const edge = edges.find(e => e.from === u && e.to === v) ||
                      (!isDirected && edges.find(e => e.to === u && e.from === v))
         if (!edge || edge.weight === undefined) continue
-
         const alt = distances[u] + edge.weight
         if (alt < distances[v]) {
           distances[v] = alt
           parent[v] = u
           pq.push({ node: v, dist: alt })
-
           steps.push({
             currentNode: u,
             visitedNodes: Array.from(visited),
-            description: `Relax edge ${u}→${v}: ${alt} < ${distances[v] === Infinity ? "∞" : distances[v]} → update`,
+            description: `Relax edge ${u}→${v}: update dist[${v}] = ${alt}`,
             highlightedEdges: [`${u}-${v}`],
             distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
             codeLine: 10,
@@ -550,7 +717,6 @@ export default function GraphVisualizerPage() {
       }
     }
 
-    // Final path
     if (targetNode && distances[targetNode] !== Infinity) {
       const path = reconstructPath(edges, startNode, targetNode, parent)
       const lastStep = steps[steps.length - 1]
@@ -572,9 +738,7 @@ export default function GraphVisualizerPage() {
     const steps: TraversalStep[] = []
     const distances: { [key: string]: number } = {}
 
-    for (const node of nodes) {
-      distances[node.id] = node.id === startNode ? 0 : Infinity
-    }
+    for (const node of nodes) distances[node.id] = node.id === startNode ? 0 : Infinity
 
     steps.push({
       visitedNodes: [],
@@ -605,22 +769,21 @@ export default function GraphVisualizerPage() {
             updated = true
             steps.push({
               visitedNodes: [],
-              description: `Relax edge ${u}→${v}: ${alt} < ${distances[v] === Infinity ? "∞" : distances[v]} → update`,
+              description: `Relax edge ${u}→${v}: dist[${v}] = ${alt}`,
               highlightedEdges: [`${u}-${v}`],
               distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
               codeLine: 6,
             })
           }
         }
-        // For undirected, also check reverse
         if (!isDirected && distances[v] !== Infinity && edge.weight !== undefined) {
-          const alt = distances[v] + edge.weight
-          if (alt < distances[u]) {
-            distances[u] = alt
+          const alt2 = distances[v] + edge.weight
+          if (alt2 < distances[u]) {
+            distances[u] = alt2
             updated = true
             steps.push({
               visitedNodes: [],
-              description: `Relax edge ${v}→${u}: ${alt} < ${distances[u] === Infinity ? "∞" : distances[u]} → update`,
+              description: `Relax edge ${v}→${u}: dist[${u}] = ${alt2}`,
               highlightedEdges: [`${v}-${u}`],
               distances: Object.fromEntries(Object.entries(distances).map(([k, v]) => [k, v === Infinity ? "∞" : v])),
               codeLine: 6,
@@ -641,12 +804,10 @@ export default function GraphVisualizerPage() {
     const nodeIds = nodes.map(n => n.id)
     const dist: { [i: string]: { [j: string]: number | string } } = {}
 
-    // Initialize
     for (const i of nodeIds) {
       dist[i] = {}
       for (const j of nodeIds) {
-        if (i === j) dist[i][j] = 0
-        else dist[i][j] = "∞"
+        dist[i][j] = i === j ? 0 : "∞"
       }
     }
     for (const edge of edges) {
@@ -675,9 +836,9 @@ export default function GraphVisualizerPage() {
           const distIK = dist[i][k]
           const distKJ = dist[k][j]
           if (distIK !== "∞" && distKJ !== "∞") {
-            const newDist = (typeof distIK === 'number' ? distIK : 0) + (typeof distKJ === 'number' ? distKJ : 0)
+            const newDist = (distIK as number) + (distKJ as number)
             const current = dist[i][j]
-            if (current === "∞" || newDist < (typeof current === 'number' ? current : Infinity)) {
+            if (current === "∞" || newDist < (current as number)) {
               dist[i][j] = newDist
               steps.push({
                 visitedNodes: [],
@@ -700,56 +861,30 @@ export default function GraphVisualizerPage() {
     resetGraph()
     setCurrentStep(0)
     switch (algorithm) {
-      case "bfs":
-        performBFS()
-        break
-      case "dfs":
-        performDFS()
-        break
-      case "dijkstra":
-        performDijkstra()
-        break
-      case "bellman-ford":
-        performBellmanFord()
-        break
-      case "floyd-warshall":
-        performFloydWarshall()
-        break
+      case "bfs": performBFS(); break
+      case "dfs": performDFS(); break
+      case "dijkstra": performDijkstra(); break
+      case "bellman-ford": performBellmanFord(); break
+      case "floyd-warshall": performFloydWarshall(); break
     }
   }
 
   const stepForward = () => {
-    if (currentStep < traversalSteps.length - 1) {
-      setCurrentStep(currentStep + 1)
-    }
+    if (currentStep < traversalSteps.length - 1) setCurrentStep(currentStep + 1)
   }
-
   const stepBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
+    if (currentStep > 0) setCurrentStep(currentStep - 1)
   }
-
   const play = () => {
-    if (traversalSteps.length === 0) {
-      startAlgorithm()
-    }
+    if (traversalSteps.length === 0) startAlgorithm()
     setIsPlaying(true)
   }
-
-  const pause = () => {
-    setIsPlaying(false)
-  }
-
-  const reset = () => {
-    resetGraph()
-  }
+  const pause = () => setIsPlaying(false)
+  const reset = () => resetGraph()
 
   useEffect(() => {
     if (isPlaying && currentStep < traversalSteps.length - 1) {
-      const timer = setTimeout(() => {
-        stepForward()
-      }, 1500)
+      const timer = setTimeout(() => stepForward(), 1500)
       return () => clearTimeout(timer)
     } else if (currentStep >= traversalSteps.length - 1) {
       setIsPlaying(false)
@@ -759,9 +894,7 @@ export default function GraphVisualizerPage() {
   useEffect(() => {
     if (traversalSteps.length > 0 && traversalSteps[currentStep]) {
       const codeLine = traversalSteps[currentStep].codeLine
-      if (codeLine !== undefined) {
-        setCurrentCodeLine(codeLine)
-      }
+      if (codeLine !== undefined) setCurrentCodeLine(codeLine)
     }
   }, [currentStep, traversalSteps])
 
@@ -880,16 +1013,10 @@ export default function GraphVisualizerPage() {
                 y1={startY}
                 x2={endX}
                 y2={endY}
-                stroke={
-                  isPathEdge
-                    ? "#22c55e"
-                    : isHighlighted
-                    ? "#6366f1"
-                    : "#e5e7eb"
-                }
-                strokeWidth={isPathEdge ? "4" : isHighlighted ? "3" : "2"}
+                stroke={isPathEdge ? "#22c55e" : isHighlighted ? "#6366f1" : "#e5e7eb"}
+                strokeWidth={isPathEdge ? 4 : isHighlighted ? 3 : 2}
                 markerEnd={isDirected ? "url(#arrowhead)" : undefined}
-                style={{ transition: "stroke 0.3s, stroke-width 0.3s" }}
+                style={{ transition: "stroke 0.3s, strokeWidth 0.3s" as any }}
               />
               {isWeighted && edge.weight !== undefined && (
                 <text
@@ -911,6 +1038,7 @@ export default function GraphVisualizerPage() {
           const isStart = node.id === startNode
           const isTarget = node.id === targetNode
           const distance = currentStepData?.distances?.[node.id]
+          const pathNodes: string[] = (currentStepData as any)?.pathNodes || []
           const isPathNode = pathNodes.includes(node.id)
           return (
             <g key={node.id}>
@@ -919,30 +1047,20 @@ export default function GraphVisualizerPage() {
                 cy={node.y}
                 r="20"
                 fill={
-                  isPathNode
-                    ? "#22c55e"
-                    : isCurrent
-                    ? "#6366f1"
-                    : isStart
-                    ? "#22c55e"
-                    : isTarget
-                    ? "#ef4444"
-                    : isVisited
-                    ? "#f59e0b"
-                    : "#ffffff"
+                  isPathNode ? "#22c55e"
+                  : isCurrent ? "#6366f1"
+                  : isStart ? "#22c55e"
+                  : isTarget ? "#ef4444"
+                  : isVisited ? "#f59e0b"
+                  : "#ffffff"
                 }
                 stroke={
-                  isPathNode
-                    ? "#16a34a"
-                    : isCurrent
-                    ? "#4f46e5"
-                    : isStart
-                    ? "#16a34a"
-                    : isTarget
-                    ? "#dc2626"
-                    : isVisited
-                    ? "#d97706"
-                    : "#6b7280"
+                  isPathNode ? "#16a34a"
+                  : isCurrent ? "#4f46e5"
+                  : isStart ? "#16a34a"
+                  : isTarget ? "#dc2626"
+                  : isVisited ? "#d97706"
+                  : "#6b7280"
                 }
                 strokeWidth="2"
                 className="cursor-move"
@@ -954,15 +1072,7 @@ export default function GraphVisualizerPage() {
                 y={node.y + 5}
                 textAnchor="middle"
                 className="text-sm font-bold pointer-events-none"
-                fill={
-                  isPathNode ||
-                  isCurrent ||
-                  isStart ||
-                  isTarget ||
-                  isVisited
-                    ? "#ffffff"
-                    : "#374151"
-                }
+                fill={isPathNode || isCurrent || isStart || isTarget || isVisited ? "#ffffff" : "#374151"}
               >
                 {node.label}
               </text>
@@ -978,40 +1088,12 @@ export default function GraphVisualizerPage() {
     )
   }
 
-  const algorithmInfo = {
-    bfs: {
-      name: "Breadth-First Search",
-      description: "Explores nodes level by level using a queue",
-      timeComplexity: "O(V + E)",
-      spaceComplexity: "O(V)",
-    },
-    dfs: {
-      name: "Depth-First Search",
-      description: "Explores as far as possible along each branch using a stack",
-      timeComplexity: "O(V + E)",
-      spaceComplexity: "O(V)",
-    },
-    dijkstra: {
-      name: "Dijkstra's Algorithm",
-      description: "Finds shortest paths from source to all other vertices (non-negative weights)",
-      timeComplexity: "O((V + E) log V)",
-      spaceComplexity: "O(V)",
-    },
-    "bellman-ford": {
-      name: "Bellman-Ford Algorithm",
-      description: "Finds shortest paths and detects negative cycles",
-      timeComplexity: "O(V × E)",
-      spaceComplexity: "O(V)",
-    },
-    "floyd-warshall": {
-      name: "Floyd-Warshall Algorithm",
-      description: "Finds shortest paths between all pairs of vertices",
-      timeComplexity: "O(V³)",
-      spaceComplexity: "O(V²)",
-    },
+  const currentAlgorithm = {
+    name: algorithmDetails[algorithm].name,
+    description: algorithmDetails[algorithm].overview,
+    timeComplexity: algorithmDetails[algorithm].complexity.time,
+    spaceComplexity: algorithmDetails[algorithm].complexity.space,
   }
-
-  const currentAlgorithm = algorithmInfo[algorithm]
 
   useEffect(() => {
     setCurrentPseudocode(pseudocodeDefinitions[algorithm])
@@ -1031,6 +1113,8 @@ export default function GraphVisualizerPage() {
     setEditEdgeTo("")
     setEditEdgeWeight("")
   }
+
+  const detail = algorithmDetails[algorithm]
 
   return (
     <VisualizerLayout
@@ -1062,18 +1146,13 @@ export default function GraphVisualizerPage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="space-y-2 text-sm">
-              <p>
-                A <strong>graph</strong> is a non-linear data structure consisting of <strong>nodes (vertices)</strong> connected by <strong>edges</strong>.
-                It models pairwise relationships and is used in social networks, maps, networks, and more.
-              </p>
-              <p>
-                <strong>Implementation:</strong> This visualizer uses an <em>edge list</em> to represent the graph.
-                Each edge stores its source, destination, and optional weight.
-              </p>
-              <p>
-                <strong>Types:</strong> Graphs can be <em>directed</em> (edges have direction) or <em>undirected</em>,
-                and <em>weighted</em> (edges have costs) or <em>unweighted</em>.
-              </p>
+              <span className="block">
+                A <strong>graph</strong> is a non-linear data structure consisting of <strong>vertices (nodes)</strong> connected by <strong>edges</strong>.
+                It models pairwise relationships—think social networks, road maps, and the internet.
+              </span>
+              <span className="block">
+                <strong>This visualizer</strong> uses an <em>edge list</em> representation. Edges can be directed/undirected and optionally weighted.
+              </span>
             </CardDescription>
           </CardContent>
         </Card>
@@ -1087,13 +1166,84 @@ export default function GraphVisualizerPage() {
               size="sm"
               onClick={() => setAlgorithm(algo)}
               className="capitalize"
+              aria-pressed={algorithm === algo}
             >
-              {algorithmInfo[algo].name}
+              {algorithmDetails[algo].name}
             </Button>
           ))}
         </div>
 
-        {/* Visualization Area - Larger */}
+        {/* Deep-Dive Info for Selected Algorithm */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">About {detail.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>{detail.overview}</p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">Best for</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {detail.bestFor.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+              <div>
+                <div className="font-semibold text-foreground mb-1">Requirements / Assumptions</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {detail.requirements.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">Limitations</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {detail.limitations.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+              <div>
+                <div className="font-semibold text-foreground mb-1">What it Guarantees</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {detail.guarantees.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-semibold text-foreground mb-1">Core Idea (Step-by-Step)</div>
+              <ol className="list-decimal list-inside space-y-1">
+                {detail.steps.map((x, i) => <li key={i}>{x}</li>)}
+              </ol>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <span><span className="font-medium mr-1">Time:</span>{detail.complexity.time}</span>
+              <span><span className="font-medium mr-1">Space:</span>{detail.complexity.space}</span>
+              <span className="col-span-2 md:col-span-2">
+                <span className="font-medium mr-1">Example:</span>{detail.example}
+              </span>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">Common Pitfalls</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {detail.pitfalls.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+              <div>
+                <div className="font-semibold text-foreground mb-1">Tips</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {detail.tips.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Visualization */}
         <div className="flex justify-center p-4 bg-muted/10 rounded-lg">
           {renderGraph()}
         </div>
@@ -1101,33 +1251,26 @@ export default function GraphVisualizerPage() {
         {/* Pseudocode Panel */}
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              Pseudocode
-            </CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">Pseudocode</CardTitle>
           </CardHeader>
           <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
             {currentPseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`
-                  py-1 px-2 rounded
-                  ${currentCodeLine === index + 1
+                className={`py-1 px-2 rounded ${
+                  currentCodeLine === index + 1
                     ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
                     : "text-muted-foreground"
-                  }
-                `}
+                }`}
               >
-                <span className="text-xs text-muted-foreground/70 mr-3">
-                  {index + 1}
-                </span>
+                <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
               </div>
             ))}
           </div>
         </Card>
 
-        {/* Rest of controls remain unchanged... */}
-        {/* Graph Controls */}
+        {/* Controls */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader>
@@ -1150,35 +1293,21 @@ export default function GraphVisualizerPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <Select value={startNode} onValueChange={setStartNode}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Start node" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Start node" /></SelectTrigger>
                 <SelectContent>
-                  {nodes.map((node) => (
-                    <SelectItem key={node.id} value={node.id}>
-                      {node.label}
-                    </SelectItem>
-                  ))}
+                  {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={targetNode} onValueChange={setTargetNode}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Target node" />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Target node" /></SelectTrigger>
                 <SelectContent>
-                  {nodes.map((node) => (
-                    <SelectItem key={node.id} value={node.id}>
-                      {node.label}
-                    </SelectItem>
-                  ))}
+                  {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Generate</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Generate</CardTitle></CardHeader>
             <CardContent>
               <Button onClick={generateRandomGraph} className="w-full">
                 <Shuffle className="h-4 w-4 mr-2" />
@@ -1187,23 +1316,17 @@ export default function GraphVisualizerPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Run Algorithm</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Run Algorithm</CardTitle></CardHeader>
             <CardContent>
-              <Button onClick={startAlgorithm} className="w-full">
-                Start Algorithm
-              </Button>
+              <Button onClick={startAlgorithm} className="w-full">Start Algorithm</Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Add/Delete Vertices and Edges */}
+        {/* Add / Delete */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Add Vertex</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Add Vertex</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
@@ -1219,33 +1342,19 @@ export default function GraphVisualizerPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Add Edge</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Add Edge</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Select value={edgeFrom} onValueChange={setEdgeFrom}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="From" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="From" /></SelectTrigger>
                   <SelectContent>
-                    {nodes.map((node) => (
-                      <SelectItem key={node.id} value={node.id}>
-                        {node.label}
-                      </SelectItem>
-                    ))}
+                    {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={edgeTo} onValueChange={setEdgeTo}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="To" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="To" /></SelectTrigger>
                   <SelectContent>
-                    {nodes.map((node) => (
-                      <SelectItem key={node.id} value={node.id}>
-                        {node.label}
-                      </SelectItem>
-                    ))}
+                    {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 {isWeighted && (
@@ -1267,21 +1376,13 @@ export default function GraphVisualizerPage() {
 
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Delete Vertex</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Delete Vertex</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Select value={deleteVertexId} onValueChange={setDeleteVertexId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select vertex" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select vertex" /></SelectTrigger>
                   <SelectContent>
-                    {nodes.map((node) => (
-                      <SelectItem key={node.id} value={node.id}>
-                        {node.label}
-                      </SelectItem>
-                    ))}
+                    {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Button
@@ -1300,33 +1401,19 @@ export default function GraphVisualizerPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Delete Edge</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Delete Edge</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Select value={deleteEdgeFrom} onValueChange={setDeleteEdgeFrom}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="From" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="From" /></SelectTrigger>
                   <SelectContent>
-                    {nodes.map((node) => (
-                      <SelectItem key={node.id} value={node.id}>
-                        {node.label}
-                      </SelectItem>
-                    ))}
+                    {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={deleteEdgeTo} onValueChange={setDeleteEdgeTo}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="To" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="To" /></SelectTrigger>
                   <SelectContent>
-                    {nodes.map((node) => (
-                      <SelectItem key={node.id} value={node.id}>
-                        {node.label}
-                      </SelectItem>
-                    ))}
+                    {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Button
@@ -1350,33 +1437,19 @@ export default function GraphVisualizerPage() {
         {isWeighted && (
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Edit Edge Weight</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Edit Edge Weight</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex gap-2">
                   <Select value={editEdgeFrom} onValueChange={setEditEdgeFrom}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="From" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="From" /></SelectTrigger>
                     <SelectContent>
-                      {nodes.map((node) => (
-                        <SelectItem key={node.id} value={node.id}>
-                          {node.label}
-                        </SelectItem>
-                      ))}
+                      {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Select value={editEdgeTo} onValueChange={setEditEdgeTo}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="To" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="To" /></SelectTrigger>
                     <SelectContent>
-                      {nodes.map((node) => (
-                        <SelectItem key={node.id} value={node.id}>
-                          {node.label}
-                        </SelectItem>
-                      ))}
+                      {nodes.map((node) => <SelectItem key={node.id} value={node.id}>{node.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Input
@@ -1386,21 +1459,17 @@ export default function GraphVisualizerPage() {
                     onChange={(e) => setEditEdgeWeight(e.target.value)}
                     className="w-36 text-base px-4 py-2"
                   />
-                  <Button
-                    onClick={handleEditEdgeWeight}
-                    disabled={!editEdgeFrom || !editEdgeTo || !editEdgeWeight}
-                  >
+                  <Button onClick={handleEditEdgeWeight} disabled={!editEdgeFrom || !editEdgeTo || !editEdgeWeight}>
                     Change
                   </Button>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Select an edge and enter a new weight to update.
-                </div>
+                <div className="text-xs text-muted-foreground">Select an edge and enter a new weight to update.</div>
               </CardContent>
             </Card>
           </div>
         )}
 
+        {/* Stats */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{currentAlgorithm.name}</CardTitle>
@@ -1424,9 +1493,12 @@ export default function GraphVisualizerPage() {
               </div>
               <div>
                 <div className="text-lg font-bold text-accent">
-                  {traversalSteps[currentStep]?.queue?.length || traversalSteps[currentStep]?.stack?.length || 0}
+                  {traversalSteps[currentStep]?.queue?.length ||
+                   traversalSteps[currentStep]?.stack?.length || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">{algorithm === "bfs" ? "Queue" : algorithm === "dfs" ? "Stack" : "—"}</div>
+                <div className="text-sm text-muted-foreground">
+                  {algorithm === "bfs" ? "Queue" : algorithm === "dfs" ? "Stack" : "—"}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1434,9 +1506,7 @@ export default function GraphVisualizerPage() {
 
         {traversalSteps.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Current Step</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Current Step</CardTitle></CardHeader>
             <CardContent>
               <div className="text-sm p-3 bg-accent/10 rounded-lg border border-accent/20">
                 {traversalSteps[currentStep]?.description || "Ready to start algorithm"}
@@ -1446,9 +1516,7 @@ export default function GraphVisualizerPage() {
                   <div className="text-sm font-medium mb-1">Queue:</div>
                   <div className="flex gap-1">
                     {traversalSteps[currentStep].queue!.map((nodeId, index) => (
-                      <Badge key={index} variant="outline">
-                        {nodeId}
-                      </Badge>
+                      <Badge key={index} variant="outline">{nodeId}</Badge>
                     ))}
                   </div>
                 </div>
@@ -1458,9 +1526,7 @@ export default function GraphVisualizerPage() {
                   <div className="text-sm font-medium mb-1">Stack:</div>
                   <div className="flex gap-1">
                     {traversalSteps[currentStep].stack!.map((nodeId, index) => (
-                      <Badge key={index} variant="outline">
-                        {nodeId}
-                      </Badge>
+                      <Badge key={index} variant="outline">{nodeId}</Badge>
                     ))}
                   </div>
                 </div>
@@ -1469,10 +1535,9 @@ export default function GraphVisualizerPage() {
           </Card>
         )}
 
+        {/* Legend */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Legend</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Legend</CardTitle></CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
@@ -1481,7 +1546,7 @@ export default function GraphVisualizerPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span>Start Node</span>
+                <span>Start Node / Path Node</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-500 rounded-full"></div>

@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../../../components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "../../../components/ui/card"
 import { Plus, Trash2, RefreshCcw, GitBranch, Play, Square, RotateCcw } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
 interface TreeNode {
   value: number
   id: string
-  left?: TreeNode
-  right?: TreeNode
+  left?: TreeNode | null
+  right?: TreeNode | null
   x?: number
   y?: number
   isHighlighted?: boolean
@@ -30,6 +30,112 @@ interface TraversalStep {
 type TraversalType = "inorder" | "preorder" | "postorder" | "levelorder"
 type TreeMode = "binary" | "bst"
 
+/* ---------- Size constants (small nudge down) ---------- */
+const SVG_W = 900
+const SVG_H = 430
+const NODE_RADIUS = 25               // was 26
+const H_GAP_BASE = 250               // was 260
+const V_GAP = 88                     // was 90
+const MIN_H_SPACING = 58             // was 60
+
+/* ---------- New: Knowledge content ---------- */
+const treesIntro = {
+  bullets: [
+    "A tree is a hierarchical structure with a root node and child subtrees; there are no cycles.",
+    "A Binary Tree (BT) allows up to two children per node (left/right) but has no ordering rule.",
+    "A Binary Search Tree (BST) enforces an order: left < node < right, enabling efficient search.",
+    "Height h is the longest path (in edges) from root to a leaf; many operations depend on h.",
+  ],
+  diagram: [
+    "          (root)",
+    "           /  \\",
+    "        (L)    (R)",
+    "        / \\    / \\",
+    "      ... ... ... ...",
+  ],
+}
+
+const modeDetails: Record<TreeMode, {
+  title: string
+  summary: string
+  how: string[]
+  pros: string[]
+  cons: string[]
+  useCases: string[]
+  complexity: { insert: string; search: string; delete: string; traverse: string }
+  diagram: string[]
+}> = {
+  binary: {
+    title: "Binary Tree (BT)",
+    summary:
+      "A generic binary tree limits each node to at most two children. It does not impose ordering between left/right.",
+    how: [
+      "Each node has up to two pointers: left and right.",
+      "Shape is arbitrary (not necessarily balanced).",
+      "Commonly built level-by-level (BFS) for examples/demos.",
+    ],
+    pros: [
+      "Very flexible — can represent expressions, heaps, segment trees, etc.",
+      "Clear recursive structure for traversals (inorder/preorder/postorder).",
+    ],
+    cons: [
+      "No value-based ordering, so search is O(n).",
+      "Without additional constraints/balancing, height can be large.",
+    ],
+    useCases: [
+      "Expression/Syntax Trees (Compilers/Calculators)",
+      "Heaps (priority queues, but with heap property instead of BST order)",
+      "Complete/Full tree demonstrations in education",
+    ],
+    complexity: { insert: "O(1)–O(n) (depends on strategy)", search: "O(n)", delete: "O(n)", traverse: "O(n)" },
+    diagram: [
+      "     10",
+      "    /  \\",
+      "  20    30",
+      " / \\   / \\",
+      "40 50 60 70",
+    ],
+  },
+  bst: {
+    title: "Binary Search Tree (BST)",
+    summary:
+      "A BST enforces ordering: left subtree values < node < right subtree values. Average search/insert/delete are O(log n) when height is small.",
+    how: [
+      "Insert compares and descends left/right based on value.",
+      "Search follows the same rule (like binary search on a path).",
+      "Delete handles 0/1/2-child cases (replace with inorder successor/predecessor).",
+    ],
+    pros: [
+      "Efficient average search/insert/delete: O(log n) if height is small.",
+      "Keeps elements in sorted order (inorder traversal yields ascending values).",
+    ],
+    cons: [
+      "Can become skewed (degraded to a linked list) → O(n) operations.",
+      "Needs balancing (AVL, Red-Black, etc.) to guarantee O(log n).",
+    ],
+    useCases: [
+      "Symbol tables / dictionaries (conceptually)",
+      "Auto-complete ranges (with augmented data)",
+      "Maintaining a dynamic sorted set of keys",
+    ],
+    complexity: {
+      insert: "O(log n) avg, O(n) worst",
+      search: "O(log n) avg, O(n) worst",
+      delete: "O(log n) avg, O(n) worst",
+      traverse: "O(n)",
+    },
+    diagram: [
+      "        50",
+      "       /  \\",
+      "     30    70",
+      "    / \\   / \\",
+      "  20  40 60  80",
+      " (L<R<Node<R)",
+    ],
+  },
+}
+/* ------------------------------------------- */
+
 export default function TreeVisualizerPage() {
   const [root, setRoot] = useState<TreeNode | null>(null)
   const [inputValue, setInputValue] = useState("")
@@ -41,7 +147,7 @@ export default function TreeVisualizerPage() {
   const [traversalResult, setTraversalResult] = useState<number[]>([])
   const [treeHeight, setTreeHeight] = useState(0)
   const [nodeCount, setNodeCount] = useState(0)
-  const [speed, setSpeed] = useState([1000])
+  const [speed, setSpeed] = useState<[number]>([1000])
   const [deleteValue, setDeleteValue] = useState("")
   const [mode, setMode] = useState<TreeMode>("bst")
 
@@ -75,39 +181,17 @@ export default function TreeVisualizerPage() {
   const resetTree = () => {
     if (mode === "bst") {
       const sampleBST: TreeNode = {
-        value: 50,
-        id: "50",
-        left: {
-          value: 30,
-          id: "30",
-          left: { value: 20, id: "20" },
-          right: { value: 40, id: "40" },
-        },
-        right: {
-          value: 70,
-          id: "70",
-          left: { value: 60, id: "60" },
-          right: { value: 80, id: "80" },
-        },
+        value: 50, id: "50",
+        left: { value: 30, id: "30", left: { value: 20, id: "20" }, right: { value: 40, id: "40" } },
+        right: { value: 70, id: "70", left: { value: 60, id: "60" }, right: { value: 80, id: "80" } },
       }
       setRoot(sampleBST)
       calculateTreeMetrics(sampleBST)
     } else {
       const sampleBT: TreeNode = {
-        value: 10,
-        id: "10",
-        left: {
-          value: 20,
-          id: "20",
-          left: { value: 40, id: "40" },
-          right: { value: 50, id: "50" },
-        },
-        right: {
-          value: 30,
-          id: "30",
-          left: { value: 60, id: "60" },
-          right: { value: 70, id: "70" },
-        },
+        value: 10, id: "10",
+        left: { value: 20, id: "20", left: { value: 40, id: "40" }, right: { value: 50, id: "50" } },
+        right: { value: 30, id: "30", left: { value: 60, id: "60" }, right: { value: 70, id: "70" } },
       }
       setRoot(sampleBT)
       calculateTreeMetrics(sampleBT)
@@ -128,25 +212,15 @@ export default function TreeVisualizerPage() {
       setNodeCount(0)
       return
     }
-
-    const getHeight = (n: TreeNode | null): number => {
-      if (!n) return 0
-      return 1 + Math.max(getHeight(n.left), getHeight(n.right))
-    }
-
-    const countNodes = (n: TreeNode | null): number => {
-      if (!n) return 0
-      return 1 + countNodes(n.left) + countNodes(n.right)
-    }
-
+    const getHeight = (n: TreeNode | null): number => (!n ? 0 : 1 + Math.max(getHeight(n.left || null), getHeight(n.right || null)))
+    const countNodes = (n: TreeNode | null): number => (!n ? 0 : 1 + countNodes(n.left || null) + countNodes(n.right || null))
     setTreeHeight(getHeight(node))
     setNodeCount(countNodes(node))
   }
 
   const insertNode = (value: number): void => {
     if (value === undefined || value === null || isNaN(value)) return
-
-    const newNode = { value, id: `${value}-${Date.now()}` }
+    const newNode: TreeNode = { value, id: `${value}-${Date.now()}` }
 
     if (!root) {
       setRoot(newNode)
@@ -159,33 +233,25 @@ export default function TreeVisualizerPage() {
     if (mode === "bst") {
       const insert = (node: TreeNode | null, val: number): TreeNode => {
         if (!node) return { value: val, id: val.toString() }
-        if (val < node.value) {
-          node.left = insert(node.left, val)
-        } else if (val > node.value) {
-          node.right = insert(node.right, val)
-        }
+        if (val < node.value) node.left = insert(node.left || null, val)
+        else if (val > node.value) node.right = insert(node.right || null, val)
         return node
       }
       const newRoot = insert(root, value)
-      setRoot(newRoot)
+      setRoot({ ...newRoot })
       calculateTreeMetrics(newRoot)
     } else {
-      const insertLevelOrder = (root: TreeNode, newNode: TreeNode): TreeNode => {
-        const queue: TreeNode[] = [root]
-        while (queue.length > 0) {
-          const current = queue.shift()!
-          if (!current.left) {
-            current.left = newNode
-            return root
-          } else if (!current.right) {
-            current.right = newNode
-            return root
-          } else {
-            queue.push(current.left)
-            queue.push(current.right)
-          }
+      // Level-order insertion (fill left-to-right)
+      const insertLevelOrder = (r: TreeNode, n: TreeNode): TreeNode => {
+        const q: TreeNode[] = [r]
+        while (q.length) {
+          const cur = q.shift()!
+          if (!cur.left) { cur.left = n; return r }
+          if (!cur.right) { cur.right = n; return r }
+          q.push(cur.left)
+          q.push(cur.right)
         }
-        return root
+        return r
       }
       const newRoot = insertLevelOrder({ ...root }, newNode)
       setRoot(newRoot)
@@ -198,17 +264,12 @@ export default function TreeVisualizerPage() {
 
   const searchNode = (value: number): boolean => {
     if (!root) return false
-
     const search = (node: TreeNode | null, val: number): boolean => {
       if (!node) return false
-      if (node.value === val) {
-        node.isFound = true
-        return true
-      }
+      if (node.value === val) { node.isFound = true; return true }
       node.isVisited = true
-      return search(node.left, val) || search(node.right, val)
+      return search(node.left || null, val) || search(node.right || null, val)
     }
-
     resetNodeStates(root)
     const found = search(root, value)
     setRoot({ ...root })
@@ -217,48 +278,36 @@ export default function TreeVisualizerPage() {
 
   const resetNodeStates = (node: TreeNode | null): void => {
     if (!node) return
-    node.isHighlighted = false
-    node.isVisited = false
-    node.isFound = false
-    node.isBeingInserted = false
-    resetNodeStates(node.left)
-    resetNodeStates(node.right)
+    node.isHighlighted = node.isVisited = node.isFound = node.isBeingInserted = false
+    resetNodeStates(node.left || null)
+    resetNodeStates(node.right || null)
   }
 
   const deleteNode = (value: number): void => {
     if (!root) return
-
     if (mode === "bst") {
-      const deleteNodeHelper = (node: TreeNode | null, val: number): TreeNode | null => {
-        if (!node) return null
-        if (val < node.value) {
-          node.left = deleteNodeHelper(node.left, val)
-        } else if (val > node.value) {
-          node.right = deleteNodeHelper(node.right, val)
-        } else {
-          if (!node.left) return node.right
-          if (!node.right) return node.left
-          const minRight = findMin(node.right)
-          node.value = minRight.value
-          node.id = minRight.id
-          node.right = deleteNodeHelper(node.right, minRight.value)
+      const findMin = (n: TreeNode): TreeNode => { while (n.left) n = n.left; return n }
+      const helper = (n: TreeNode | null, val: number): TreeNode | null => {
+        if (!n) return null
+        if (val < n.value) n.left = helper(n.left || null, val)
+        else if (val > n.value) n.right = helper(n.right || null, val)
+        else {
+          if (!n.left) return n.right || null
+          if (!n.right) return n.left || null
+          const minRight = findMin(n.right!)
+          n.value = minRight.value
+          n.id = minRight.id
+          n.right = helper(n.right, minRight.value)
         }
-        return node
+        return n
       }
-
-      const findMin = (node: TreeNode): TreeNode => {
-        while (node.left) node = node.left
-        return node
-      }
-
-      const newRoot = deleteNodeHelper(root, value)
+      const newRoot = helper(root, value)
       setRoot(newRoot)
       calculateTreeMetrics(newRoot)
     } else {
       alert("Deletion in generic Binary Tree is complex and often not visualized. Try BST mode for deletion.")
       return
     }
-
     resetTraversal()
   }
 
@@ -309,91 +358,53 @@ export default function TreeVisualizerPage() {
     const result: number[] = []
     const visited: string[] = []
 
-    const pushStep = (
-      node: TreeNode,
-      description: string,
-      codeLine: number,
-      currentPath: string[] = []
-    ) => {
-      steps.push({
-        node,
-        description,
-        visitedNodes: [...visited],
-        currentPath,
-        codeLine,
-      })
+    const pushStep = (node: TreeNode, description: string, codeLine: number, currentPath: string[] = []) => {
+      steps.push({ node, description, visitedNodes: [...visited], currentPath, codeLine })
     }
 
     const inorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
-      if (!node) {
-        pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path)
-        return
-      }
-      const currentPath = [...path, node.id]
-      pushStep(node, `Traverse left of ${node.value}`, 4, currentPath)
-      inorderTraversal(node.left, currentPath)
-      visited.push(node.id)
-      result.push(node.value)
-      pushStep(node, `Visit node ${node.value}`, 5, currentPath)
-      pushStep(node, `Traverse right of ${node.value}`, 6, currentPath)
-      inorderTraversal(node.right, currentPath)
+      if (!node) { pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path); return }
+      const p = [...path, node.id]
+      pushStep(node, `Traverse left of ${node.value}`, 4, p)
+      inorderTraversal(node.left || null, p)
+      visited.push(node.id); result.push(node.value)
+      pushStep(node, `Visit node ${node.value}`, 5, p)
+      pushStep(node, `Traverse right of ${node.value}`, 6, p)
+      inorderTraversal(node.right || null, p)
     }
 
     const preorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
-      if (!node) {
-        pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path)
-        return
-      }
-      const currentPath = [...path, node.id]
-      visited.push(node.id)
-      result.push(node.value)
-      pushStep(node, `Visit node ${node.value}`, 4, currentPath)
-      pushStep(node, `Traverse left of ${node.value}`, 5, currentPath)
-      preorderTraversal(node.left, currentPath)
-      pushStep(node, `Traverse right of ${node.value}`, 6, currentPath)
-      preorderTraversal(node.right, currentPath)
+      if (!node) { pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path); return }
+      const p = [...path, node.id]
+      visited.push(node.id); result.push(node.value)
+      pushStep(node, `Visit node ${node.value}`, 4, p)
+      pushStep(node, `Traverse left of ${node.value}`, 5, p)
+      preorderTraversal(node.left || null, p)
+      pushStep(node, `Traverse right of ${node.value}`, 6, p)
+      preorderTraversal(node.right || null, p)
     }
 
     const postorderTraversal = (node: TreeNode | null, path: string[] = []): void => {
-      if (!node) {
-        pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path)
-        return
-      }
-      const currentPath = [...path, node.id]
-      pushStep(node, `Traverse left of ${node.value}`, 4, currentPath)
-      postorderTraversal(node.left, currentPath)
-      pushStep(node, `Traverse right of ${node.value}`, 5, currentPath)
-      postorderTraversal(node.right, currentPath)
-      visited.push(node.id)
-      result.push(node.value)
-      pushStep(node, `Visit node ${node.value}`, 6, currentPath)
+      if (!node) { pushStep({ value: -1, id: "null" } as TreeNode, "Node is null, return", 2, path); return }
+      const p = [...path, node.id]
+      pushStep(node, `Traverse left of ${node.value}`, 4, p)
+      postorderTraversal(node.left || null, p)
+      pushStep(node, `Traverse right of ${node.value}`, 5, p)
+      postorderTraversal(node.right || null, p)
+      visited.push(node.id); result.push(node.value)
+      pushStep(node, `Visit node ${node.value}`, 6, p)
     }
 
     const levelorderTraversal = (): void => {
       const queue: TreeNode[] = [root]
       let level = 0
-
-      while (queue.length > 0) {
-        const levelSize = queue.length
-        steps.push({
-          node: root,
-          description: `Processing level ${level}`,
-          visitedNodes: [...visited],
-          currentPath: [],
-        })
-
-        for (let i = 0; i < levelSize; i++) {
+      while (queue.length) {
+        const size = queue.length
+        steps.push({ node: root!, description: `Processing level ${level}`, visitedNodes: [...visited], currentPath: [] })
+        for (let i = 0; i < size; i++) {
           const node = queue.shift()!
-          visited.push(node.id)
-          result.push(node.value)
-
-          steps.push({
-            node,
-            description: `Processing node ${node.value} at level ${level}`,
-            visitedNodes: [...visited],
-            currentPath: [node.id],
-          })
-
+          visited.push(node.id); result.push(node.value)
+          steps.push({ node, description: `Processing node ${node.value} at level ${level}`, visitedNodes: [...visited], currentPath: [node.id] })
           if (node.left) queue.push(node.left)
           if (node.right) queue.push(node.right)
         }
@@ -403,20 +414,10 @@ export default function TreeVisualizerPage() {
 
     resetNodeStates(root)
 
-    switch (type) {
-      case "inorder":
-        inorderTraversal(root)
-        break
-      case "preorder":
-        preorderTraversal(root)
-        break
-      case "postorder":
-        postorderTraversal(root)
-        break
-      case "levelorder":
-        levelorderTraversal()
-        break
-    }
+    if (type === "inorder") inorderTraversal(root)
+    else if (type === "preorder") preorderTraversal(root)
+    else if (type === "postorder") postorderTraversal(root)
+    else levelorderTraversal()
 
     setTraversalSteps(steps)
     setTraversalResult(result)
@@ -424,23 +425,21 @@ export default function TreeVisualizerPage() {
     setIsPlaying(true)
   }
 
-  const calculateNodePositions = useCallback((node: TreeNode | null, x = 400, y = 50, level = 0): TreeNode | null => {
+  const calculateNodePositions = useCallback((node: TreeNode | null, x = SVG_W / 2, y = 60, level = 0): TreeNode | null => {
     if (!node) return null
-    const spacing = Math.max(200 / (level + 1), 50)
+    const spacing = Math.max(H_GAP_BASE / (level + 1), MIN_H_SPACING)
     return {
       ...node,
-      x,
-      y,
-      left: node.left ? calculateNodePositions(node.left, x - spacing, y + 80, level + 1) : null,
-      right: node.right ? calculateNodePositions(node.right, x + spacing, y + 80, level + 1) : null,
+      x, y,
+      left: node.left ? calculateNodePositions(node.left, x - spacing, y + V_GAP, level + 1) : null,
+      right: node.right ? calculateNodePositions(node.right, x + spacing, y + V_GAP, level + 1) : null,
     }
   }, [])
 
   const renderTree = (node: TreeNode | null): JSX.Element | null => {
     if (!node) return null
-
     const currentStepData = traversalSteps[currentStep]
-    const isCurrentNode = currentStepData?.node.id === node.id
+    const isCurrent = currentStepData?.node.id === node.id
     const isVisited = currentStepData?.visitedNodes.includes(node.id)
 
     return (
@@ -454,38 +453,30 @@ export default function TreeVisualizerPage() {
         <circle
           cx={node.x}
           cy={node.y}
-          r="25"
+          r={NODE_RADIUS}
           fill={
-            node.isFound
-              ? "#22c55e"
-              : isCurrentNode
-                ? "#6366f1"
-                : isVisited
-                  ? "#f59e0b"
-                  : node.isVisited
-                    ? "#ef4444"
-                    : "#ffffff"
+            node.isFound ? "#22c55e"
+            : isCurrent ? "#6366f1"
+            : isVisited ? "#f59e0b"
+            : node.isVisited ? "#ef4444"
+            : "#ffffff"
           }
           stroke={
-            node.isFound
-              ? "#16a34a"
-              : isCurrentNode
-                ? "#4f46e5"
-                : isVisited
-                  ? "#d97706"
-                  : node.isVisited
-                    ? "#dc2626"
-                    : "#6b7280"
+            node.isFound ? "#16a34a"
+            : isCurrent ? "#4f46e5"
+            : isVisited ? "#d97706"
+            : node.isVisited ? "#dc2626"
+            : "#6b7280"
           }
           strokeWidth="2"
-          className="cursor-pointer transition-all duration-300"
+          className="transition-all duration-300"
         />
         <text
           x={node.x}
           y={node.y + 5}
           textAnchor="middle"
-          className="text-sm font-bold fill-current"
-          fill={node.isFound || isCurrentNode || isVisited || node.isVisited ? "#ffffff" : "#374151"}
+          className="text-sm font-bold"
+          fill={node.isFound || isCurrent || isVisited || node.isVisited ? "#ffffff" : "#374151"}
         >
           {node.value}
         </text>
@@ -495,7 +486,7 @@ export default function TreeVisualizerPage() {
 
   const stepForward = () => {
     if (currentStep < traversalSteps.length - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(prev => prev + 1)
     } else {
       setIsPlaying(false)
     }
@@ -503,8 +494,8 @@ export default function TreeVisualizerPage() {
 
   useEffect(() => {
     if (isPlaying && currentStep < traversalSteps.length - 1) {
-      const timer = setTimeout(() => stepForward(), speed[0])
-      return () => clearTimeout(timer)
+      const t = setTimeout(stepForward, speed[0])
+      return () => clearTimeout(t)
     } else if (currentStep >= traversalSteps.length - 1) {
       setIsPlaying(false)
     }
@@ -514,23 +505,17 @@ export default function TreeVisualizerPage() {
   const currentPseudocode = pseudocodeDefinitions[traversalType]
   const currentCodeLine = traversalSteps[currentStep]?.codeLine ?? -1
 
-  // Local control handlers
   const handleStart = () => {
-    if (traversalSteps.length === 0) {
-      performTraversal(traversalType)
-    } else {
-      setIsPlaying(true)
-    }
+    if (traversalSteps.length === 0) performTraversal(traversalType)
+    else setIsPlaying(true)
   }
 
-  const handlePause = () => {
-    setIsPlaying(false)
-  }
+  const handlePause = () => setIsPlaying(false)
 
   const handleResetTraversal = () => {
     resetTraversal()
     resetNodeStates(root)
-    setRoot({ ...root })
+    setRoot(root ? { ...root } : null)
   }
 
   return (
@@ -538,7 +523,6 @@ export default function TreeVisualizerPage() {
       title="Binary Tree & BST Visualizer"
       description="Compare generic binary trees and binary search trees with interactive operations"
       difficulty="Intermediate"
-      // Removed global controls
       complexity={{
         time: mode === "bst" ? "O(log n) avg, O(n) worst" : "O(n)",
         space: "O(h)",
@@ -546,6 +530,23 @@ export default function TreeVisualizerPage() {
       applications={applications}
     >
       <div className="w-full space-y-6">
+        {/* Knowledge: Trees (always visible) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">📚 Understanding Trees</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <ul className="list-disc list-inside space-y-1">
+              {treesIntro.bullets.map((b, i) => <li key={i}>{b}</li>)}
+            </ul>
+            <div className="rounded-md bg-muted/40 p-3 overflow-x-auto">
+              <div className="font-mono text-xs leading-5">
+                {treesIntro.diagram.map((l, i) => <div key={i}>{l}</div>)}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Mode Selector */}
         <Card className="bg-orange-50 border-primary">
           <CardHeader>
@@ -559,9 +560,7 @@ export default function TreeVisualizerPage() {
               <button
                 onClick={() => setMode("binary")}
                 className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  mode === "binary"
-                    ? "bg-blue-600 text-white"
-                    : "bg-muted hover:bg-muted/80"
+                  mode === "binary" ? "bg-blue-600 text-white" : "bg-muted hover:bg-muted/80"
                 }`}
               >
                 Binary Tree (BT)
@@ -569,25 +568,71 @@ export default function TreeVisualizerPage() {
               <button
                 onClick={() => setMode("bst")}
                 className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  mode === "bst"
-                    ? "bg-green-600 text-white"
-                    : "bg-muted hover:bg-muted/80"
+                  mode === "bst" ? "bg-green-600 text-white" : "bg-muted hover:bg-muted/80"
                 }`}
               >
                 Binary Search Tree (BST)
               </button>
             </div>
-            <CardDescription className="text-sm">
-              {mode === "binary"
-                ? "A Binary Tree allows any structure—each node has up to two children with no ordering rules. Used in expression trees, Huffman coding, and more."
-                : "A Binary Search Tree enforces ordering: left child < parent < right child. Enables efficient search, insertion, and deletion."}
-            </CardDescription>
+          </CardContent>
+        </Card>
+
+        {/* Mode-specific Knowledge */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{modeDetails[mode].title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <div>{modeDetails[mode].summary}</div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">How it works</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {modeDetails[mode].how.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+              <div>
+                <div className="font-semibold text-foreground mb-1">Typical use cases</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {modeDetails[mode].useCases.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">Pros</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {modeDetails[mode].pros.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+              <div>
+                <div className="font-semibold text-foreground mb-1">Cons</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {modeDetails[mode].cons.map((x, i) => <li key={i}>{x}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div className="rounded-md bg-muted/40 p-3 overflow-x-auto">
+              <div className="font-mono text-xs leading-5">
+                {modeDetails[mode].diagram.map((l, i) => <div key={i}>{l}</div>)}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <span className="inline-flex"><span className="font-medium mr-1">Insert:</span> {modeDetails[mode].complexity.insert}</span>
+              <span className="inline-flex"><span className="font-medium mr-1">Search:</span> {modeDetails[mode].complexity.search}</span>
+              <span className="inline-flex"><span className="font-medium mr-1">Delete:</span> {modeDetails[mode].complexity.delete}</span>
+              <span className="inline-flex"><span className="font-medium mr-1">Traverse:</span> {modeDetails[mode].complexity.traverse}</span>
+            </div>
           </CardContent>
         </Card>
 
         {/* Tree Visualization */}
-        <div className="bg-muted/10 rounded-lg p-4 min-h-[400px] overflow-auto">
-          <svg width="800" height="400" className="mx-auto">
+        <div className="bg-muted/10 rounded-lg p-4 min-h-[440px] overflow-auto">
+          <svg width={SVG_W} height={SVG_H} className="mx-auto">
             {positionedRoot && renderTree(positionedRoot)}
           </svg>
         </div>
@@ -613,13 +658,11 @@ export default function TreeVisualizerPage() {
             {currentPseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`
-                  py-1 px-2 rounded
-                  ${currentCodeLine === index + 1
+                className={`py-1 px-2 rounded ${
+                  currentCodeLine === index + 1
                     ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
                     : "text-muted-foreground"
-                  }
-                `}
+                }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
@@ -645,7 +688,7 @@ export default function TreeVisualizerPage() {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Enter value"
                 className="w-full px-3 py-2 border rounded-md"
-                onKeyPress={(e) => e.key === "Enter" && insertNode(Number(inputValue))}
+                onKeyDown={(e) => e.key === "Enter" && insertNode(Number(inputValue))}
               />
               <button
                 onClick={() => insertNode(Number(inputValue))}
@@ -669,7 +712,7 @@ export default function TreeVisualizerPage() {
                 onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Enter value to search"
                 className="w-full px-3 py-2 border rounded-md"
-                onKeyPress={(e) => e.key === "Enter" && searchNode(Number(searchValue))}
+                onKeyDown={(e) => e.key === "Enter" && searchNode(Number(searchValue))}
               />
               <button
                 onClick={() => searchNode(Number(searchValue))}
@@ -696,7 +739,7 @@ export default function TreeVisualizerPage() {
                 onChange={(e) => setDeleteValue(e.target.value)}
                 placeholder="Enter value to delete"
                 className="w-full px-3 py-2 border rounded-md"
-                onKeyPress={(e) => e.key === "Enter" && handleDeleteNode()}
+                onKeyDown={(e) => e.key === "Enter" && handleDeleteNode()}
               />
               <button
                 onClick={handleDeleteNode}
@@ -713,7 +756,7 @@ export default function TreeVisualizerPage() {
             </div>
           </Card>
 
-          {/* Traversal Controls — Updated */}
+          {/* Traversal Controls */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Tree Traversal</CardTitle>
@@ -721,10 +764,7 @@ export default function TreeVisualizerPage() {
             <div className="p-4 pt-0 space-y-3">
               <select
                 value={traversalType}
-                onChange={(e) => {
-                  setTraversalType(e.target.value as TraversalType)
-                  resetTraversal()
-                }}
+                onChange={(e) => { setTraversalType(e.target.value as TraversalType); resetTraversal() }}
                 className="w-full px-3 py-2 border rounded-md"
               >
                 <option value="inorder">Inorder (L-Root-R)</option>
@@ -758,7 +798,7 @@ export default function TreeVisualizerPage() {
             </div>
           </Card>
 
-          {/* Speed Control */}
+          {/* Speed */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Speed</CardTitle>
@@ -784,25 +824,15 @@ export default function TreeVisualizerPage() {
         {/* Metrics */}
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Tree Height</CardTitle>
-            </CardHeader>
-            <div className="p-4 pt-0">
-              <div className="text-2xl font-bold text-blue-600">{treeHeight}</div>
-            </div>
+            <CardHeader><CardTitle className="text-sm text-muted-foreground">Tree Height</CardTitle></CardHeader>
+            <div className="p-4 pt-0"><div className="text-2xl font-bold text-blue-600">{treeHeight}</div></div>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Node Count</CardTitle>
-            </CardHeader>
-            <div className="p-4 pt-0">
-              <div className="text-2xl font-bold text-green-600">{nodeCount}</div>
-            </div>
+            <CardHeader><CardTitle className="text-sm text-muted-foreground">Node Count</CardTitle></CardHeader>
+            <div className="p-4 pt-0"><div className="text-2xl font-bold text-green-600">{nodeCount}</div></div>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">Traversal Result</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-sm text-muted-foreground">Traversal Result</CardTitle></CardHeader>
             <div className="p-4 pt-0">
               <div className="text-sm font-mono bg-muted p-2 rounded">[{traversalResult.join(", ")}]</div>
             </div>
@@ -812,18 +842,12 @@ export default function TreeVisualizerPage() {
         {/* Step Info */}
         {traversalSteps.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Traversal Progress</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg">Traversal Progress</CardTitle></CardHeader>
             <div className="p-4 pt-0">
               <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">
-                  Step {currentStep + 1} of {traversalSteps.length}
-                </div>
+                <div className="text-sm text-muted-foreground">Step {currentStep + 1} of {traversalSteps.length}</div>
                 <div className="text-base">{traversalSteps[currentStep]?.description}</div>
-                <div className="text-sm text-muted-foreground">
-                  Visited: [{traversalSteps[currentStep]?.visitedNodes.join(", ")}]
-                </div>
+                <div className="text-sm text-muted-foreground">Visited: [{traversalSteps[currentStep]?.visitedNodes.join(", ")}]</div>
               </div>
             </div>
           </Card>
@@ -832,42 +856,33 @@ export default function TreeVisualizerPage() {
     </VisualizerLayout>
   )
 
-  // Utility to generate random tree
-  function generateRandomTree(nodeCount = 7, min = 10, max = 99) {
-    const values = new Set<number>()
-    while (values.size < nodeCount) {
-      values.add(Math.floor(Math.random() * (max - min + 1)) + min)
-    }
-    const arr = Array.from(values)
+  /* Utility: random tree */
+  function generateRandomTree(count = 7, min = 10, max = 99) {
+    const vals = new Set<number>()
+    while (vals.size < count) vals.add(Math.floor(Math.random() * (max - min + 1)) + min)
+    const arr = Array.from(vals)
     let newRoot: TreeNode | null = null
 
     if (mode === "bst") {
-      const insert = (node: TreeNode | null, val: number): TreeNode => {
-        if (!node) return { value: val, id: val.toString() }
-        if (val < node.value) node.left = insert(node.left, val)
-        else if (val > node.value) node.right = insert(node.right, val)
-        return node
+      const insert = (n: TreeNode | null, v: number): TreeNode => {
+        if (!n) return { value: v, id: v.toString() }
+        if (v < n.value) n.left = insert(n.left || null, v)
+        else if (v > n.value) n.right = insert(n.right || null, v)
+        return n
       }
-      for (const v of arr) {
-        newRoot = insert(newRoot, v)
-      }
+      for (const v of arr) newRoot = insert(newRoot, v)
     } else {
       if (arr.length === 0) return
       newRoot = { value: arr[0], id: `${arr[0]}-${Date.now()}` }
-      const queue: TreeNode[] = [newRoot]
+      const q: TreeNode[] = [newRoot]
       for (let i = 1; i < arr.length; i++) {
-        const parent = queue[0]
-        const newNode = { value: arr[i], id: `${arr[i]}-${Date.now()}` }
-        if (!parent.left) {
-          parent.left = newNode
-        } else {
-          parent.right = newNode
-          queue.shift()
-        }
-        queue.push(newNode)
+        const parent = q[0]
+        const node: TreeNode = { value: arr[i], id: `${arr[i]}-${Date.now()}` }
+        if (!parent.left) parent.left = node
+        else { parent.right = node; q.shift() }
+        q.push(node)
       }
     }
-
     setRoot(newRoot)
     calculateTreeMetrics(newRoot)
     resetTraversal()
