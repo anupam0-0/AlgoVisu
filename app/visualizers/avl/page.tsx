@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
@@ -14,7 +15,6 @@ interface AVLNode {
   right: AVLNode | null
   height: number
   id: string
-  isHighlighted?: boolean
   rotationType?: "LL" | "RR" | "LR" | "RL"
 }
 
@@ -90,6 +90,7 @@ const pseudocode = [
 
 let nodeIdCounter = 0
 
+// create node with stable id base
 const createNode = (value: number): AVLNode => ({
   value,
   left: null,
@@ -100,9 +101,7 @@ const createNode = (value: number): AVLNode => ({
 })
 
 const getHeight = (node: AVLNode | null): number => node?.height || 0
-
-const getBalance = (node: AVLNode | null): number => 
-  node ? getHeight(node.left) - getHeight(node.right) : 0
+const getBalance = (node: AVLNode | null): number => (node ? getHeight(node.left) - getHeight(node.right) : 0)
 
 const rotateRight = (y: AVLNode): AVLNode => {
   const x = y.left!
@@ -132,6 +131,21 @@ const minValueNode = (node: AVLNode): AVLNode => {
     current = current.left
   }
   return current
+}
+
+// IMPORTANT: cloneNode used to create snapshots for steps
+// We must ensure cloned snapshots have unique IDs to prevent duplicate React keys.
+const cloneNode = (node: AVLNode | null): AVLNode | null => {
+  if (!node) return null
+  // append a short unique suffix so every snapshot node key is unique
+  const suffix = `-snap-${Math.random().toString(36).slice(2, 8)}`
+  return {
+    ...node,
+    id: `${node.id}${suffix}`,
+    left: cloneNode(node.left),
+    right: cloneNode(node.right),
+    // keep rotationType & height as-is
+  }
 }
 
 export default function AVLVisualizer() {
@@ -167,20 +181,17 @@ export default function AVLVisualizer() {
     nodeIdCounter = 0
   }
 
-  const cloneNode = (node: AVLNode | null): AVLNode | null => {
-    if (!node) return null
-    return {
-      ...node,
-      left: cloneNode(node.left),
-      right: cloneNode(node.right),
-      id: node.id,
-    }
+  // helper to push a step into a local snapshot array (used by recursive insert/delete)
+  const pushStep = (arr: AVLStep[], description: string, tree: AVLNode | null, highlighted: string[], codeLine: number) => {
+    arr.push({
+      description,
+      tree: cloneNode(tree),
+      highlightedNodes: [...highlighted],
+      codeLine,
+    })
   }
 
-  const addStep = (description: string, tree: AVLNode | null, highlighted: string[], codeLine: number) => {
-    setSteps(prev => [...prev, { description, tree: cloneNode(tree), highlightedNodes: [...highlighted], codeLine }])
-  }
-
+  // insert recursive that appends to stepsSnapshot
   const insertRecursive = (
     node: AVLNode | null,
     value: number,
@@ -189,34 +200,20 @@ export default function AVLVisualizer() {
   ): AVLNode => {
     if (!node) {
       const newNode = createNode(value)
-      stepsSnapshot.push({
-        description: `Inserted ${value}.`,
-        tree: cloneNode(newNode),
-        highlightedNodes: [newNode.id],
-        codeLine: 2,
-      })
+      pushStep(stepsSnapshot, `Inserted ${value}.`, newNode, [newNode.id], 2)
       return newNode
     }
 
     path.push(node.id)
 
     if (value < node.value) {
-      stepsSnapshot.push({
-        description: `Going left from ${node.value} to insert ${value}.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 3,
-      })
+      pushStep(stepsSnapshot, `Going left from ${node.value} to insert ${value}.`, node, [node.id], 3)
       node.left = insertRecursive(node.left, value, stepsSnapshot, path)
     } else if (value > node.value) {
-      stepsSnapshot.push({
-        description: `Going right from ${node.value} to insert ${value}.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 5,
-      })
+      pushStep(stepsSnapshot, `Going right from ${node.value} to insert ${value}.`, node, [node.id], 5)
       node.right = insertRecursive(node.right, value, stepsSnapshot, path)
     } else {
+      pushStep(stepsSnapshot, `Value ${value} is duplicate. No insertion.`, node, [node.id], 6)
       return node // duplicate
     }
 
@@ -224,41 +221,21 @@ export default function AVLVisualizer() {
     const balance = getBalance(node)
 
     if (balance > 1 && value < (node.left?.value || 0)) {
-      stepsSnapshot.push({
-        description: `LL imbalance at ${node.value}. Performing right rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 11,
-      })
+      pushStep(stepsSnapshot, `LL imbalance at ${node.value}. Performing right rotation.`, node, [node.id], 11)
       return rotateRight(node)
     }
     if (balance < -1 && value > (node.right?.value || 0)) {
-      stepsSnapshot.push({
-        description: `RR imbalance at ${node.value}. Performing left rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 14,
-      })
+      pushStep(stepsSnapshot, `RR imbalance at ${node.value}. Performing left rotation.`, node, [node.id], 14)
       return rotateLeft(node)
     }
     if (balance > 1 && value > (node.left?.value || 0)) {
-      stepsSnapshot.push({
-        description: `LR imbalance at ${node.value}. Left rotation on left child, then right rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 17,
-      })
+      pushStep(stepsSnapshot, `LR imbalance at ${node.value}. Left rotate child, then right rotate.`, node, [node.id], 17)
       node.left = rotateLeft(node.left!)
       node.left.rotationType = "LR"
       return rotateRight(node)
     }
     if (balance < -1 && value < (node.right?.value || 0)) {
-      stepsSnapshot.push({
-        description: `RL imbalance at ${node.value}. Right rotation on right child, then left rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 21,
-      })
+      pushStep(stepsSnapshot, `RL imbalance at ${node.value}. Right rotate child, then left rotate.`, node, [node.id], 21)
       node.right = rotateRight(node.right!)
       node.right.rotationType = "RL"
       return rotateLeft(node)
@@ -278,50 +255,25 @@ export default function AVLVisualizer() {
     path.push(node.id)
 
     if (value < node.value) {
-      stepsSnapshot.push({
-        description: `Going left from ${node.value} to delete ${value}.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 28,
-      })
+      pushStep(stepsSnapshot, `Going left from ${node.value} to delete ${value}.`, node, [node.id], 28)
       node.left = deleteRecursive(node.left, value, stepsSnapshot, path)
     } else if (value > node.value) {
-      stepsSnapshot.push({
-        description: `Going right from ${node.value} to delete ${value}.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 30,
-      })
+      pushStep(stepsSnapshot, `Going right from ${node.value} to delete ${value}.`, node, [node.id], 30)
       node.right = deleteRecursive(node.right, value, stepsSnapshot, path)
     } else {
       if (!node.left || !node.right) {
         const temp = node.left || node.right
         if (!temp) {
-          stepsSnapshot.push({
-            description: `Deleting leaf node ${value}.`,
-            tree: cloneNode(node),
-            highlightedNodes: [node.id],
-            codeLine: 34,
-          })
+          pushStep(stepsSnapshot, `Deleting leaf node ${value}.`, node, [node.id], 34)
           return null
         } else {
-          stepsSnapshot.push({
-            description: `Deleting node ${value} with one child.`,
-            tree: cloneNode(node),
-            highlightedNodes: [node.id],
-            codeLine: 36,
-          })
+          pushStep(stepsSnapshot, `Deleting node ${value} with one child.`, node, [node.id], 36)
           return temp
         }
       } else {
         const temp = minValueNode(node.right)
         node.value = temp.value
-        stepsSnapshot.push({
-          description: `Replacing ${value} with inorder successor ${temp.value}.`,
-          tree: cloneNode(node),
-          highlightedNodes: [node.id, temp.id],
-          codeLine: 40,
-        })
+        pushStep(stepsSnapshot, `Replacing ${value} with inorder successor ${temp.value}.`, node, [node.id, temp.id], 40)
         node.right = deleteRecursive(node.right, temp.value, stepsSnapshot, [...path])
       }
     }
@@ -332,41 +284,21 @@ export default function AVLVisualizer() {
     const balance = getBalance(node)
 
     if (balance > 1 && getBalance(node.left) >= 0) {
-      stepsSnapshot.push({
-        description: `LL imbalance at ${node.value}. Right rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 44,
-      })
+      pushStep(stepsSnapshot, `LL imbalance at ${node.value}. Right rotation.`, node, [node.id], 44)
       return rotateRight(node)
     }
     if (balance > 1 && getBalance(node.left) < 0) {
-      stepsSnapshot.push({
-        description: `LR imbalance at ${node.value}. Left rotation on left child, then right rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 47,
-      })
+      pushStep(stepsSnapshot, `LR imbalance at ${node.value}. Left rotation on left child, then right rotation.`, node, [node.id], 47)
       node.left = rotateLeft(node.left!)
       node.left.rotationType = "LR"
       return rotateRight(node)
     }
     if (balance < -1 && getBalance(node.right) <= 0) {
-      stepsSnapshot.push({
-        description: `RR imbalance at ${node.value}. Left rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 51,
-      })
+      pushStep(stepsSnapshot, `RR imbalance at ${node.value}. Left rotation.`, node, [node.id], 51)
       return rotateLeft(node)
     }
     if (balance < -1 && getBalance(node.right) > 0) {
-      stepsSnapshot.push({
-        description: `RL imbalance at ${node.value}. Right rotation on right child, then left rotation.`,
-        tree: cloneNode(node),
-        highlightedNodes: [node.id],
-        codeLine: 54,
-      })
+      pushStep(stepsSnapshot, `RL imbalance at ${node.value}. Right rotation on right child, then left rotation.`, node, [node.id], 54)
       node.right = rotateRight(node.right!)
       node.right.rotationType = "RL"
       return rotateLeft(node)
@@ -375,30 +307,55 @@ export default function AVLVisualizer() {
     return node
   }
 
+  // Handlers: Insert/Delete
+  // We will produce stepsSnapshot first, then update steps[] (snapshots).
+  // To avoid React remount flicker we update root slightly after steps (small timeout).
   const handleInsert = () => {
     const val = Number(inputValue)
     if (isNaN(val)) return
+
     const stepsSnapshot: AVLStep[] = []
     const newRoot = insertRecursive(root, val, stepsSnapshot)
-    setRoot(newRoot)
+
+    // Save snapshots (cloned inside pushStep) - these snapshots contain unique ids
     setSteps(stepsSnapshot)
     setCurrentStep(0)
+    setCurrentCodeLine(stepsSnapshot[0]?.codeLine ?? -1)
+
+    // Small delay to avoid sudden remount and visual flicker when we replace root
+    // The steps list is what UI will use for the step-by-step display; after a
+    // brief moment we update the actual root to the new balanced tree.
+    setTimeout(() => {
+      setRoot(newRoot)
+    }, 120)
+
     setInputValue("")
   }
 
   const handleDelete = () => {
     const val = Number(inputValue)
     if (isNaN(val)) return
+
     const stepsSnapshot: AVLStep[] = []
     const newRoot = deleteRecursive(root, val, stepsSnapshot)
-    setRoot(newRoot)
+
     setSteps(stepsSnapshot)
     setCurrentStep(0)
+    setCurrentCodeLine(stepsSnapshot[0]?.codeLine ?? -1)
+
+    setTimeout(() => {
+      setRoot(newRoot)
+    }, 120)
+
     setInputValue("")
   }
 
-  const stepForward = () => setCurrentStep(prev => Math.min(prev + 1, steps.length - 1))
-  const stepBack = () => setCurrentStep(prev => Math.max(prev - 1, 0))
+  const stepForward = () => {
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+  }
+  const stepBack = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0))
+  }
   const reset = () => resetTree()
 
   useEffect(() => {
@@ -414,18 +371,30 @@ export default function AVLVisualizer() {
     codeLine: -1,
   }
 
+  // Render tree nodes recursively with motion; use unique key composed of node.id + props to avoid duplicates
   const renderNode = (node: AVLNode | null, depth = 0): JSX.Element | null => {
     if (!node) return null
 
     const isHighlighted = currentStepData.highlightedNodes.includes(node.id)
 
     return (
-      <div className="flex flex-col items-center" key={node.id}>
-        <div
+      <motion.div
+        key={`${node.id}-${node.value}-${node.height}`}
+        layout
+        initial={{ opacity: 0, scale: 0.75 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.6 }}
+        transition={{ duration: 0.28, ease: "easeOut" }}
+        className="flex flex-col items-center"
+      >
+        <motion.div
+          layout
           className={`
             w-16 h-16 rounded-full flex items-center justify-center border-2 font-bold relative
             ${isHighlighted ? "border-primary bg-primary/10 ring-2 ring-primary/30" : "border-muted bg-background"}
           `}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
           {node.value}
           {node.rotationType && (
@@ -433,36 +402,47 @@ export default function AVLVisualizer() {
               {node.rotationType}
             </Badge>
           )}
-        </div>
+        </motion.div>
+
         <div className="text-xs text-muted-foreground mt-1">h:{node.height}</div>
-        <div className="flex space-x-6 mt-2">
-          {renderNode(node.left, depth + 1)}
-          {renderNode(node.right, depth + 1)}
+
+        <div className="flex space-x-6 mt-3">
+          <AnimatePresence mode="popLayout">
+            {node.left && (
+              <motion.div key={`L-${node.left.id}`} layout>
+                {renderNode(node.left, depth + 1)}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="popLayout">
+            {node.right && (
+              <motion.div key={`R-${node.right.id}`} layout>
+                {renderNode(node.right, depth + 1)}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     )
   }
+
+  const applicationsShort = applications
 
   return (
     <VisualizerLayout
       title="AVL Tree Visualizer"
       description="Self-balancing binary search trees with automatic rotations to maintain O(log n) height"
       difficulty="Advanced"
-      isPlaying={false}
-      onPlay={() => {}}
-      onPause={() => {}}
-      onStepBack={stepBack}
-      onStepForward={stepForward}
-      onReset={reset}
-      currentStep={currentStep}
-      totalSteps={steps.length}
+      
       complexity={{
         time: "Insert/Delete/Search: O(log n)",
         space: "O(n)",
       }}
-      applications={applications}
+      applications={applicationsShort}
     >
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-8">
+        {/* Intro Card */}
         <Card className="bg-orange-50 border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -471,19 +451,28 @@ export default function AVLVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="space-y-2 text-sm">
-              <div>
-                An <strong>AVL tree</strong> is a self-balancing binary search tree where the height difference (balance factor)
-                between left and right subtrees of any node is at most 1.
-              </div>
-              <div>
-                After insertions or deletions, <strong>rotations</strong> (LL, RR, LR, RL) restore balance, guaranteeing O(log n) operations.
-                Rotations are visually indicated during steps.
-              </div>
+            <CardDescription className="text-sm text-gray-600 leading-relaxed">
+              <span className="block">
+                An <strong>AVL Tree</strong> is a type of <em>self-balancing binary search tree</em>.
+                After every insertion or deletion, it checks the balance factor of each node to
+                ensure the height difference between left and right subtrees never exceeds 1.
+              </span>
+              <br />
+              <span className="block">
+                It performs rotations (LL, RR, LR, RL) to maintain balance, guaranteeing
+                <strong> O(log n) </strong> search, insert, and delete operations.
+              </span>
+              <br />
+              <span className="block">
+                <strong>Example:</strong> Insert <code>10, 20, 30</code>.
+                The tree rotates to make <code>20</code> the root, forming a balanced AVL tree.
+              </span>
             </CardDescription>
+
           </CardContent>
         </Card>
 
+        {/* Controls */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="lg:col-span-2">
             <CardHeader>
@@ -518,19 +507,30 @@ export default function AVLVisualizer() {
           </Card>
         </div>
 
+        {/* Visualization */}
         <Card>
           <CardHeader>
             <CardTitle>AVL Tree</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="min-h-64 p-4 bg-muted/10 rounded flex justify-center items-start">
-              {currentStepData.tree ? renderNode(currentStepData.tree) : (
-                <div className="text-muted-foreground italic">Tree is empty</div>
-              )}
+            <div className="min-h-64 p-4 bg-muted/10 rounded flex justify-center items-start overflow-auto">
+              <div className="w-full flex justify-center py-4">
+                <AnimatePresence mode="popLayout">
+                  {currentStepData.tree ? (
+                    // Render snapshot tree if steps active, else render live root
+                    renderNode(currentStepData.tree)
+                  ) : root ? (
+                    renderNode(root)
+                  ) : (
+                    <div className="text-muted-foreground italic">Tree is empty</div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Pseudocode */}
         <Card>
           <CardHeader>
             <CardTitle>Pseudocode (Insert & Delete)</CardTitle>
@@ -554,6 +554,7 @@ export default function AVLVisualizer() {
           </div>
         </Card>
 
+        {/* Current Step */}
         {steps.length > 0 && (
           <Card>
             <CardHeader>
@@ -563,10 +564,16 @@ export default function AVLVisualizer() {
               <div className="text-sm p-3 bg-accent/10 rounded-lg border border-accent/20">
                 {currentStepData.description}
               </div>
+              <div className="flex items-center gap-2 mt-3">
+                <Button onClick={stepBack} variant="outline">Back</Button>
+                <div className="text-sm">{currentStep + 1} / {steps.length}</div>
+                <Button onClick={stepForward} variant="outline">Forward</Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
+        {/* Legend */}
         <Card>
           <CardHeader>
             <CardTitle>Legend</CardTitle>

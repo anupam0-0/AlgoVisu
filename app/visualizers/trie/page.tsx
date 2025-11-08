@@ -1,24 +1,22 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
-import { Plus, X, Search, GitBranch, Hash, List, Zap } from "lucide-react"
+import { Plus, X, Search, GitBranch } from "lucide-react"
 
-// Trie Node
+// Trie Node (as per GeeksforGeeks implementation)
 interface TrieNode {
-  char: string
-  isEnd: boolean
-  children: { [key: string]: TrieNode }
+  children: (TrieNode | null)[]
+  isEndOfWord: boolean
+  char: string // for visualization only
   id: string
-  isHighlighted?: boolean
-  isPath?: boolean
 }
 
-type Operation = "insert" | "search" | "delete" | "findPrefix"
+type Operation = "insert" | "search"
 
 interface Step {
   description: string
@@ -30,59 +28,45 @@ interface Step {
 
 const pseudocode = [
   "class TrieNode:",
-  "  char = ''",
-  "  isEnd = false",
-  "  children = {}",
+  "  children = array of size 26 (initialized to null)",
+  "  isEndOfWord = false",
   "",
-  "// Insert",
-  "function insert(word):",
+  "function insert(root, key):",
   "  node = root",
-  "  for char in word:",
-  "    if char not in node.children:",
-  "      node.children[char] = new TrieNode(char)",
-  "    node = node.children[char]",
-  "  node.isEnd = true",
+  "  for each character c in key:",
+  "    index = c - 'a'",
+  "    if node.children[index] is null:",
+  "      node.children[index] = new TrieNode()",
+  "    node = node.children[index]",
+  "  node.isEndOfWord = true",
   "",
-  "// Search",
-  "function search(word):",
+  "function search(root, key):",
   "  node = root",
-  "  for char in word:",
-  "    if char not in node.children: return false",
-  "    node = node.children[char]",
-  "  return node.isEnd",
-  "",
-  "// Delete",
-  "function delete(word):",
-  "  helper(root, word, 0)",
-  "",
-  "// Find Words with Prefix",
-  "function findWordsWithPrefix(prefix):",
-  "  node = traverseToPrefix(prefix)",
-  "  if not node: return []",
-  "  return dfsCollectWords(node, prefix)",
-  "",
-  "// DFS Helper",
-  "function dfsCollectWords(node, current):",
-  "  results = []",
-  "  if node.isEnd: results.append(current)",
-  "  for char, child in node.children.items():",
-  "    results += dfsCollectWords(child, current + char)",
-  "  return results",
+  "  for each character c in key:",
+  "    index = c - 'a'",
+  "    if node.children[index] is null:",
+  "      return false",
+  "    node = node.children[index]",
+  "  return node.isEndOfWord",
 ]
 
+const ALPHABET_SIZE = 26
+
+// Create new trie node
+const createNode = (char: string = "", id: string): TrieNode => ({
+  children: new Array(ALPHABET_SIZE).fill(null),
+  isEndOfWord: false,
+  char,
+  id,
+})
+
 export default function TrieVisualizer() {
-  const [root, setRoot] = useState<TrieNode>({
-    char: "",
-    isEnd: false,
-    children: {},
-    id: "root",
-  })
+  const [root, setRoot] = useState<TrieNode>(createNode("", "root"))
   const [word, setWord] = useState("")
   const [operation, setOperation] = useState<Operation>("insert")
   const [steps, setSteps] = useState<Step[]>([])
   const [currentStep, setCurrentStep] = useState(0)
   const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
-  const [radixMode, setRadixMode] = useState(false) // Compressed trie toggle
 
   const applications = [
     {
@@ -100,21 +84,11 @@ export default function TrieVisualizer() {
       description: "Longest prefix matching in networking uses binary tries",
       examples: ["Router forwarding tables", "CDNs", "Load balancers"],
     },
-    {
-      title: "Unicode Text Processing",
-      description: "Support for international characters and custom alphabets",
-      examples: ["Multilingual search", "Emoji dictionaries", "Specialized symbol sets"],
-    },
   ]
 
   // Reset trie
   const resetTrie = () => {
-    setRoot({
-      char: "",
-      isEnd: false,
-      children: {},
-      id: "root",
-    })
+    setRoot(createNode("", "root"))
     setSteps([])
     setCurrentStep(0)
     setCurrentCodeLine(-1)
@@ -124,38 +98,15 @@ export default function TrieVisualizer() {
   const cloneNode = (node: TrieNode): TrieNode => {
     const cloned: TrieNode = {
       ...node,
-      children: {},
+      children: [...node.children],
       id: node.id,
     }
-    for (const key in node.children) {
-      cloned.children[key] = cloneNode(node.children[key])
+    for (let i = 0; i < ALPHABET_SIZE; i++) {
+      if (node.children[i]) {
+        cloned.children[i] = cloneNode(node.children[i]!)
+      }
     }
     return cloned
-  }
-
-  // Compress trie into radix tree (single-child chains merged)
-  const compressToRadix = (node: TrieNode): TrieNode => {
-    const compressed: TrieNode = { ...node, children: {} }
-    for (const char in node.children) {
-      let child = node.children[char]
-      let mergedChars = char
-
-      // Traverse single-child chains
-      while (Object.keys(child.children).length === 1 && !child.isEnd) {
-        const nextChar = Object.keys(child.children)[0]
-        mergedChars += nextChar
-        child = child.children[nextChar]
-      }
-
-      // Recursively compress the end of chain
-      const finalChild = compressToRadix(child)
-      compressed.children[mergedChars] = {
-        ...finalChild,
-        char: mergedChars,
-        id: `${node.id}-${mergedChars}`,
-      }
-    }
-    return compressed
   }
 
   // Add step helper
@@ -166,12 +117,11 @@ export default function TrieVisualizer() {
     path: string[],
     codeLine: number
   ) => {
-    const snapshot = radixMode ? compressToRadix(trie) : trie
     setSteps((prev) => [
       ...prev,
       {
         description,
-        trieSnapshot: cloneNode(snapshot),
+        trieSnapshot: cloneNode(trie),
         highlightedNodes: [...highlighted],
         pathNodes: [...path],
         codeLine,
@@ -179,211 +129,128 @@ export default function TrieVisualizer() {
     ])
   }
 
-  // === INSERT ===
+  // === INSERT OPERATION (GeeksforGeeks style) ===
   const handleInsert = () => {
     if (!word.trim()) return
-    const cleanWord = word // Now supports Unicode!
+    const cleanWord = word.toLowerCase()
+    
+    // Validate input (only a-z)
+    if (!/^[a-z]+$/.test(cleanWord)) {
+      alert("Only lowercase letters a-z are supported.")
+      return
+    }
 
     let current = cloneNode(root)
     const path: string[] = []
     const highlighted: string[] = []
 
-    addStep(`Starting insertion of "${cleanWord}"`, current, [], [], 7)
-
+    addStep(`Starting insertion of "${cleanWord}"`, current, [], [], 5)
+    
     let node = current
     for (let i = 0; i < cleanWord.length; i++) {
       const char = cleanWord[i]
+      const index = char.charCodeAt(0) - 'a'.charCodeAt(0)
       path.push(node.id)
 
-      if (!node.children[char]) {
+      if (node.children[index] === null) {
         const newId = `${node.id}-${char}`
-        node.children[char] = {
-          char,
-          isEnd: false,
-          children: {},
-          id: newId,
-        }
-        addStep(`Created new node for '${char}'`, current, [newId], [...path], 10)
+        node.children[index] = createNode(char, newId)
+        addStep(
+          `Created new node for '${char}' at index ${index}`,
+          current,
+          [newId],
+          [...path],
+          9
+        )
       }
 
-      node = node.children[char]
+      node = node.children[index]!
       highlighted.push(node.id)
-      addStep(`Moved to node '${char}'`, current, [node.id], [...path, node.id], 12)
+      addStep(
+        `Moved to node '${char}'`,
+        current,
+        [node.id],
+        [...path, node.id],
+        11
+      )
     }
 
-    node.isEnd = true
-    addStep(`Marked end of word "${cleanWord}"`, current, [node.id], [...path, node.id], 13)
+    node.isEndOfWord = true
+    addStep(
+      `Marked end of word "${cleanWord}"`,
+      current,
+      [node.id],
+      [...path, node.id],
+      12
+    )
+
     setRoot(current)
     setCurrentStep(0)
     setWord("")
   }
 
-  // === SEARCH ===
+  // === SEARCH OPERATION (GeeksforGeeks style) ===
   const handleSearch = () => {
     if (!word.trim()) return
-    const cleanWord = word
+    const cleanWord = word.toLowerCase()
+    
+    // Validate input (only a-z)
+    if (!/^[a-z]+$/.test(cleanWord)) {
+      alert("Only lowercase letters a-z are supported.")
+      return
+    }
 
     let current = cloneNode(root)
     const path: string[] = []
     let node = current
 
-    addStep(`Starting search for "${cleanWord}"`, current, [], [], 16)
+    addStep(`Starting search for "${cleanWord}"`, current, [], [], 14)
 
     for (let i = 0; i < cleanWord.length; i++) {
       const char = cleanWord[i]
+      const index = char.charCodeAt(0) - 'a'.charCodeAt(0)
       path.push(node.id)
 
-      if (!node.children[char]) {
+      if (node.children[index] === null) {
         addStep(
-          `Character '${char}' not found. Word "${cleanWord}" does not exist.`,
+          `Character '${char}' not found at index ${index}. Word "${cleanWord}" does not exist.`,
           current,
           [],
           [...path],
-          19
+          18
         )
         setCurrentStep(0)
         setWord("")
         return
       }
 
-      node = node.children[char]
-      addStep(`Found '${char}'`, current, [node.id], [...path, node.id], 20)
+      node = node.children[index]!
+      addStep(
+        `Found '${char}' at index ${index}`,
+        current,
+        [node.id],
+        [...path, node.id],
+        20
+      )
     }
 
-    if (node.isEnd) {
-      addStep(`Word "${cleanWord}" found!`, current, [node.id], [...path, node.id], 21)
+    if (node.isEndOfWord) {
+      addStep(
+        `Word "${cleanWord}" found! (isEndOfWord = true)`,
+        current,
+        [node.id],
+        [...path, node.id],
+        21
+      )
     } else {
       addStep(
-        `"${cleanWord}" is a prefix but not a complete word.`,
+        `"${cleanWord}" exists as prefix but is not a complete word (isEndOfWord = false)`,
         current,
         [node.id],
         [...path, node.id],
         21
       )
     }
-
-    setCurrentStep(0)
-    setWord("")
-  }
-
-  // === DELETE ===
-  const handleDelete = () => {
-    if (!word.trim()) return
-    const cleanWord = word
-
-    let current = cloneNode(root)
-    const path: TrieNode[] = [current]
-    let node = current
-
-    addStep(`Starting deletion of "${cleanWord}"`, current, [], [], 24)
-
-    for (let i = 0; i < cleanWord.length; i++) {
-      const char = cleanWord[i]
-      if (!node.children[char]) {
-        addStep(
-          `Word "${cleanWord}" not found. Nothing to delete.`,
-          current,
-          [],
-          path.map(n => n.id),
-          30
-        )
-        setCurrentStep(0)
-        setWord("")
-        return
-      }
-      node = node.children[char]
-      path.push(node)
-      addStep(`Traversing to '${char}'`, current, [node.id], path.map(n => n.id), 31)
-    }
-
-    if (!node.isEnd) {
-      addStep(
-        `"${cleanWord}" is not a complete word. Cannot delete.`,
-        current,
-        [node.id],
-        path.map(n => n.id),
-        27
-      )
-    } else {
-      node.isEnd = false
-      addStep(
-        `Deleted word "${cleanWord}" (marked as non-end).`,
-        current,
-        [node.id],
-        path.map(n => n.id),
-        28
-      )
-    }
-
-    setRoot(current)
-    setCurrentStep(0)
-    setWord("")
-  }
-
-  // === FIND WORDS WITH PREFIX ===
-  const handleFindPrefix = () => {
-    if (!word.trim()) return
-    const prefix = word
-
-    let current = cloneNode(root)
-    const path: string[] = []
-    let node = current
-
-    addStep(`Finding all words with prefix "${prefix}"`, current, [], [], 28)
-
-    // Traverse to prefix
-    for (let i = 0; i < prefix.length; i++) {
-      const char = prefix[i]
-      path.push(node.id)
-
-      if (!node.children[char]) {
-        addStep(
-          `Prefix "${prefix}" not found in trie.`,
-          current,
-          [],
-          [...path],
-          29
-        )
-        setCurrentStep(0)
-        setWord("")
-        return
-      }
-      node = node.children[char]
-      addStep(`Reached prefix node '${char}'`, current, [node.id], [...path, node.id], 29)
-    }
-
-    // DFS to collect all words
-    const results: string[] = []
-    const dfsStack: { node: TrieNode; current: string; path: string[] }[] = [
-      { node, current: prefix, path: [...path, node.id] },
-    ]
-    const highlightedNodes: string[] = []
-
-    while (dfsStack.length > 0) {
-      const { node: currNode, current: currStr, path: currPath } = dfsStack.pop()!
-      if (currNode.isEnd) {
-        results.push(currStr)
-        highlightedNodes.push(currNode.id)
-      }
-      for (const char of Object.keys(currNode.children).sort().reverse()) {
-        const child = currNode.children[char]
-        dfsStack.push({
-          node: child,
-          current: currStr + char,
-          path: [...currPath, child.id],
-        })
-      }
-    }
-
-    addStep(
-      results.length > 0
-        ? `Found ${results.length} word(s): ${results.join(", ")}`
-        : `No complete words found under prefix "${prefix}"`,
-      current,
-      highlightedNodes,
-      [...path, node.id],
-      35
-    )
 
     setCurrentStep(0)
     setWord("")
@@ -408,32 +275,28 @@ export default function TrieVisualizer() {
 
   const currentStepData = steps[currentStep] || {
     description: "Ready to perform an operation.",
-    trieSnapshot: radixMode ? compressToRadix(root) : root,
+    trieSnapshot: root,
     highlightedNodes: [],
     pathNodes: [],
     codeLine: -1,
   }
 
-  // Recursive render function with animation support
+  // Recursive render function
   const renderNode = (node: TrieNode, depth = 0): JSX.Element => {
     const isHighlighted = currentStepData.highlightedNodes.includes(node.id)
     const isPath = currentStepData.pathNodes.includes(node.id)
-    const isEnd = node.isEnd
+    const isEnd = node.isEndOfWord
 
     return (
-      <div
-        className="ml-4 animate-fadeInUp"
-        key={node.id}
-        style={{ animationDelay: `${depth * 50}ms` }}
-      >
+      <div className="ml-4" key={node.id}>
         <div
           className={`
-            flex items-center gap-2 p-2 rounded border mb-1 transition-all duration-300
+            flex items-center gap-2 p-2 rounded border mb-1
             ${isPath ? "bg-primary/10 border-primary" : "bg-background border-muted"}
-            ${isHighlighted ? "ring-2 ring-primary/50 scale-105" : ""}
+            ${isHighlighted ? "ring-2 ring-primary/50" : ""}
           `}
         >
-          <span className="font-mono w-8 text-center truncate">
+          <span className="font-mono w-6 text-center">
             {node.char || "•"}
           </span>
           {isEnd && (
@@ -442,13 +305,14 @@ export default function TrieVisualizer() {
             </Badge>
           )}
         </div>
-        {Object.keys(node.children).length > 0 && (
-          <div className="border-l-2 border-dashed border-muted pl-2">
-            {Object.keys(node.children)
-              .sort()
-              .map((char) => renderNode(node.children[char], depth + 1))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-1">
+          {node.children.map((child, idx) => {
+            if (child !== null) {
+              return renderNode(child, depth + 1)
+            }
+            return null
+          })}
+        </div>
       </div>
     )
   }
@@ -456,7 +320,7 @@ export default function TrieVisualizer() {
   return (
     <VisualizerLayout
       title="Trie Visualizer"
-      description="Visualize prefix trees with Unicode support, prefix search, and radix compression"
+      description="Visualize standard trie implementation for insert and search operations (GeeksforGeeks style)"
       difficulty="Intermediate"
       isPlaying={false}
       onPlay={() => {}}
@@ -472,23 +336,6 @@ export default function TrieVisualizer() {
       }}
       applications={applications}
     >
-      <style jsx global>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeInUp {
-          animation: fadeInUp 0.4s ease-out forwards;
-          opacity: 0;
-        }
-      `}</style>
-
       <div className="w-full space-y-6">
         {/* Info Card */}
         <Card className="bg-orange-50 border-primary">
@@ -499,18 +346,12 @@ export default function TrieVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm">
-              <div>
-                A <strong>trie</strong> (prefix tree) stores strings by sharing common prefixes.
-                Each node represents a character (or string segment in radix mode), and paths from root to marked nodes spell complete words.
-              </div>
-              <div>
-                <strong>Now supports:</strong> Unicode characters, custom alphabets, prefix-based word search, and compressed (radix) representation.
-              </div>
-              <div>
-                <strong>Radix Mode:</strong> Merges single-child chains to reduce memory and improve readability.
-              </div>
-            </div>
+            <CardDescription className="space-y-2 text-sm">
+              <span className="block">
+                A <strong>trie</strong> (prefix tree) is a tree-like data structure that stores strings by sharing common prefixes.
+                Each node represents a single character, and paths from root to marked nodes spell complete words.
+              </span>
+            </CardDescription>
           </CardContent>
         </Card>
 
@@ -537,76 +378,34 @@ export default function TrieVisualizer() {
               >
                 <Search className="h-4 w-4 mr-2" /> Search
               </Button>
-              <Button
-                variant={operation === "delete" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setOperation("delete")}
-                className="w-full justify-start"
-              >
-                <X className="h-4 w-4 mr-2" /> Delete
-              </Button>
-              <Button
-                variant={operation === "findPrefix" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setOperation("findPrefix")}
-                className="w-full justify-start"
-              >
-                <List className="h-4 w-4 mr-2" /> Find Prefix
-              </Button>
             </CardContent>
           </Card>
 
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Word / Prefix Input</CardTitle>
+              <CardTitle className="text-lg">Word Input</CardTitle>
             </CardHeader>
             <CardContent className="flex gap-2">
               <Input
-                placeholder="Enter word or prefix (supports Unicode!)"
+                placeholder="Enter a word (a-z only)"
                 value={word}
-                onChange={(e) => setWord(e.target.value)}
+                onChange={(e) => setWord(e.target.value.toLowerCase())}
                 className="flex-1"
               />
               <Button
-                onClick={
-                  operation === "insert"
-                    ? handleInsert
-                    : operation === "search"
-                    ? handleSearch
-                    : operation === "delete"
-                    ? handleDelete
-                    : handleFindPrefix
-                }
+                onClick={operation === "insert" ? handleInsert : handleSearch}
                 className="gap-1"
               >
-                {operation === "insert"
-                  ? "Insert"
-                  : operation === "search"
-                  ? "Search"
-                  : operation === "delete"
-                  ? "Delete"
-                  : "Find Words"}
+                {operation === "insert" ? "Insert" : "Search"}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Options</CardTitle>
+              <CardTitle className="text-lg">Reset</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Radix Mode</span>
-                <Button
-                  variant={radixMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setRadixMode(!radixMode)}
-                  className="gap-1"
-                >
-                  <Zap className="h-3 w-3" />
-                  {radixMode ? "ON" : "OFF"}
-                </Button>
-              </div>
+            <CardContent>
               <Button onClick={reset} className="w-full" variant="outline">
                 Clear Trie
               </Button>
@@ -617,15 +416,15 @@ export default function TrieVisualizer() {
         {/* Visualization */}
         <Card>
           <CardHeader>
-            <CardTitle>Trie Structure {radixMode && "(Radix Mode)"}</CardTitle>
+            <CardTitle>Trie Structure</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="bg-muted/20 p-4 rounded min-h-64">
-              {Object.keys(currentStepData.trieSnapshot.children).length === 0 ? (
+              {root.children.every(child => child === null) ? (
                 <div className="text-muted-foreground italic">Trie is empty</div>
               ) : (
                 <div className="font-sans">
-                  {renderNode(currentStepData.trieSnapshot)}
+                  {renderNode(root)}
                 </div>
               )}
             </div>
@@ -635,14 +434,14 @@ export default function TrieVisualizer() {
         {/* Pseudocode */}
         <Card>
           <CardHeader>
-            <CardTitle>Pseudocode</CardTitle>
+            <CardTitle>Pseudocode (GeeksforGeeks)</CardTitle>
           </CardHeader>
           <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-60 overflow-y-auto">
             {pseudocode.map((line, index) => (
               <div
                 key={index}
                 className={`
-                  py-1 px-2 rounded transition-all duration-200
+                  py-1 px-2 rounded
                   ${currentCodeLine === index + 1
                     ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
                     : "text-muted-foreground"
@@ -679,7 +478,7 @@ export default function TrieVisualizer() {
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <span className="font-mono">•</span>
-                <span>Root</span>
+                <span>Root (no character)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50">
@@ -692,15 +491,9 @@ export default function TrieVisualizer() {
                 <span>Highlighted Node</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border-l-2 border-dashed border-muted pl-2"></div>
+                <div className="w-4 h-4 rounded border-l-2 border-muted pl-2"></div>
                 <span>Path Traversal</span>
               </div>
-              {radixMode && (
-                <div className="flex items-center gap-2">
-                  <span className="font-mono">"abc"</span>
-                  <span>Compressed Segment</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

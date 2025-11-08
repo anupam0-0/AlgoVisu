@@ -26,104 +26,154 @@ const getInitialStack = (type: StackType): StackElement[] => {
 };
 
 // Detailed educational content per type
-const typeDetails: Record<StackType, {
-  title: string;
-  icon: JSX.Element;
-  description: string;
-  howItWorks: string[];
-  useCases: string[];
-  complexity: { time: string; space: string };
-}> = {
+const typeDetails: Record<
+  StackType,
+  {
+    title: string;
+    icon: JSX.Element;
+    description: string;
+    howItWorks: string[];
+    useCases: string[];
+    complexity: { time: string; space: string };
+    advancedInsights?: string[];
+    visualizationNotes?: string[];
+  }
+> = {
   basic: {
     title: "Basic Stack",
     icon: <Layers className="h-5 w-5 text-muted-foreground" />,
-    description: "The standard Last-In-First-Out (LIFO) data structure where elements are added and removed only from the top.",
+    description:
+      "A stack follows the Last-In-First-Out (LIFO) principle — the last item pushed is the first one popped. Think of a stack of plates: you add and remove only from the top.",
     howItWorks: [
-      "Uses an array or linked list internally.",
-      "Push adds to the top; pop removes from the top.",
-      "Peek inspects the top without removal.",
-      "No size restrictions in theory (but limited by memory)."
+      "Backed by an array or linked list.",
+      "Push adds to the top; pop removes from the top; peek inspects the top.",
+      "Stack overflow: pushing onto a full/limited stack. Stack underflow: popping from an empty stack.",
+      "Index of top grows/shrinks as elements are added/removed.",
     ],
     useCases: [
       "Function call management (call stack)",
-      "Expression evaluation and syntax parsing",
-      "Undo mechanisms in software",
-      "Depth-First Search (DFS) in graphs"
+      "Expression evaluation (infix → postfix)",
+      "Undo/redo systems",
+      "Depth-First Search (DFS) in graphs",
     ],
-    complexity: { time: "O(1) for push/pop/peek", space: "O(n)" }
+    complexity: { time: "O(1) for push/pop/peek", space: "O(n)" },
+    advancedInsights: [
+      "Recursive function calls allocate activation records on the call stack.",
+      "Postfix (Reverse Polish) evaluation is naturally implemented with stacks.",
+      "Parsing and backtracking leverage stacks for state management.",
+    ],
+    visualizationNotes: [
+      "Green = recently pushed/peeked (highlight).",
+      "Red & faded = popped (removal animation).",
+      "‘TOP’ indicator points to the current top element.",
+    ],
   },
   bounded: {
     title: "Bounded Stack",
     icon: <Lock className="h-5 w-5 text-muted-foreground" />,
-    description: "A stack with a fixed maximum capacity, preventing memory overflow in constrained environments.",
+    description:
+      "A stack with a fixed maximum capacity to prevent unbounded memory growth — useful in constrained environments.",
     howItWorks: [
       "Pre-allocates a fixed-size buffer (e.g., array of size N).",
-      "Push is rejected when the stack is full.",
-      "Prevents runtime errors due to uncontrolled growth.",
-      "Often implemented in low-level or embedded systems."
+      "Push is rejected when the stack is full (overflow protection).",
+      "Prevents runtime crashes due to uncontrolled growth.",
+      "Common in embedded/real-time systems.",
     ],
     useCases: [
       "Microcontrollers and IoT devices",
       "Real-time operating systems (RTOS)",
       "Hardware interrupt stacks",
-      "Safety-critical systems (avionics, medical devices)"
+      "Safety-critical systems (avionics, medical devices)",
     ],
-    complexity: { time: "O(1) for all operations", space: "O(1) fixed" }
+    complexity: { time: "O(1) for all operations", space: "O(1) fixed" },
+    advancedInsights: [
+      "Bounded stacks can be placed in fast on-chip memory (SRAM) for deterministic latency.",
+      "Compile-time checks and guard regions detect overflow conditions.",
+    ],
+    visualizationNotes: [
+      "Push button disables when capacity reached.",
+      "Status panel shows size & empty state in real time.",
+    ],
   },
   resizable: {
     title: "Resizable Stack",
     icon: <Zap className="h-5 w-5 text-muted-foreground" />,
-    description: "A dynamic stack that automatically expands its capacity when needed, commonly used in high-level programming languages.",
+    description:
+      "A dynamic stack that grows automatically (e.g., doubling capacity) — common in high-level languages.",
     howItWorks: [
-      "Backed by a dynamic array (e.g., JavaScript Array, Python list).",
-      "When full, allocates a larger block (e.g., doubles size) and copies data.",
-      "Amortized O(1) time for push due to infrequent resizing.",
-      "Balances memory efficiency and performance."
+      "Backed by a dynamic array (JS Array, Python list).",
+      "On full: allocate larger buffer, copy elements (rare event).",
+      "Amortized O(1) push due to infrequent resizing.",
+      "Trade-off between memory overhead & performance.",
     ],
     useCases: [
-      "Web application state management",
-      "Scripting language runtimes (Python, JS, Ruby)",
-      "General-purpose application development",
-      "Interactive tools and REPLs"
+      "General-purpose applications",
+      "Interpreter runtimes & REPLs",
+      "Web app state transitions",
+      "Interactive tools",
     ],
-    complexity: { time: "Amortized O(1) push, O(1) pop/peek", space: "O(n)" }
+    complexity: { time: "Amortized O(1) push, O(1) pop/peek", space: "O(n)" },
+    advancedInsights: [
+      "Doubling strategy yields amortized O(1); shrinking heuristics avoid thrashing.",
+      "Allocator behavior (fragmentation, cache locality) impacts performance.",
+    ],
+    visualizationNotes: [
+      "Behaves like basic stack here, but conceptually resizes when needed.",
+    ],
   },
   persistent: {
     title: "Persistent Stack",
     icon: <Clock className="h-5 w-5 text-muted-foreground" />,
-    description: "An immutable stack where every operation returns a new version, preserving all previous states.",
+    description:
+      "Immutable stack: each operation returns a new version while preserving previous versions (structural sharing).",
     howItWorks: [
-      "No mutation: each push/pop creates a new stack instance.",
-      "Shares structure with previous versions (structural sharing).",
+      "No in-place mutation; push/pop create new versions.",
+      "Shares most nodes with prior versions → memory efficient over copies.",
       "Enables safe time-travel debugging and undo without side effects.",
-      "Common in functional programming paradigms."
+      "Popular in functional programming & immutable state management.",
     ],
     useCases: [
-      "Redux and state management libraries",
-      "Time-travel debugging (e.g., React DevTools)",
-      "Version control systems (conceptually)",
-      "Blockchain state transitions"
+      "Redux-like state histories",
+      "Time-travel debugging",
+      "Purely functional data structures",
+      "Versioned states",
     ],
-    complexity: { time: "O(1) for push/pop (with sharing)", space: "O(n) per version (amortized)" }
+    complexity: { time: "O(1) push/pop with sharing", space: "O(n) across versions (amortized)" },
+    advancedInsights: [
+      "Linked-node representation allows O(1) persistent pushes via cons cells.",
+      "Garbage collection reclaims unreferenced versions automatically.",
+    ],
+    visualizationNotes: [
+      "‘History’ is maintained; popping restores a previous version.",
+    ],
   },
   min: {
     title: "Min Stack",
     icon: <TrendingDown className="h-5 w-5 text-muted-foreground" />,
-    description: "A specialized stack that supports retrieving the minimum element in constant time.",
+    description:
+      "A specialized stack that can return the current minimum in O(1) time via an auxiliary min stack.",
     howItWorks: [
-      "Maintains a secondary stack that tracks the current minimum at each level.",
-      "On push: compare new value with current min; push min(new, current) to min-stack.",
-      "On pop: pop from both main and min stacks.",
-      "Peek min: just read top of min-stack."
+      "Maintain a secondary stack tracking min at each depth.",
+      "On push: minStack.push(min(newValue, minStack.top())).",
+      "On pop: pop from both main & min stacks.",
+      "getMin(): return minStack.top().",
     ],
     useCases: [
-      "Real-time stock price monitoring (track lowest price)",
-      "Leaderboard systems (track min/max scores)",
-      "Algorithm problems (e.g., LeetCode 'Min Stack')",
-      "Resource allocation (track minimum available resource)"
+      "Real-time stock monitoring (track lowest price)",
+      "Leaderboards (min/max tracking variants)",
+      "Interview & competitive programming problems",
+      "Resource allocation thresholds",
     ],
-    complexity: { time: "O(1) for all operations including getMin", space: "O(n) extra for min-stack" }
-  }
+    complexity: { time: "O(1) push/pop/peek/getMin", space: "O(n) extra for min-stack" },
+    advancedInsights: [
+      "A max stack is symmetric; both can be combined for min/max in O(1).",
+      "Space-optimized trick: store deltas or pairs to compress min history.",
+    ],
+    visualizationNotes: [
+      "Status panel shows current minimum.",
+      "Min updates whenever a smaller value is pushed.",
+    ],
+  },
 };
 
 export default function StackVisualizerPage() {
@@ -133,7 +183,11 @@ export default function StackVisualizerPage() {
   const [history, setHistory] = useState<StackElement[][]>([getInitialStack("persistent")]); // for persistent
   const [inputValue, setInputValue] = useState("");
   const [lastOperation, setLastOperation] = useState<string>("");
-  const [peekedValue, setPeekedValue] = useState<string | number | null>(null);
+  const [peekedValue, setPeekedValue] = useState<string | number | null>(null)
+
+  // NEW: Edge-case demo toggles
+  const [demoOverflow, setDemoOverflow] = useState(false)
+  const [demoUnderflow, setDemoUnderflow] = useState(false)
 
   // Reset on type change
   useEffect(() => {
@@ -166,6 +220,17 @@ export default function StackVisualizerPage() {
     }
   };
 
+  // --- Helpers (capacity calc for demo) ---
+  // For bounded stacks, capacity is fixed at 6 total elements (including "Base")
+  // For others, if demoOverflow is ON, cap at 4; else no cap.
+  const effectiveCapacity =
+    stackType === "bounded" ? 6 : demoOverflow ? 4 : Number.MAX_SAFE_INTEGER
+
+  const isBoundedFull = stack.length >= effectiveCapacity
+  const currentMin =
+    stackType === "min" && minStack.length > 0 ? minStack[minStack.length - 1] : null
+  const details = typeDetails[stackType];
+
   // --- Operations ---
   const pushElement = () => {
     if (!inputValue.trim()) return;
@@ -173,9 +238,10 @@ export default function StackVisualizerPage() {
     const val = !isNaN(Number(raw)) ? Number(raw) : raw;
     const id = Date.now();
 
-    if (stackType === "bounded" && stack.length >= 6) {
-      setLastOperation("❌ Stack full (max 5 elements)");
-      return;
+    // Overflow guard (bounded OR demo overflow)
+    if (isBoundedFull) {
+      setLastOperation("❌ Overflow: capacity reached — cannot push")
+      return
     }
 
     if (stackType === "persistent") {
@@ -191,8 +257,8 @@ export default function StackVisualizerPage() {
     }
 
     if (stackType === "min") {
-      const currentMin = minStack.length > 0 ? minStack[minStack.length - 1] : Infinity;
-      const newMin = typeof val === "number" ? Math.min(currentMin, val) : currentMin;
+      const lastMin = minStack.length > 0 ? minStack[minStack.length - 1] : Infinity;
+      const newMin = typeof val === "number" ? Math.min(lastMin, val) : lastMin;
       setMinStack([...minStack, newMin]);
     }
 
@@ -201,7 +267,14 @@ export default function StackVisualizerPage() {
   };
 
   const popElement = () => {
-    if (stack.length <= 1) return;
+    // Underflow demo: explicitly surface the error when empty
+    if (stack.length <= 1) {
+      if (demoUnderflow) {
+        setLastOperation("❌ Underflow: cannot pop from empty stack")
+      }
+      return;
+    }
+
     const popped = stack[stack.length - 1];
 
     if (stackType === "persistent") {
@@ -213,7 +286,7 @@ export default function StackVisualizerPage() {
       setStack(prev =>
         prev.map((el, i) => (i === prev.length - 1 ? { ...el, isPopped: true } : el))
       );
-      setTimeout(() => setStack(prev => prev.slice(0, -1)), 300);
+      setTimeout(() => setStack(prev => prev.slice(0, - 1)), 300);
     }
 
     if (stackType === "min") {
@@ -246,40 +319,36 @@ export default function StackVisualizerPage() {
     setLastOperation(`👁️ Peeked: ${top.value}`);
   };
 
-  // --- Helpers ---
-  const isBoundedFull = stackType === "bounded" && stack.length >= 6;
-  const currentMin = stackType === "min" && minStack.length > 0 ? minStack[minStack.length - 1] : null;
-  const details = typeDetails[stackType];
-
   // --- Render Stack ---
+  // --- Render Stack (BIGGER) ---
   const renderStack = () => (
-    <div className="flex flex-col-reverse space-y-reverse space-y-1 min-h-[200px] justify-end">
+    <div className="flex flex-col-reverse space-y-reverse space-y-2 min-h-[320px] justify-end">
       {stack.map((el, idx) => (
         <div
           key={el.id}
           className={`
-            w-32 h-12 border-2 rounded-lg flex items-center justify-center
-            transition-all duration-300 relative
-            ${
-              el.isHighlighted
-                ? "bg-green-100 border-green-500 text-green-800 scale-105"
-                : el.isPopped
-                  ? "bg-red-100 border-red-500 scale-95 opacity-50"
-                  : "bg-card border-border"
+          w-40 h-14 md:w-48 md:h-16 border-2 rounded-xl flex items-center justify-center
+          transition-all duration-300 relative
+          ${el.isHighlighted
+              ? "bg-green-100 border-green-500 text-green-800 scale-105"
+              : el.isPopped
+                ? "bg-red-100 border-red-500 scale-95 opacity-50"
+                : "bg-card border-border"
             }
-          `}
-          style={{ transform: el.isPopped ? "translateX(100px)" : "translateX(0)" }}
+        `}
+          style={{ transform: el.isPopped ? "translateX(120px)" : "translateX(0)" }}
         >
-          <span className="font-mono font-bold text-sm">{el.value}</span>
+          <span className="font-mono font-bold text-base md:text-lg">{el.value}</span>
           {idx === stack.length - 1 && idx > 0 && (
-            <div className="absolute -right-8 top-1/2 transform -translate-y-1/2">
-              <div className="text-xs font-medium text-green-600">← TOP</div>
+            <div className="absolute -right-10 top-1/2 -translate-y-1/2">
+              <div className="text-xs md:text-sm font-medium text-green-600">← TOP</div>
             </div>
           )}
         </div>
       ))}
     </div>
-  );
+  )
+
 
   return (
     <VisualizerLayout
@@ -304,10 +373,9 @@ export default function StackVisualizerPage() {
                 onClick={() => setStackType(type)}
                 className={`
                   flex-1 py-2 text-sm font-medium rounded-sm transition-colors
-                  ${
-                    stackType === type
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                  ${stackType === type
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                   }
                 `}
               >
@@ -326,7 +394,7 @@ export default function StackVisualizerPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p className="font-medium">{details.description}</p>
+            <div className="font-medium">{details.description}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div>
@@ -347,6 +415,28 @@ export default function StackVisualizerPage() {
               </div>
             </div>
 
+            {details.advancedInsights && details.advancedInsights.length > 0 && (
+              <div className="pt-2">
+                <h4 className="font-semibold text-foreground mb-2">Advanced Insights</h4>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  {details.advancedInsights.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {details.visualizationNotes && details.visualizationNotes.length > 0 && (
+              <div className="pt-2">
+                <h4 className="font-semibold text-foreground mb-2">Visualization Notes</h4>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  {details.visualizationNotes.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="pt-2 text-xs">
               <strong>Complexity:</strong> Time – {details.complexity.time}, Space – {details.complexity.space}
             </div>
@@ -364,8 +454,63 @@ export default function StackVisualizerPage() {
             )}
           </div>
           {renderStack()}
-          <div className="text-sm text-muted-foreground mt-2">Base</div>
+          
         </div>
+
+        {/* Visualization Key */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Visualization Key</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-green-100 border border-green-500" />
+              <span className="text-muted-foreground">Recent push / peek highlight</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-red-100 border border-red-500 opacity-60" />
+              <span className="text-muted-foreground">Popped (removal animation)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-card border border-border" />
+              <span className="text-muted-foreground">Regular element</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Edge Case Demo */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Edge Case Demo</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={demoOverflow}
+                onChange={(e) => setDemoOverflow(e.target.checked)}
+              />
+              <span className="text-muted-foreground">
+                Demo Overflow ({stackType === "bounded" ? "bounded capacity = 6" : "temp capacity = 4"})
+              </span>
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={demoUnderflow}
+                onChange={(e) => setDemoUnderflow(e.target.checked)}
+              />
+              <span className="text-muted-foreground">Demo Underflow (show error when empty pop)</span>
+            </label>
+            <div className="text-xs text-muted-foreground">
+              {isBoundedFull
+                ? "Capacity reached — pushing will trigger overflow."
+                : "Capacity available."}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Controls */}
         <div className="grid md:grid-cols-3 gap-4">
@@ -392,7 +537,7 @@ export default function StackVisualizerPage() {
                 Push to Stack
               </Button>
               {isBoundedFull && (
-                <p className="text-xs text-red-500">Max 5 elements allowed</p>
+                <div className="text-xs text-red-500">Max capacity reached</div>
               )}
             </CardContent>
           </Card>
@@ -407,7 +552,6 @@ export default function StackVisualizerPage() {
             <CardContent>
               <Button
                 onClick={popElement}
-                disabled={stack.length <= 1}
                 className="w-full"
                 variant="destructive"
               >
@@ -420,21 +564,31 @@ export default function StackVisualizerPage() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Eye className="h-5 w-5 text-blue-600" />
-                Peek
+                Peek & Reset
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button
-                onClick={peekElement}
-                disabled={stack.length <= 1}
-                className="w-full"
-                variant="outline"
-                style={{ borderColor: "#a8d8b9", color: "#1a5d38" }}
-              >
-                Peek at Top
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={peekElement}
+                  disabled={stack.length <= 1}
+                  className="flex-1"
+                  variant="outline"
+                  style={{ borderColor: "#a8d8b9", color: "#1a5d38" }}
+                >
+                  Peek at Top
+                </Button>
+                <Button
+                  onClick={resetStack}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  Reset
+                </Button>
+              </div>
             </CardContent>
           </Card>
+
         </div>
 
         {/* Info Panel */}
@@ -450,7 +604,7 @@ export default function StackVisualizerPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">
-                  {stack.length > 1 ? stack[stack.length - 1].value : "—"}
+                  {stack.length > 1 ? (stack[stack.length - 1].value as any) : "—"}
                 </div>
                 <div className="text-sm text-muted-foreground">Top Element</div>
               </div>
@@ -458,17 +612,12 @@ export default function StackVisualizerPage() {
                 <div className="text-2xl font-bold text-green-600">{stack.length <= 1 ? "Yes" : "No"}</div>
                 <div className="text-sm text-muted-foreground">Is Empty?</div>
               </div>
-              {stackType === "min" && currentMin !== null ? (
-                <div>
-                  <div className="text-2xl font-bold text-green-600">{currentMin}</div>
-                  <div className="text-sm text-muted-foreground">Current Min</div>
+              <div>
+                <div className={`text-sm font-medium ${lastOperation.startsWith("❌") ? "text-red-600" : "text-green-600"}`}>
+                  {lastOperation || "Ready to interact"}
                 </div>
-              ) : (
-                <div>
-                  <div className="text-sm font-medium text-green-600">{lastOperation || "Ready to interact"}</div>
-                  <div className="text-sm text-muted-foreground">Last Action</div>
-                </div>
-              )}
+                <div className="text-sm text-muted-foreground">Last Action</div>
+              </div>
             </div>
           </CardContent>
         </Card>

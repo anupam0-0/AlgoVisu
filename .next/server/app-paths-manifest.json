@@ -1,7 +1,7 @@
 {
-  "/visualizers/hash-table/page": "app/visualizers/hash-table/page.js",
-  "/visualizers/avl/page": "app/visualizers/avl/page.js",
+  "/visualizers/queue/page": "app/visualizers/queue/page.js",
+  "/visualizers/stack/page": "app/visualizers/stack/page.js",
+  "/visualizers/sorting/page": "app/visualizers/sorting/page.js",
   "/visualizers/page": "app/visualizers/page.js",
-  "/visualizers/tree/page": "app/visualizers/tree/page.js",
-  "/visualizers/trie/page": "app/visualizers/trie/page.js"
+  "/visualizers/linked-list/page": "app/visualizers/linked-list/page.js"
 }

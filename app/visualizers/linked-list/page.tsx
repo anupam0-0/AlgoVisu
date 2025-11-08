@@ -6,7 +6,7 @@ import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
-import { Plus, Trash2, ChevronRight, ArrowRight, Repeat, ArrowLeftRight, ArrowLeft } from "lucide-react"
+import { Plus, Trash2, ChevronRight, Repeat, ArrowLeftRight, ArrowLeft } from "lucide-react"
 
 interface NodeItem {
   value: string | number
@@ -22,8 +22,18 @@ type ListType = "singly" | "doubly" | "circular"
 function buildPointers(nodes: NodeItem[], listType: ListType): NodeItem[] {
   return nodes.map((node, i) => ({
     ...node,
-    nextId: i < nodes.length - 1 ? i + 1 : (listType === "circular" && nodes.length > 1 ? 0 : undefined),
-    prevId: (listType === "doubly" || listType === "circular") && i > 0 ? i - 1 : (listType === "circular" && i === 0 && nodes.length > 1 ? nodes.length - 1 : undefined)
+    nextId:
+      i < nodes.length - 1
+        ? i + 1
+        : listType === "circular" && nodes.length > 1
+          ? 0
+          : undefined,
+    prevId:
+      (listType === "doubly" || listType === "circular") && i > 0
+        ? i - 1
+        : listType === "circular" && i === 0 && nodes.length > 1
+          ? nodes.length - 1
+          : undefined,
   }))
 }
 
@@ -74,12 +84,115 @@ const pseudocodeDefinitions = {
   ],
 }
 
+// --- Static “About Linked Lists” content ---
+const linkedListIntro = {
+  bullets: [
+    "A linked list is a linear collection of nodes where each node stores a value and pointers (links) to its neighbors.",
+    "Unlike arrays, nodes are scattered in memory; links connect them. This makes insert/delete O(1) when you already have the node (no shifting).",
+    "Random access is not supported — reaching index i typically takes O(i).",
+    "Common operations: prepend (O(1)), append (O(n) unless you keep tail → O(1)), delete at index (O(n)), traversal (O(n)).",
+  ],
+  diagram: [
+    "HEAD           next         next         next         null",
+    "  │              │            │            │            │ ",
+    " [10] ───────▶ [20] ───────▶ [30] ───────▶ [40] ───▶  null",
+  ],
+}
+
+// --- Per-type dynamic content ---
+const typeDetails: Record<ListType, {
+  title: string
+  description: string
+  howItWorks: string[]
+  pros: string[]
+  cons: string[]
+  useCases: string[]
+  complexity: { prepend: string; append: string; deleteAtI: string; traverse: string }
+  diagram: string[]
+}> = {
+  singly: {
+    title: "Singly Linked List (SLL)",
+    description: "Each node holds a value and a pointer to next. Traversal is forward-only. Tail points to null.",
+    howItWorks: [
+      "Node = { value, next }",
+      "HEAD stores first node; follow next to traverse.",
+      "TAIL is the last node with next = null.",
+    ],
+    pros: [
+      "Simple structure, minimal extra memory.",
+      "Prepend is O(1).",
+      "Delete-after-node is O(1).",
+    ],
+    cons: [
+      "No backward traversal.",
+      "Deleting a node without its previous pointer requires O(n) scan.",
+      "Append is O(n) unless tail pointer is maintained.",
+    ],
+    useCases: ["Stacks/Queues (as building blocks)", "Adjacency lists", "Incremental logs"],
+    complexity: { prepend: "O(1)", append: "O(n) (with tail → O(1))", deleteAtI: "O(n)", traverse: "O(n)" },
+    diagram: [
+      "HEAD           next         next         null",
+      "  │              │            │            │",
+      " [A] ───────▶  [B] ───────▶ [C] ───────▶ null",
+    ],
+  },
+  doubly: {
+    title: "Doubly Linked List (DLL)",
+    description: "Each node holds prev and next pointers, enabling traversal in both directions.",
+    howItWorks: [
+      "Node = { value, prev, next }",
+      "HEAD.prev = null; TAIL.next = null.",
+      "Maintain prev on insert/delete.",
+    ],
+    pros: [
+      "Bidirectional traversal.",
+      "Delete given node in O(1) (when node known).",
+      "Easier to remove tail or insert before a node.",
+    ],
+    cons: [
+      "Extra memory for prev pointers.",
+      "More pointer bookkeeping on updates.",
+    ],
+    useCases: ["LRU caches (with hash map + DLL)", "Undo/Redo", "Text editors (gaps/lists)"],
+    complexity: { prepend: "O(1)", append: "O(n) (with tail → O(1))", deleteAtI: "O(n)", traverse: "O(n)" },
+    diagram: [
+      "null        prev   next        prev   next        prev   next    null",
+      "  │           │     │            │     │            │     │        │ ",
+      " [A] ◀────▶ [B] ◀────▶ [C] ◀────▶ [D] ◀────▶ [E] ──▶ null",
+    ],
+  },
+  circular: {
+    title: "Circular Linked List (CLL)",
+    description: "Tail’s next points back to head (and in circular DLL, head.prev points to tail). No null at ends.",
+    howItWorks: [
+      "SLL-CLL: TAIL.next = HEAD.",
+      "DLL-CLL: additionally HEAD.prev = TAIL.",
+      "Stop traversal when you loop back.",
+    ],
+    pros: [
+      "Great for round-robin scheduling and buffering.",
+      "No null checks at ends.",
+    ],
+    cons: [
+      "Careful to avoid infinite loops.",
+      "Edge cases with 1 node (self-loop).",
+    ],
+    useCases: ["CPU scheduling (round-robin)", "Multiplayer turn rotation", "Circular buffers"],
+    complexity: { prepend: "O(1)", append: "O(n) (with tail → O(1))", deleteAtI: "O(n)", traverse: "O(n)" },
+    diagram: [
+      "               ┌──────────────────────────────────────┐",
+      "               │                                      │",
+      " HEAD          ▼             next          next       │",
+      "  │         [A] ─────────▶  [B]  ───────▶  [C]  ──────┘",
+      "  └───────────────────────────────◀─────────────────── ",
+    ],
+  },
+}
+
 export default function LinkedListVisualizerPage() {
-  const [nodes, setNodes] = useState<NodeItem[]>(buildPointers([
-    { value: 10 },
-    { value: 20 },
-    { value: 30 },
-  ], "singly"))
+  const [nodes, setNodes] = useState<NodeItem[]>(
+    buildPointers([{ value: 10 }, { value: 20 }, { value: 30 }], "singly")
+  )
   const [inputValue, setInputValue] = useState("")
   const [currentStep, setCurrentStep] = useState(0)
   const [operations, setOperations] = useState<string[]>([])
@@ -88,16 +201,21 @@ export default function LinkedListVisualizerPage() {
   const [traversalDone, setTraversalDone] = useState(false)
   const [listType, setListType] = useState<ListType>("singly")
   const [traversalDirection, setTraversalDirection] = useState<"forward" | "backward">("forward")
-  const [speed, setSpeed] = useState([1000]) // Speed in ms, default 1000ms
-  const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(pseudocodeDefinitions.traverseForward)
+  const [speed, setSpeed] = useState<[number]>([1000]) // ms
+  const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(
+    pseudocodeDefinitions.traverseForward
+  )
   const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
+
+  // Operation explainer (micro-lesson)
+  const [opHint, setOpHint] = useState<{ title: string; points: string[] } | null>(null)
 
   // Head and tail indices
   const headIndex = nodes.length > 0 ? 0 : null
   const tailIndex = nodes.length > 0 ? nodes.length - 1 : null
 
   const getNodeByIndex = (index: number | null) =>
-  index !== null && index >= 0 && index < nodes.length ? nodes[index] : null
+    index !== null && index >= 0 && index < nodes.length ? nodes[index] : null
 
   // Rebuild pointers on list type change
   useEffect(() => {
@@ -105,32 +223,39 @@ export default function LinkedListVisualizerPage() {
     setTraversalIndex(null)
     setTraversalDone(false)
     setCurrentStep(0)
+    // Reset explainer to list-type concept
+    const t = typeDetails[listType]
+    setOpHint({
+      title: t.title,
+      points: [
+        t.description,
+        `Complexity → Prepend: ${t.complexity.prepend}, Append: ${t.complexity.append}, Delete@i: ${t.complexity.deleteAtI}, Traverse: ${t.complexity.traverse}`,
+      ],
+    })
   }, [listType])
 
   const resetList = () => {
-    setNodes(buildPointers([
-      { value: 10 },
-      { value: 20 },
-      { value: 30 },
-    ], listType))
+    setNodes(buildPointers([{ value: 10 }, { value: 20 }, { value: 30 }], listType))
     setOperations([])
     setCurrentStep(0)
     setIsPlaying(false)
     setTraversalIndex(null)
     setTraversalDone(false)
+    setOpHint(null)
   }
 
   // --- Pseudocode Step Helpers ---
-  const highlightPseudocode = (operation: string, line: number) => {
+  const highlightPseudocode = (operation: keyof typeof pseudocodeDefinitions, line: number) => {
     setCurrentPseudocode(pseudocodeDefinitions[operation])
     setCurrentCodeLine(line)
   }
 
-  // --- Modified Operations to include pseudocode highlighting ---
+  // --- Operations (with hints) ---
   const appendNode = () => {
     if (!inputValue.trim()) return
     highlightPseudocode("append", 1)
     const newValue = isNaN(Number(inputValue)) ? inputValue : Number(inputValue)
+
     setTimeout(() => highlightPseudocode("append", 2), 200)
     setTimeout(() => {
       if (nodes.length === 0) {
@@ -143,10 +268,21 @@ export default function LinkedListVisualizerPage() {
         setTimeout(() => highlightPseudocode("append", 8), 600)
       }
     }, 400)
+
     setNodes(prev => buildPointers([...prev, { value: newValue, isHighlighted: true }], listType))
     setOperations(prev => [...prev, `Appended ${newValue}`])
     setInputValue("")
     setTraversalDone(false)
+
+    setOpHint({
+      title: "Append: why O(n)?",
+      points: [
+        "We must walk to the last node to link it.",
+        "If we maintained a tail pointer, append could be O(1).",
+        "Updates: last.next → new; new.next → null (or head in circular).",
+      ],
+    })
+
     setTimeout(() => {
       setNodes(prev => prev.map(n => ({ ...n, isHighlighted: false })))
       setCurrentCodeLine(-1)
@@ -160,10 +296,21 @@ export default function LinkedListVisualizerPage() {
     setTimeout(() => highlightPseudocode("prepend", 2), 200)
     setTimeout(() => highlightPseudocode("prepend", 3), 400)
     setTimeout(() => highlightPseudocode("prepend", 4), 600)
+
     setNodes(prev => buildPointers([{ value: newValue, isHighlighted: true }, ...prev], listType))
     setOperations(prev => [...prev, `Prepended ${newValue}`])
     setInputValue("")
     setTraversalDone(false)
+
+    setOpHint({
+      title: "Prepend: O(1)",
+      points: [
+        "We rewrite head to the new node.",
+        "New node next points to previous head.",
+        "Prev pointers updated in doubly/circular lists.",
+      ],
+    })
+
     setTimeout(() => {
       setNodes(prev => prev.map(n => ({ ...n, isHighlighted: false })))
       setCurrentCodeLine(-1)
@@ -171,6 +318,8 @@ export default function LinkedListVisualizerPage() {
   }
 
   const removeNode = (index: number) => {
+    if (nodes.length === 0 || index < 0 || index >= nodes.length) return
+
     highlightPseudocode("remove", 1)
     setTimeout(() => highlightPseudocode("remove", 2), 200)
     setTimeout(() => highlightPseudocode("remove", 3), 400)
@@ -185,9 +334,20 @@ export default function LinkedListVisualizerPage() {
         setTimeout(() => highlightPseudocode("remove", 9), 600)
       }
     }, 600)
-    setNodes(prev => prev.map((n, i) => i === index ? { ...n, isRemoved: true } : n))
+
+    setNodes(prev => prev.map((n, i) => (i === index ? { ...n, isRemoved: true } : n)))
     const node = nodes[index]
     setOperations(prev => [...prev, `Removed ${node?.value}`])
+
+    setOpHint({
+      title: "Delete at index i: O(n)",
+      points: [
+        "We must reach node i−1 to splice next pointers.",
+        "In DLL, also update prev pointers.",
+        "Edge case: deleting head/tail is simpler.",
+      ],
+    })
+
     setTimeout(() => {
       setNodes(prev => buildPointers(prev.filter((_, i) => i !== index), listType))
       setTraversalIndex(null)
@@ -204,11 +364,27 @@ export default function LinkedListVisualizerPage() {
       setOperations(prev => [...prev, `Started forward traversal`])
       setCurrentPseudocode(pseudocodeDefinitions.traverseForward)
       setCurrentCodeLine(1)
+      setOpHint({
+        title: "Forward traversal",
+        points: [
+          "Start at head.",
+          "Visit node, then follow next.",
+          listType === "circular" ? "Stop when we loop back to head." : "Stop at null (tail).",
+        ],
+      })
     } else {
       setTraversalIndex(tailIndex)
       setOperations(prev => [...prev, `Started backward traversal`])
       setCurrentPseudocode(pseudocodeDefinitions.traverseBackward)
       setCurrentCodeLine(1)
+      setOpHint({
+        title: "Backward traversal (DLL/Circular)",
+        points: [
+          "Start at tail.",
+          "Visit node, then follow prev.",
+          listType === "circular" ? "Stop when we loop back to tail." : "Stop at null (head).",
+        ],
+      })
     }
     setCurrentStep(0)
     setTraversalDone(false)
@@ -216,7 +392,7 @@ export default function LinkedListVisualizerPage() {
 
   const stepForward = () => {
     if (traversalIndex === null) return
-    setNodes(prev => prev.map((n, i) => i === traversalIndex ? { ...n, isTraversed: true } : n))
+    setNodes(prev => prev.map((n, i) => (i === traversalIndex ? { ...n, isTraversed: true } : n)))
     const current = getNodeByIndex(traversalIndex)
     let nextIndex: number | null | undefined
     if (traversalDirection === "forward") {
@@ -245,9 +421,9 @@ export default function LinkedListVisualizerPage() {
       prevIndex = getNodeByIndex(traversalIndex)?.nextId
     }
     if (prevIndex !== undefined && prevIndex !== null && prevIndex >= 0 && prevIndex < nodes.length) {
-      setNodes(prev => prev.map((n, i) => i === prevIndex ? { ...n, isTraversed: false } : n))
+      setNodes(prev => prev.map((n, i) => (i === prevIndex ? { ...n, isTraversed: false } : n)))
       setTraversalIndex(prevIndex)
-      setCurrentStep(s => s - 1)
+      setCurrentStep(s => Math.max(0, s - 1))
       setTraversalDone(false)
     }
   }
@@ -261,27 +437,18 @@ export default function LinkedListVisualizerPage() {
 
   const pause = () => setIsPlaying(false)
 
-  // --- Speed Control for Traversal ---
+  // --- Speed-controlled traversal (single effect) ---
   useEffect(() => {
     if (isPlaying && traversalIndex !== null) {
-      let codeLine = traversalDirection === "forward" ? 3 : 3
+      const codeLine = 3
       setCurrentCodeLine(codeLine)
       const timer = setTimeout(() => {
         stepForward()
-        setCurrentCodeLine(traversalDirection === "forward" ? 4 : 4)
+        setCurrentCodeLine(4)
       }, speed[0])
       return () => clearTimeout(timer)
     }
-  }, [isPlaying, traversalIndex, nodes.length, speed, traversalDirection])
-
-  useEffect(() => {
-    if (isPlaying && traversalIndex !== null) {
-      const timer = setTimeout(() => {
-        stepForward()
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [isPlaying, traversalIndex, nodes.length])
+  }, [isPlaying, traversalIndex, speed])
 
   useEffect(() => {
     if (traversalDone) {
@@ -289,35 +456,41 @@ export default function LinkedListVisualizerPage() {
     }
   }, [traversalDone])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase()
+      if ([" ", "arrowleft", "arrowright", "r"].includes(k)) e.preventDefault()
+      if (k === " ") setIsPlaying(prev => !prev)
+      else if (k === "arrowright") stepForward()
+      else if (k === "arrowleft") stepBack()
+      else if (k === "r") resetList()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [traversalIndex])
+
   // List type selection UI
   const listTypeOptions = [
     { value: "singly", label: "Singly Linked List", icon: <ChevronRight className="inline h-4 w-4" /> },
     { value: "doubly", label: "Doubly Linked List", icon: <ArrowLeftRight className="inline h-4 w-4" /> },
     { value: "circular", label: "Circular Linked List", icon: <Repeat className="inline h-4 w-4" /> },
-  ]
+  ] as const
 
-  // For rendering, follow pointers from head
+  // Render in pointer-following order starting at head
   const renderNodes = useMemo(() => {
     if (nodes.length === 0) return []
-    
     const result: (NodeItem & { index: number })[] = []
     const visited = new Set<number>()
     let currentIndex = headIndex
-    
     while (currentIndex !== null && !visited.has(currentIndex)) {
       const node = getNodeByIndex(currentIndex)
       if (!node) break
-
       result.push({ ...node, index: currentIndex })
-
       visited.add(currentIndex)
-      
-      // Stop if we've completed a full circle in circular list
       if (listType === "circular" && result.length > 1 && currentIndex === headIndex) break
-      
       currentIndex = node.nextId ?? null
     }
-    
     return result
   }, [nodes, headIndex, listType])
 
@@ -334,7 +507,7 @@ export default function LinkedListVisualizerPage() {
     },
   ]
 
-  // Get node by index
+  const t = typeDetails[listType]
 
   return (
     <VisualizerLayout
@@ -349,17 +522,35 @@ export default function LinkedListVisualizerPage() {
       onReset={resetList}
       currentStep={currentStep}
       totalSteps={Math.max(operations.length, nodes.length)}
-      complexity={{
-        time: "O(n)",
-        space: "O(n)",
-      }}
+      complexity={{ time: "O(n)", space: "O(n)" }}
       applications={applications}
     >
       <div className="w-full space-y-6">
+        {/* ===== Knowledge: Linked Lists (Global) ===== */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">📚 Understanding Linked Lists</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <ul className="list-disc list-inside space-y-1">
+              {linkedListIntro.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+            <div className="rounded-md bg-muted/40 p-3 overflow-x-auto">
+              <div className="font-mono text-xs leading-5">
+                {linkedListIntro.diagram.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* List type selection */}
-        <div className="flex gap-2 items-center mb-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <span className="font-semibold">List Type:</span>
-          {listTypeOptions.map((opt) => (
+          {listTypeOptions.map(opt => (
             <Button
               key={opt.value}
               variant={listType === opt.value ? "secondary" : "outline"}
@@ -373,8 +564,83 @@ export default function LinkedListVisualizerPage() {
           ))}
         </div>
 
+        {/* ===== Knowledge: Current Type ===== */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{t.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <div>{t.description}</div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">How it works</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {t.howItWorks.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <div className="font-semibold text-foreground mb-1">Typical use cases</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {t.useCases.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="font-semibold text-foreground mb-1">Pros</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {t.pros.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="font-semibold text-foreground mb-1">Cons</div>
+                <ul className="list-disc list-inside space-y-1">
+                  {t.cons.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="rounded-md bg-muted/40 p-3 overflow-x-auto">
+              <div className="font-mono text-xs leading-5">
+                {t.diagram.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <Badge variant="outline">Prepend: {t.complexity.prepend}</Badge>
+              <Badge variant="outline">Append: {t.complexity.append}</Badge>
+              <Badge variant="outline">Delete@i: {t.complexity.deleteAtI}</Badge>
+              <Badge variant="outline">Traverse: {t.complexity.traverse}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Operation Complexity Strip */}
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <Badge variant="outline">
+            Append: {t.complexity.append}
+          </Badge>
+          <Badge variant="outline">Prepend: {t.complexity.prepend}</Badge>
+          <Badge variant="outline">Delete@i: {t.complexity.deleteAtI}</Badge>
+          <Badge variant="outline">Traverse: {t.complexity.traverse}</Badge>
+          {listType === "circular" && <Badge variant="secondary">Circular wraps to head</Badge>}
+        </div>
+
         {/* Linked list visualization */}
-        <div className="flex-1 flex items-center justify-center gap-4 overflow-x-auto py-4 min-h-[140px]">
+        <div className="flex-1 flex items-center justify-center gap-4 overflow-x-auto py-6 min-h-[220px]">
           {renderNodes.length === 0 ? (
             <div className="text-muted-foreground">List is empty</div>
           ) : (
@@ -383,39 +649,64 @@ export default function LinkedListVisualizerPage() {
               {listType !== "circular" && (
                 <div className="flex flex-col items-center mr-4">
                   <div className="text-xs text-muted-foreground mb-1">HEAD</div>
-                  <div className="w-8 h-0.5 bg-primary"></div>
+                  <div className="w-8 h-0.5 bg-primary" />
                 </div>
               )}
 
-              {/* Nodes and arrows */}
-              {renderNodes.map((node, idx) => {
-                const hasNext = node.nextId !== undefined && node.nextId >= 0 && node.nextId < nodes.length
-                const hasPrev = node.prevId !== undefined && node.prevId >= 0 && node.prevId < nodes.length
-                
+              {/* Nodes + Arrows */}
+              {renderNodes.map((node) => {
+                const hasNext =
+                  node.nextId !== undefined && node.nextId >= 0 && node.nextId < nodes.length
                 return (
-                  <div key={node.index} className="flex items-center gap-2 relative">
+                  <div key={node.index} className="flex items-center gap-3 relative">
                     {/* Node */}
                     <div
                       className={`
-                        w-24 h-20 border-2 rounded-lg flex flex-col items-center justify-center relative
+                        w-28 h-24 border-2 rounded-lg flex flex-col items-center justify-center relative
                         transition-all duration-300 z-10
                         ${
                           node.isRemoved
                             ? "bg-red-100 border-red-500 opacity-60 line-through"
                             : traversalIndex === node.index
-                              ? "bg-blue-200 border-blue-500 scale-105 shadow-lg"
-                              : node.isTraversed
-                                ? "bg-green-200 border-green-500"
-                                : node.isHighlighted
-                                  ? "bg-accent/20 border-accent scale-105"
-                                  : "bg-card border-border"
+                            ? "bg-blue-200 border-blue-500 scale-105 shadow-lg"
+                            : node.isTraversed
+                            ? "bg-green-200 border-green-500"
+                            : node.isHighlighted
+                            ? "bg-accent/20 border-accent scale-105"
+                            : "bg-card border-border"
                         }
                       `}
+                      style={{
+                        transform:
+                          traversalIndex === node.index
+                            ? "translateY(-4px)"
+                            : node.isHighlighted
+                            ? "translateY(-2px)"
+                            : "translateY(0)",
+                      }}
                     >
                       <div className="font-mono font-bold text-lg">{node.value}</div>
-                      <div className="absolute -bottom-6 text-xs text-muted-foreground">
+                      {/* Index */}
+                      <div className="absolute -bottom-6 text-[11px] text-muted-foreground">
                         Index: {node.index}
                       </div>
+                      {/* Pointer metadata */}
+                      <div className="absolute -bottom-10 text-[11px] text-muted-foreground leading-tight">
+                        next: {node.nextId ?? "null"}
+                        {(listType === "doubly" || listType === "circular") && (
+                          <> · prev: {node.prevId ?? "null"}</>
+                        )}
+                      </div>
+                      {/* Delete button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 hover:opacity-100 transition-opacity"
+                        onClick={() => removeNode(node.index)}
+                        aria-label={`Delete node ${node.value}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
                     </div>
 
                     {/* Arrows */}
@@ -436,32 +727,43 @@ export default function LinkedListVisualizerPage() {
                 )
               })}
 
-              {/* TAIL indicator */}
+              {/* TAIL indicator + null */}
               {listType !== "circular" && (
-                <div className="flex flex-col items-center ml-4">
-                  <div className="w-8 h-0.5 bg-primary"></div>
-                  <div className="text-xs text-muted-foreground mt-1">TAIL</div>
+                <div className="flex items-center ml-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-0.5 bg-primary" />
+                    <div className="text-xs text-muted-foreground mt-1">TAIL</div>
+                  </div>
+                  <Badge variant="outline" className="ml-2 text-[11px]">
+                    null
+                  </Badge>
                 </div>
               )}
 
-              {/* Circular connection arrow */}
+              {/* Circular curved bridge */}
               {listType === "circular" && renderNodes.length > 1 && (
-                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-accent/30 -z-10">
-                  <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2">
-                    <Repeat className="h-5 w-5 text-accent rotate-90" />
-                  </div>
-                </div>
+                <svg
+                  className="absolute w-full h-20 -bottom-6 text-accent -z-10"
+                  viewBox="0 0 100 40"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M 10 30 C 40 0, 60 0, 90 30"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <polygon points="90,30 86,27 86,33" fill="currentColor" />
+                </svg>
               )}
             </div>
           )}
         </div>
 
-        {/* Pseudocode Panel BELOW the visualizer */}
+        {/* Pseudocode Panel */}
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              Pseudocode
-            </CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">Pseudocode</CardTitle>
           </CardHeader>
           <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
             {currentPseudocode.map((line, index) => (
@@ -469,15 +771,14 @@ export default function LinkedListVisualizerPage() {
                 key={index}
                 className={`
                   py-1 px-2 rounded
-                  ${currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
+                  ${
+                    currentCodeLine === index + 1
+                      ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                      : "text-muted-foreground"
                   }
                 `}
               >
-                <span className="text-xs text-muted-foreground/70 mr-3">
-                  {index + 1}
-                </span>
+                <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
               </div>
             ))}
@@ -497,8 +798,8 @@ export default function LinkedListVisualizerPage() {
               <Input
                 placeholder="Value to insert"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && appendNode()}
+                onChange={e => setInputValue(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && appendNode()}
               />
               <div className="flex gap-2">
                 <Button onClick={appendNode} disabled={!inputValue.trim()} className="w-full">
@@ -521,35 +822,30 @@ export default function LinkedListVisualizerPage() {
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">Click the trash icon on a node to remove it</p>
               <div className="flex flex-wrap gap-2">
-                {renderNodes.map((n) => (
+                {renderNodes.map(n => (
                   <Button key={n.index} variant="destructive" size="sm" onClick={() => removeNode(n.index)}>
                     Delete {n.value}
                   </Button>
                 ))}
-                {renderNodes.length === 0 && <div className="text-sm text-muted-foreground">No nodes to delete</div>}
+                {renderNodes.length === 0 && (
+                  <div className="text-sm text-muted-foreground">No nodes to delete</div>
+                )}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <ArrowRight className="h-5 w-5" />
-                Traverse
-              </CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">Traverse</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2 flex-wrap">
-                <Button 
-                  onClick={() => startTraversal("forward")} 
-                  disabled={renderNodes.length === 0}
-                  className="w-full sm:w-auto"
-                >
+                <Button onClick={() => startTraversal("forward")} disabled={renderNodes.length === 0} className="w-full sm:w-auto">
                   Start Forward
                 </Button>
                 {(listType === "doubly" || listType === "circular") && (
-                  <Button 
-                    onClick={() => startTraversal("backward")} 
+                  <Button
+                    onClick={() => startTraversal("backward")}
                     disabled={renderNodes.length === 0}
                     className="w-full sm:w-auto"
                     variant="outline"
@@ -558,27 +854,27 @@ export default function LinkedListVisualizerPage() {
                   </Button>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
-                <Button 
-                  onClick={stepBack} 
-                  disabled={traversalIndex === null}
-                  variant="outline"
-                >
+                <Button onClick={stepBack} disabled={traversalIndex === null} variant="outline">
                   Back
                 </Button>
-                <Button
-                  onClick={stepForward}
-                  disabled={traversalIndex === null}
-                  variant="outline"
-                >
+                <Button onClick={stepForward} disabled={traversalIndex === null} variant="outline">
                   Next
+                </Button>
+                <Button onClick={() => (isPlaying ? pause() : play())} disabled={renderNodes.length === 0}>
+                  {isPlaying ? "Pause" : "Play"}
+                </Button>
+                <Button variant="ghost" onClick={resetList}>
+                  Reset
                 </Button>
               </div>
 
               <div className="text-sm text-muted-foreground mt-2">
                 Current:{" "}
-                {traversalIndex === null ? "—" : `${getNodeByIndex(traversalIndex)?.value} (index ${traversalIndex})`}
+                {traversalIndex === null
+                  ? "—"
+                  : `${getNodeByIndex(traversalIndex)?.value} (index ${traversalIndex})`}
                 {traversalIndex !== null && ` | Direction: ${traversalDirection}`}
               </div>
             </CardContent>
@@ -602,15 +898,26 @@ export default function LinkedListVisualizerPage() {
               disabled={isPlaying}
             />
             <div className="text-sm text-muted-foreground text-center">
-              {speed[0] <= 400
-                ? "Fast"
-                : speed[0] <= 1000
-                ? "Medium"
-                : "Slow"}
-              
+              {speed[0] <= 400 ? "Fast" : speed[0] <= 1000 ? "Medium" : "Slow"}
             </div>
           </div>
         </Card>
+
+        {/* Operation Explainer */}
+        {opHint && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">{opHint.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
+                {opHint.points.map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Operations / Steps */}
         {operations.length > 0 && (
@@ -627,8 +934,8 @@ export default function LinkedListVisualizerPage() {
                       i === currentStep
                         ? "bg-accent/20 border border-accent"
                         : i < currentStep
-                          ? "bg-muted/50 text-muted-foreground"
-                          : "text-muted-foreground"
+                        ? "bg-muted/50 text-muted-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
                     <Badge variant="outline" className="mr-2 text-xs">

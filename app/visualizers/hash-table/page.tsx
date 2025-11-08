@@ -1,432 +1,212 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
-import { Plus, X, Hash, Zap, RotateCcw } from "lucide-react"
+import { Plus, X, Search, Hash } from "lucide-react"
 
-// Types
-type HashEntry = {
-  key: string
-  value: string
-  status?: "deleted" // for open addressing
-}
-
-type HashSlot = HashEntry[] // for chaining
-type TableState = (HashSlot | HashEntry | null)[]
-
-type CollisionStrategy = "chaining" | "linear-probing"
+type HashBucket = string[]
+type HashTable = HashBucket[]
 
 interface Step {
   description: string
-  tableState: TableState
+  tableState: HashTable
   highlightedIndex: number | null
   codeLine: number
-  isRehash?: boolean
 }
 
-const pseudocodeDefinitions = {
-  chaining: [
-    "function insert(key, value):",
-    "  index = hash(key) % tableSize",
-    "  for each entry in table[index]:",
-    "    if entry.key == key:",
-    "      entry.value = value",
-    "      return",
-    "  table[index].push({ key, value })",
-    "",
-    "function search(key):",
-    "  index = hash(key) % tableSize",
-    "  for each entry in table[index]:",
-    "    if entry.key == key: return entry.value",
-    "  return null",
-  ],
-  "linear-probing": [
-    "function insert(key, value):",
-    "  index = hash(key) % tableSize",
-    "  while table[index] is not null and table[index].key != key and table[index].status != 'deleted':",
-    "    index = (index + 1) % tableSize",
-    "  table[index] = { key, value }",
-    "",
-    "function search(key):",
-    "  index = hash(key) % tableSize",
-    "  while table[index] is not null:",
-    "    if table[index].key == key and table[index].status != 'deleted':",
-    "      return table[index].value",
-    "    index = (index + 1) % tableSize",
-    "  return null",
-  ],
+const pseudocode = [
+  "// Hash Function",
+  "function hash(key):",
+  "  sum = 0",
+  "  for each char in key:",
+  "    sum += Unicode(char)",
+  "  return sum % tableSize",
+  "",
+  "// Insert",
+  "function insert(key):",
+  "  index = hash(key)",
+  "  if key not in table[index]:",
+  "    table[index].push(key)",
+  "",
+  "// Search",
+  "function search(key):",
+  "  index = hash(key)",
+  "  return key in table[index]",
+  "",
+  "// Delete",
+  "function delete(key):",
+  "  index = hash(key)",
+  "  remove key from table[index]",
+]
+
+const hashFunction = (key: string, tableSize: number): number => {
+  let sum = 0
+  for (let i = 0; i < key.length; i++) {
+    sum += key.charCodeAt(i)
+  }
+  return sum % tableSize
 }
 
-// Default hash function
-const defaultHashFunction = "key.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0)"
+const getCharSum = (key: string): number => {
+  return key.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0)
+}
+
+// Deep clone helper
+const cloneTable = (table: HashTable): HashTable => {
+  return table.map(bucket => [...bucket])
+}
 
 export default function HashTableVisualizer() {
-  // Config
-  const [tableSize, setTableSize] = useState<number>(7)
-  const [strategy, setStrategy] = useState<CollisionStrategy>("chaining")
-  const [customHash, setCustomHash] = useState<string>(defaultHashFunction)
-
-  // Input
+  const [tableSize, setTableSize] = useState<number>(10)
   const [key, setKey] = useState("")
-  const [value, setValue] = useState("")
-
-  // State
-  const [table, setTable] = useState<TableState>([])
   const [steps, setSteps] = useState<Step[]>([])
   const [currentStep, setCurrentStep] = useState(0)
-
-  // Pseudocode
-  const [currentPseudocode, setCurrentPseudocode] = useState<string[]>(
-    pseudocodeDefinitions.chaining
-  )
   const [currentCodeLine, setCurrentCodeLine] = useState<number>(-1)
 
-  // Initialize table
-  useEffect(() => {
-    resetTable()
-  }, [tableSize, strategy])
+  const initTable = (size: number): HashTable => {
+    return Array.from({ length: size }, () => [])
+  }
 
-  useEffect(() => {
-    setCurrentPseudocode(pseudocodeDefinitions[strategy])
-    setCurrentCodeLine(-1)
-  }, [strategy])
+  const [table, setTable] = useState<HashTable>(initTable(10))
 
   const resetTable = () => {
-    if (strategy === "chaining") {
-      setTable(Array(tableSize).fill(null).map(() => [] as HashSlot))
-    } else {
-      setTable(Array(tableSize).fill(null))
-    }
+    const newTable = initTable(tableSize)
+    setTable(newTable)
     setSteps([])
     setCurrentStep(0)
+    setCurrentCodeLine(-1)
   }
 
-  // Safe hash function evaluator
-  const evaluateHash = useCallback(
-    (key: string, size: number): number => {
-      try {
-        // eslint-disable-next-line no-new-func
-        const hashFn = new Function("key", `return (${customHash})`)
-        const rawHash = hashFn(key)
-        if (typeof rawHash !== "number" || isNaN(rawHash)) {
-          throw new Error("Hash must return a number")
-        }
-        return ((rawHash % size) + size) % size // Ensure non-negative
-      } catch (e) {
-        console.warn("Hash eval error, using default:", e)
-        let hash = 0
-        for (let i = 0; i < key.length; i++) {
-          hash += key.charCodeAt(i)
-        }
-        return hash % size
-      }
-    },
-    [customHash]
-  )
+  useEffect(() => {
+    resetTable()
+  }, [tableSize])
 
-  const addStep = (
-    description: string,
-    highlightedIndex: number | null,
-    codeLine: number,
-    isRehash = false
-  ) => {
-    setSteps((prev) => [
-      ...prev,
-      {
-        description,
-        tableState: JSON.parse(JSON.stringify(table)),
-        highlightedIndex,
-        codeLine,
-        isRehash,
-      },
-    ])
-  }
-
-  const getLoadFactor = (tbl: TableState): number => {
-    if (strategy === "chaining") {
-      return tbl.reduce((sum, slot) => sum + (slot as HashSlot).length, 0) / tableSize
-    } else {
-      return (
-        tbl.filter(
-          (slot) => slot !== null && (slot as HashEntry).status !== "deleted"
-        ).length / tableSize
-      )
-    }
-  }
-
-  const getAllEntries = (tbl: TableState): HashEntry[] => {
-    const entries: HashEntry[] = []
-    if (strategy === "chaining") {
-      for (const slot of tbl as HashSlot[]) {
-        for (const entry of slot) {
-          entries.push(entry)
-        }
-      }
-    } else {
-      for (const slot of tbl as (HashEntry | null)[]) {
-        if (slot && slot.status !== "deleted") {
-          entries.push(slot)
-        }
-      }
-    }
-    return entries
-  }
-
-  const performRehash = () => {
-    const newTableSize = tableSize * 2 + 1 // ensure odd for probing
-    const newTable = strategy === "chaining"
-      ? Array(newTableSize).fill(null).map(() => [] as HashSlot)
-      : Array(newTableSize).fill(null)
-
-    const entries = getAllEntries(table)
-    addStep(
-      `🔁 Rehashing: Load factor = ${getLoadFactor(table).toFixed(2)} > 0.75. Resizing to ${newTableSize}.`,
-      null,
-      -1,
-      true
-    )
-
-    // Reinsert all entries
-    for (const entry of entries) {
-      const newIndex = evaluateHash(entry.key, newTableSize)
-      if (strategy === "chaining") {
-        (newTable[newIndex] as HashSlot).push(entry)
-      } else {
-        let index = newIndex
-        let probe = 0
-        while (
-          probe < newTableSize &&
-          newTable[index] !== null &&
-          (newTable[index] as HashEntry).key !== entry.key &&
-          (newTable[index] as HashEntry).status !== "deleted"
-        ) {
-          index = (index + 1) % newTableSize
-          probe++
-        }
-        if (probe < newTableSize) {
-          newTable[index] = entry
-        }
-      }
-    }
-
-    setTable(newTable)
-    setTableSize(newTableSize)
-    addStep(
-      `✅ Rehash complete. New table size: ${newTableSize}`,
-      null,
-      -1,
-      true
-    )
-  }
-
+  // ---------------------------
+  // INSERT OPERATION
+  // ---------------------------
   const handleInsert = () => {
     if (!key.trim()) return
-    const val = value || "1"
-    let newTable = [...table]
+    const cleanKey = key.trim()
+    const index = hashFunction(cleanKey, tableSize)
+    const charSum = getCharSum(cleanKey)
+
+    const newTable = cloneTable(table)
     const stepsSnapshot: Step[] = []
-    let index = evaluateHash(key, tableSize)
 
-    if (strategy === "chaining") {
-      const slot = newTable[index] as HashSlot
-      const existing = slot.find((entry) => entry.key === key)
-      if (existing) {
-        existing.value = val
-        stepsSnapshot.push({
-          description: `Key "${key}" exists. Updated value to "${val}".`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 5,
-        })
-      } else {
-        slot.push({ key, value: val })
-        stepsSnapshot.push({
-          description: `Inserted "${key}" → "${val}" at index ${index} (chaining).`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 6,
-        })
-      }
+    stepsSnapshot.push({
+      description: `Hash("${cleanKey}") = ${index} (sum: ${charSum} % ${tableSize})`,
+      tableState: cloneTable(newTable),
+      highlightedIndex: index,
+      codeLine: 2,
+    })
+
+    if (newTable[index].includes(cleanKey)) {
+      stepsSnapshot.push({
+        description: `Key "${cleanKey}" already exists in bucket ${index}.`,
+        tableState: cloneTable(newTable),
+        highlightedIndex: index,
+        codeLine: 11,
+      })
     } else {
-      let probeCount = 0
-      let originalIndex = index
-      while (
-        probeCount < tableSize &&
-        newTable[index] !== null &&
-        (newTable[index] as HashEntry).key !== key &&
-        (newTable[index] as HashEntry).status !== "deleted"
-      ) {
-        stepsSnapshot.push({
-          description: `Index ${index} occupied. Probing next...`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 3,
-        })
-        index = (index + 1) % tableSize
-        probeCount++
-      }
+      newTable[index].push(cleanKey)
+      const updatedTable = cloneTable(newTable)
 
-      if (probeCount >= tableSize) {
-        alert("Hash table is full!")
-        return
-      }
+      stepsSnapshot.push({
+        description: `Inserted "${cleanKey}" into bucket ${index}.`,
+        tableState: updatedTable,
+        highlightedIndex: index,
+        codeLine: 12,
+      })
 
-      const existing = newTable[index] as HashEntry | null
-      if (existing && existing.key === key) {
-        ;(newTable[index] as HashEntry).value = val
-        stepsSnapshot.push({
-          description: `Key "${key}" found at index ${index}. Updated value.`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 4,
-        })
-      } else {
-        newTable[index] = { key, value: val }
-        stepsSnapshot.push({
-          description: `Inserted "${key}" → "${val}" at index ${index} (linear probing).`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 4,
-        })
-      }
+      setTable(updatedTable)
     }
 
-    setTable(newTable)
     setSteps(stepsSnapshot)
-    setCurrentStep(0)
-
-    // Check if rehash needed
-    const newLoadFactor = getLoadFactor(newTable)
-    if (newLoadFactor > 0.75) {
-      setTimeout(() => {
-        performRehash()
-      }, 600)
-    }
-
+    setCurrentStep(stepsSnapshot.length - 1)
     setKey("")
-    setValue("")
   }
 
+  // ---------------------------
+  // SEARCH OPERATION
+  // ---------------------------
   const handleSearch = () => {
     if (!key.trim()) return
-    const newTable = [...table]
-    const stepsSnapshot: Step[] = []
-    let index = evaluateHash(key, tableSize)
+    const cleanKey = key.trim()
+    const index = hashFunction(cleanKey, tableSize)
+    const charSum = getCharSum(cleanKey)
 
-    if (strategy === "chaining") {
-      const slot = newTable[index] as HashSlot
-      const found = slot.find((entry) => entry.key === key)
-      if (found) {
-        stepsSnapshot.push({
-          description: `Found "${key}" → "${found.value}" at index ${index}.`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 11,
-        })
-      } else {
-        stepsSnapshot.push({
-          description: `Key "${key}" not found in index ${index}.`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 12,
-        })
-      }
-    } else {
-      let probeCount = 0
-      while (probeCount < tableSize && newTable[index] !== null) {
-        const entry = newTable[index] as HashEntry
-        if (entry.key === key && entry.status !== "deleted") {
-          stepsSnapshot.push({
-            description: `Found "${key}" → "${entry.value}" at index ${index}.`,
-            tableState: JSON.parse(JSON.stringify(newTable)),
-            highlightedIndex: index,
-            codeLine: 10,
-          })
-          setTable(newTable)
-          setSteps(stepsSnapshot)
-          setCurrentStep(0)
-          setKey("")
-          return
-        }
-        stepsSnapshot.push({
-          description: `Checked index ${index}, not a match.`,
-          tableState: JSON.parse(JSON.stringify(newTable)),
-          highlightedIndex: index,
-          codeLine: 9,
-        })
-        index = (index + 1) % tableSize
-        probeCount++
-      }
+    const stepsSnapshot: Step[] = []
+    stepsSnapshot.push({
+      description: `Hash("${cleanKey}") = ${index} (sum: ${charSum} % ${tableSize})`,
+      tableState: cloneTable(table),
+      highlightedIndex: index,
+      codeLine: 15,
+    })
+
+    const found = table[index].includes(cleanKey)
+    stepsSnapshot.push({
+      description: found
+        ? `Found "${cleanKey}" in bucket ${index}.`
+        : `"${cleanKey}" not found in bucket ${index}.`,
+      tableState: cloneTable(table),
+      highlightedIndex: index,
+      codeLine: 16,
+    })
+
+    setSteps(stepsSnapshot)
+    setCurrentStep(stepsSnapshot.length - 1)
+    setKey("")
+  }
+
+  // ---------------------------
+  // DELETE OPERATION
+  // ---------------------------
+  const handleDelete = () => {
+    if (!key.trim()) return
+    const cleanKey = key.trim()
+    const index = hashFunction(cleanKey, tableSize)
+    const charSum = getCharSum(cleanKey)
+
+    const newTable = cloneTable(table)
+    const stepsSnapshot: Step[] = []
+
+    stepsSnapshot.push({
+      description: `Hash("${cleanKey}") = ${index} (sum: ${charSum} % ${tableSize})`,
+      tableState: cloneTable(newTable),
+      highlightedIndex: index,
+      codeLine: 19,
+    })
+
+    const bucket = newTable[index]
+    const itemIndex = bucket.indexOf(cleanKey)
+    if (itemIndex !== -1) {
+      bucket.splice(itemIndex, 1)
+      const updatedTable = cloneTable(newTable)
       stepsSnapshot.push({
-        description: `Key "${key}" not found after full probe.`,
-        tableState: JSON.parse(JSON.stringify(newTable)),
-        highlightedIndex: null,
-        codeLine: 12,
+        description: `Deleted "${cleanKey}" from bucket ${index}.`,
+        tableState: updatedTable,
+        highlightedIndex: index,
+        codeLine: 21,
+      })
+      setTable(updatedTable)
+    } else {
+      stepsSnapshot.push({
+        description: `"${cleanKey}" not found in bucket ${index}.`,
+        tableState: cloneTable(newTable),
+        highlightedIndex: index,
+        codeLine: 21,
       })
     }
 
-    setTable(newTable)
     setSteps(stepsSnapshot)
-    setCurrentStep(0)
+    setCurrentStep(stepsSnapshot.length - 1)
     setKey("")
   }
 
-  const handleDelete = () => {
-    if (!key.trim()) return
-    const newTable = [...table]
-    let index = evaluateHash(key, tableSize)
-
-    if (strategy === "chaining") {
-      const slot = newTable[index] as HashSlot
-      const idx = slot.findIndex((entry) => entry.key === key)
-      if (idx !== -1) {
-        slot.splice(idx, 1)
-        const stepsSnapshot = [
-          {
-            description: `Deleted key "${key}" from index ${index}.`,
-            tableState: JSON.parse(JSON.stringify(newTable)),
-            highlightedIndex: index,
-            codeLine: -1,
-          },
-        ]
-        setTable(newTable)
-        setSteps(stepsSnapshot)
-        setCurrentStep(0)
-      } else {
-        alert("Key not found.")
-      }
-    } else {
-      let probeCount = 0
-      while (probeCount < tableSize && newTable[index] !== null) {
-        const entry = newTable[index] as HashEntry
-        if (entry.key === key && entry.status !== "deleted") {
-          ;(newTable[index] as HashEntry).status = "deleted"
-          const stepsSnapshot = [
-            {
-              description: `Marked key "${key}" as deleted (lazy deletion).`,
-              tableState: JSON.parse(JSON.stringify(newTable)),
-              highlightedIndex: index,
-              codeLine: -1,
-            },
-          ]
-          setTable(newTable)
-          setSteps(stepsSnapshot)
-          setCurrentStep(0)
-          setKey("")
-          return
-        }
-        index = (index + 1) % tableSize
-        probeCount++
-      }
-      alert("Key not found.")
-    }
-    setKey("")
-  }
-
-  // Navigation
   const stepForward = () => {
     if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1)
   }
@@ -443,120 +223,110 @@ export default function HashTableVisualizer() {
     }
   }, [currentStep, steps])
 
-  const currentStepData = steps[currentStep] || {
-    description: "Ready to perform an operation.",
-    tableState: table,
-    highlightedIndex: null,
-    codeLine: -1,
-  }
+  const currentStepData = steps.length > 0
+    ? steps[currentStep]
+    : {
+      description: "Ready to perform an operation.",
+      tableState: table,
+      highlightedIndex: null,
+      codeLine: -1,
+    }
 
-  const loadFactor = getLoadFactor(table)
+  const loadFactor = table.reduce((sum, bucket) => sum + bucket.length, 0) / tableSize
 
   const applications = [
     {
-      title: "Database Indexing",
-      description: "Hash tables enable O(1) lookups in database systems",
-      examples: ["Primary keys", "Unique constraints", "Caching query results"],
+      title: "Membership Testing",
+      description: "Check if an item exists (e.g., username in a system)",
+      examples: ["Login validation", "Spam filter", "Unique visitor tracking"],
     },
     {
-      title: "Caching Systems",
-      description: "Used in Redis, Memcached, and browser caches",
-      examples: ["Session storage", "API response caching", "Page rendering"],
+      title: "Deduplication",
+      description: "Store only unique items efficiently",
+      examples: ["Email lists", "Tag systems", "Vocabulary sets"],
     },
     {
-      title: "Language Implementations",
-      description: "JavaScript objects, Python dicts, and Java HashMaps rely on hashing",
-      examples: ["Object property access", "Symbol tables", "Compiler optimizations"],
+      title: "Fast Lookups",
+      description: "O(1) average time for search, insert, delete",
+      examples: ["Caching", "Compiler symbol tables", "Database indexing"],
     },
   ]
 
+  const liveHashCode = key ? hashFunction(key, tableSize) : null
+  const liveCharSum = key ? getCharSum(key) : null
+
   return (
     <VisualizerLayout
-      title="Hash Table Visualizer"
-      description="Explore key-value storage, custom hash functions, and automatic rehashing"
-      difficulty="Intermediate"
+      title="Hash Table Visualizer (Hash Set)"
+      description="Visualize hash tables using chaining with Unicode-based hashing (w3schools style)"
+      difficulty="Beginner"
       isPlaying={false}
-      onPlay={() => {}}
-      onPause={() => {}}
-      onStepBack={stepBack}
-      onStepForward={stepForward}
-      onReset={reset}
-      currentStep={currentStep}
-      totalSteps={steps.length}
+      
       complexity={{
-        time: strategy === "chaining" ? "O(1) avg, O(n) worst" : "O(1) avg, O(n) worst",
-        space: "O(n)",
+        time: "O(1) average, O(n) worst-case",
+        space: "O(n + tableSize)",
       }}
       applications={applications}
     >
-      <style jsx global>{`
-        @keyframes fadeSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(8px) scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .animate-hash-row {
-          animation: fadeSlideIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-          opacity: 0;
-        }
-      `}</style>
-
       <div className="w-full space-y-6">
         {/* Info Card */}
         <Card className="bg-orange-50 border-primary">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Hash className="h-5 w-5" />
-              What is a Hash Table?
+            <CardTitle className="text-2xl font-bold text-gray-800 tracking-wide">
+              Hash Table Visualizer
             </CardTitle>
+
+            <CardDescription className="text-sm text-muted-foreground leading-relaxed space-y-4">
+              <div>
+                A <strong>hash table</strong> (also called a <em>hash map</em>) is a powerful data structure
+                that stores data in <strong>key–value pairs</strong> for extremely fast access and updates.
+                Instead of searching through a list, a <strong>hash function</strong> converts each key into
+                an index, called a <strong>bucket</strong>, where that key is stored.
+              </div>
+
+              <div className="p-3 bg-muted/40 rounded-lg border border-border">
+                <p className="font-medium text-foreground mb-2">💡 Example:</p>
+                <p>
+                  Suppose we have 5 buckets (<code>0</code> to <code>4</code>) and we insert the keys
+                  <code> "Alice" </code> and <code> "Bob" </code>.
+                </p>
+                <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                  <li>
+                    Hash(<code>"Alice"</code>) → <code>sum("Alice") % 5 = 2</code> → goes into <strong>bucket 2</strong>.
+                  </li>
+                  <li>
+                    Hash(<code>"Bob"</code>) → <code>sum("Bob") % 5 = 0</code> → goes into <strong>bucket 0</strong>.
+                  </li>
+                </ul>
+                <p className="mt-2">
+                  If another key also maps to the same bucket, we handle that using <strong>chaining</strong> —
+                  storing multiple keys in a small list inside that bucket.
+                </p>
+              </div>
+
+              <div>
+                Hash tables are widely used in programming — for example, in
+                <strong> dictionaries (Python) </strong>, <strong>objects (JavaScript)</strong>, and
+                <strong> maps (Java, C++)</strong>. Their average time complexity is
+                <strong> O(1)</strong> for insertion, lookup, and deletion.
+              </div>
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
-            <div className="space-y-2 text-sm">
+            <CardDescription className="text-sm leading-relaxed space-y-2">
               <div>
-                A <strong>hash table</strong> maps <em>keys</em> to <em>values</em> using a <strong>hash function</strong>.
-                Average <strong>O(1)</strong> operations!
+                Use the controls below to <strong>insert</strong> or <strong>delete</strong> keys and watch how
+                the hash table updates dynamically. Each operation is visualized step-by-step, so you can
+                clearly see how hashing, collisions, and chaining work behind the scenes.
               </div>
-              <div>
-                <strong>Collisions</strong> are resolved via <em>chaining</em> or <em>linear probing</em>.
-                This visualizer supports <strong>custom hash functions</strong> and <strong>automatic rehashing</strong> when load factor exceeds 0.75.
-              </div>
-            </div>
+            </CardDescription>
           </CardContent>
+
         </Card>
 
         {/* Controls */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Strategy</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant={strategy === "chaining" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStrategy("chaining")}
-                  className="justify-start"
-                >
-                  Chaining
-                </Button>
-                <Button
-                  variant={strategy === "linear-probing" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStrategy("linear-probing")}
-                  className="justify-start"
-                >
-                  Linear Probing
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Table Size</CardTitle>
@@ -564,12 +334,10 @@ export default function HashTableVisualizer() {
             <CardContent>
               <Input
                 type="number"
-                min="3"
-                max="31"
+                min="5"
+                max="20"
                 value={tableSize}
-                onChange={(e) =>
-                  setTableSize(Math.max(3, Math.min(31, Number(e.target.value))))
-                }
+                onChange={(e) => setTableSize(Math.max(5, Math.min(20, Number(e.target.value))))}
                 className="w-full"
               />
             </CardContent>
@@ -580,126 +348,76 @@ export default function HashTableVisualizer() {
               <CardTitle className="text-lg">Load Factor</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${loadFactor > 0.75 ? "text-red-500" : "text-accent"}`}>
-                {loadFactor.toFixed(2)}
-              </div>
-              <div className="text-sm text-muted-foreground">n / tableSize</div>
-              {loadFactor > 0.75 && (
-                <div className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                  <RotateCcw className="h-3 w-3" /> Will rehash on next insert
-                </div>
-              )}
+              <div className="text-2xl font-bold text-accent">{loadFactor.toFixed(2)}</div>
+              <div className="text-sm text-muted-foreground">Total keys / tableSize</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Reset</CardTitle>
+              <CardTitle className="text-lg">Key Input</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Button onClick={reset} className="w-full" variant="outline">
-                Clear Table
-              </Button>
+            <CardContent className="space-y-3">
+              <Input
+                placeholder="Enter a key (e.g., Bob, Lisa)"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                className="font-mono"
+              />
+
+              {key && (
+                <div className="text-sm p-2 bg-muted/30 rounded flex flex-wrap items-center gap-2">
+                  <span>Hash Code:</span>
+                  <code className="bg-background px-2 py-1 rounded font-mono flex-1">
+                    hash("{key}") = {liveHashCode} (sum: {liveCharSum})
+                  </code>
+                </div>
+              )}
+
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={handleInsert} className="gap-1" disabled={!key.trim()}>
+                  <Plus className="h-4 w-4" /> Insert
+                </Button>
+                <Button variant="outline" onClick={handleSearch} className="gap-1" disabled={!key.trim()}>
+                  <Search className="h-4 w-4" /> Search
+                </Button>
+                <Button variant="destructive" onClick={handleDelete} className="gap-1" disabled={!key.trim()}>
+                  <X className="h-4 w-4" /> Delete
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Hash Function Input */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Custom Hash Function</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Input
-                placeholder="Enter JS expression (e.g., key.length, key.charCodeAt(0))"
-                value={customHash}
-                onChange={(e) => setCustomHash(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Receives <code className="bg-muted px-1 rounded">key</code> (string). Must return a number.
-                Default: sum of character codes.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Operation Inputs */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Operations</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex gap-2 flex-wrap">
-              <Input
-                placeholder="Key"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                className="flex-1 min-w-[120px]"
-              />
-              <Input
-                placeholder="Value"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="flex-1 min-w-[120px]"
-              />
-              <Button onClick={handleInsert} className="gap-1">
-                <Plus className="h-4 w-4" /> Insert
-              </Button>
-              <Button variant="outline" onClick={handleSearch} className="gap-1">
-                <Zap className="h-4 w-4" /> Search
-              </Button>
-              <Button variant="destructive" onClick={handleDelete} className="gap-1">
-                <X className="h-4 w-4" /> Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Visualization */}
         <Card>
           <CardHeader>
-            <CardTitle>Hash Table ({strategy})</CardTitle>
+            <CardTitle>Hash Table (Buckets)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-2">
-              {currentStepData.tableState.map((slot, idx) => {
+              {currentStepData.tableState.map((bucket, idx) => {
                 const isHighlighted = currentStepData.highlightedIndex === idx
                 return (
                   <div
                     key={idx}
-                    className={`animate-hash-row flex items-center p-3 rounded border ${
-                      isHighlighted ? "border-primary bg-primary/10" : "border-muted bg-background"
-                    }`}
-                    style={{ animationDelay: `${idx * 20}ms` }}
+                    className={`flex items-start p-3 rounded border ${isHighlighted ? "border-primary bg-primary/10" : "border-muted bg-background"
+                      }`}
                   >
                     <div className="w-8 text-right font-mono text-sm text-muted-foreground mr-4">
                       {idx}
                     </div>
                     <div className="flex-1 min-h-8">
-                      {strategy === "chaining" ? (
-                        (slot as HashSlot).length === 0 ? (
-                          <span className="text-muted-foreground text-sm">empty</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {(slot as HashSlot).map((entry, i) => (
-                              <Badge key={i} variant="outline" className="font-mono">
-                                "{entry.key}" → "{entry.value}"
-                              </Badge>
-                            ))}
-                          </div>
-                        )
+                      {bucket.length === 0 ? (
+                        <span className="text-muted-foreground text-sm">empty</span>
                       ) : (
-                        slot === null ? (
-                          <span className="text-muted-foreground text-sm">empty</span>
-                        ) : (slot as HashEntry).status === "deleted" ? (
-                          <Badge variant="destructive" className="font-mono">DELETED</Badge>
-                        ) : (
-                          <Badge variant="outline" className="font-mono">
-                            "{(slot as HashEntry).key}" → "{(slot as HashEntry).value}"
-                          </Badge>
-                        )
+                        <div className="flex flex-wrap gap-2">
+                          {bucket.map((item, i) => (
+                            <Badge key={i} variant="outline" className="font-mono">
+                              "{item}"
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -712,19 +430,16 @@ export default function HashTableVisualizer() {
         {/* Pseudocode */}
         <Card>
           <CardHeader>
-            <CardTitle>Pseudocode ({strategy})</CardTitle>
+            <CardTitle>Pseudocode (w3schools Style)</CardTitle>
           </CardHeader>
           <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-60 overflow-y-auto">
-            {currentPseudocode.map((line, index) => (
+            {pseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`
-                  py-1 px-2 rounded transition-all duration-200
-                  ${currentCodeLine === index + 1
+                className={`py-1 px-2 rounded ${currentCodeLine === index + 1
                     ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
                     : "text-muted-foreground"
-                  }
-                `}
+                  }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
@@ -755,23 +470,13 @@ export default function HashTableVisualizer() {
           <CardContent>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="font-mono">"key" → "val"</Badge>
-                <span>Active Entry</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="destructive">DELETED</Badge>
-                <span>Deleted (Linear Probing)</span>
+                <Badge variant="outline" className="font-mono">"key"</Badge>
+                <span>Stored Key</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded border-2 border-primary bg-primary/10"></div>
-                <span>Highlighted Index</span>
+                <span>Highlighted Bucket</span>
               </div>
-              {steps.some((s) => s.isRehash) && (
-                <div className="flex items-center gap-2">
-                  <RotateCcw className="h-4 w-4 text-blue-500" />
-                  <span>Rehashing Step</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

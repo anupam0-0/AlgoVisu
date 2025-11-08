@@ -251,6 +251,47 @@ export default function ArrayVisualizerPage() {
       applications={applications}
     >
       <div className="w-full space-y-8">
+        {/* Introduction Section */}
+        <Card className="bg-gradient-to-br from-gray-50 to-white shadow-md border border-gray-200 rounded-2xl mb-8">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              Understanding Arrays
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-gray-700 leading-relaxed space-y-3 text-sm md:text-base">
+            <div>
+              An <strong>Array</strong> is a linear data structure used to store a fixed-size sequence of
+              elements of the same type. Each element is accessed by its <em>index</em>, which represents its
+              position in memory. Arrays are one of the most fundamental data structures in computer science.
+            </div>
+
+            <div>
+              Arrays enable efficient <strong>data storage</strong> and <strong>random access</strong>, meaning any element can
+              be retrieved instantly using its index. However, inserting or deleting elements can be costly,
+              since other elements may need to shift to maintain order.
+            </div>
+
+            <div className="p-4 bg-gray-50 border rounded-lg shadow-sm space-y-2">
+              <h4 className="font-semibold text-gray-800">Example:</h4>
+              <div className="bg-gray-900 text-gray-100 p-3 rounded-lg text-sm overflow-x-auto font-mono leading-relaxed">
+                # Example of an array in Python<br />
+                numbers = [11, 22, 33, 44, 55]<br />
+                <br />
+                # Accessing elements<br />
+                print(numbers[0]) &nbsp;&nbsp;# Output: 11<br />
+                print(numbers[3]) &nbsp;&nbsp;# Output: 44
+              </div>
+            </div>
+
+            <div>
+              In this visualizer, you can <strong>add elements</strong>, <strong>sort</strong> them, and observe
+              how different search algorithms like <strong>Linear Search</strong> and <strong>Binary Search</strong>
+              work step-by-step in real time. The visualization demonstrates how comparisons and highlights
+              change dynamically as the algorithm progresses.
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Array Visualization — Enlarged */}
         <div className="flex flex-wrap justify-center gap-4 min-h-[200px] items-center p-6 bg-gradient-to-br from-muted/30 to-background rounded-2xl border border-border shadow-sm">
           {array.length === 0 ? (
@@ -262,12 +303,11 @@ export default function ArrayVisualizerPage() {
                   className={`
                     w-20 h-20 md:w-24 md:h-24 border-2 rounded-xl flex flex-col items-center justify-center
                     transition-all duration-300 shadow-md font-bold
-                    ${
-                      element.isFound
-                        ? "bg-green-100 border-green-600 text-green-900 shadow-lg scale-105"
-                        : element.isComparing
-                          ? "bg-yellow-100 border-yellow-500 text-yellow-900 animate-pulse"
-                          : "bg-background border-border hover:border-primary/60"
+                    ${element.isFound
+                      ? "bg-green-100 border-green-600 text-green-900 shadow-lg scale-105"
+                      : element.isComparing
+                        ? "bg-yellow-100 border-yellow-500 text-yellow-900 animate-pulse"
+                        : "bg-background border-border hover:border-primary/60"
                     }
                   `}
                 >
@@ -415,11 +455,10 @@ export default function ArrayVisualizerPage() {
                     {searchSteps.map((step, index) => (
                       <div
                         key={index}
-                        className={`p-3 rounded-lg text-sm transition-all ${
-                          index === currentStepIndex
+                        className={`p-3 rounded-lg text-sm transition-all ${index === currentStepIndex
                             ? "bg-primary/10 border border-primary/30 font-medium text-primary"
                             : "bg-background border border-border"
-                        }`}
+                          }`}
                       >
                         <Badge variant="outline" className="mr-2">
                           {index + 1}
