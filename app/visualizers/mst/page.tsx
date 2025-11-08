@@ -3,12 +3,11 @@ import { useState, useEffect, useRef } from "react"
 import { VisualizerLayout } from "../../../components/visualizer-layout"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
-import { Switch } from "../../../components/ui/switch"
-import { Label } from "../../../components/ui/label"
-import { Plus, Shuffle, X } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../../components/ui/tabs"
+import { Plus, Shuffle } from "lucide-react"
 import type { JSX } from "react/jsx-runtime"
 
 interface GraphNode {
@@ -141,12 +140,6 @@ export default function MSTVisualizerPage() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const svgRef = useRef<SVGSVGElement>(null)
 
-  // Enforce undirected + weighted for MST
-  useEffect(() => {
-    // MST only works on undirected, weighted graphs
-    // We'll silently enforce this in logic; UI can warn if needed
-  }, [])
-
   // Initialize with sample graph
   useEffect(() => {
     const sampleNodes: GraphNode[] = [
@@ -195,8 +188,6 @@ export default function MSTVisualizerPage() {
   const addEdge = () => {
     if (!edgeFrom || !edgeTo || edgeFrom === edgeTo) return
     const weight = Number(edgeWeight) || 1
-    const key1 = `${edgeFrom}-${edgeTo}`
-    const key2 = `${edgeTo}-${edgeFrom}`
     if (edges.some(e => (e.from === edgeFrom && e.to === edgeTo) || (e.from === edgeTo && e.to === edgeFrom))) return
     setEdges([...edges, { from: edgeFrom, to: edgeTo, weight }])
     setEdgeFrom("")
@@ -253,7 +244,6 @@ export default function MSTVisualizerPage() {
 
   const performPrims = () => {
     if (!startNode || nodes.length === 0) return
-
     const steps: MSTStep[] = []
     const mstEdges: string[] = []
     const visited = new Set<string>()
@@ -261,7 +251,6 @@ export default function MSTVisualizerPage() {
     const parent: { [key: string]: string | null } = {}
     const inQueue = new Set<string>(nodes.map(n => n.id))
 
-    // Initialize
     for (const node of nodes) {
       key[node.id] = node.id === startNode ? 0 : Infinity
       parent[node.id] = null
@@ -274,7 +263,6 @@ export default function MSTVisualizerPage() {
     })
 
     while (inQueue.size > 0) {
-      // Find min key in queue
       let minNode = ""
       let minKey = Infinity
       for (const nodeId of inQueue) {
@@ -306,7 +294,6 @@ export default function MSTVisualizerPage() {
         })
       }
 
-      // Update neighbors
       const neighbors = getNeighbors(minNode, edges)
       for (const v of neighbors) {
         if (inQueue.has(v)) {
@@ -333,7 +320,6 @@ export default function MSTVisualizerPage() {
 
   const performKruskal = () => {
     if (nodes.length === 0) return
-
     const steps: MSTStep[] = []
     const mstEdges: string[] = []
     const sortedEdges = [...edges].sort((a, b) => a.weight - b.weight)
@@ -408,13 +394,9 @@ export default function MSTVisualizerPage() {
     setIsPlaying(true)
   }
 
-  const pause = () => {
-    setIsPlaying(false)
-  }
+  const pause = () => setIsPlaying(false)
 
-  const reset = () => {
-    resetGraph()
-  }
+  const reset = () => resetGraph()
 
   useEffect(() => {
     if (isPlaying && currentStep < mstSteps.length - 1) {
@@ -431,13 +413,14 @@ export default function MSTVisualizerPage() {
     }
   }, [currentStep, mstSteps])
 
-  // Drag handlers (same as before)
+  // Drag handlers
+  const svgRefLocal = svgRef
   const handleMouseDown = (nodeId: string, e: React.MouseEvent) => {
     const node = nodes.find(n => n.id === nodeId)
     if (!node) return
     setIsDragging(true)
     setDraggedNodeId(nodeId)
-    const svgRect = svgRef.current?.getBoundingClientRect()
+    const svgRect = svgRefLocal.current?.getBoundingClientRect()
     if (svgRect) {
       setDragOffset({
         x: e.clientX - svgRect.left - node.x,
@@ -591,15 +574,31 @@ export default function MSTVisualizerPage() {
   const algorithmInfo = {
     prim: {
       name: "Prim's Algorithm",
-      description: "Grows MST from a starting vertex using greedy edge selection",
-      timeComplexity: "O(E log V)",
-      spaceComplexity: "O(V)",
+      description: "Grows an MST from a chosen start vertex by repeatedly taking the cheapest edge that connects the tree to a new vertex.",
+      timeComplexity: "O(E log V) with a binary heap (dense graphs often perform well).",
+      spaceComplexity: "O(V) for keys/parents/queue.",
+      whenToUse: [
+        "Graphs where you care about connecting from a specific start.",
+        "Dense graphs (Prim’s with heaps is efficient).",
+      ],
+      keyIdeas: [
+        "Maintain a key (best known edge weight) for each non-tree vertex.",
+        "Use a priority structure to pick the minimum key vertex.",
+      ],
     },
     kruskal: {
       name: "Kruskal's Algorithm",
-      description: "Sorts edges and adds smallest safe edge using Union-Find",
-      timeComplexity: "O(E log E)",
-      spaceComplexity: "O(V)",
+      description: "Sorts all edges by weight and adds the next lightest edge that doesn’t make a cycle, using Union–Find to detect cycles.",
+      timeComplexity: "O(E log E) for edge sort (≈ O(E log V)).",
+      spaceComplexity: "O(V) for Union–Find.",
+      whenToUse: [
+        "Sparse graphs.",
+        "You want a simple global greedy rule independent of a start vertex.",
+      ],
+      keyIdeas: [
+        "Sort edges by weight.",
+        "Use Union–Find (Disjoint Sets) to avoid cycles.",
+      ],
     },
   }
 
@@ -642,14 +641,104 @@ export default function MSTVisualizerPage() {
       currentStep={currentStep}
       totalSteps={mstSteps.length}
       complexity={{
-        time: currentAlgorithm.timeComplexity,
-        space: currentAlgorithm.spaceComplexity,
+        time: algorithm === "prim" ? "O(E log V)" : "O(E log E)",
+        space: "O(V)",
       }}
       applications={applications}
     >
       <div className="w-full space-y-6">
+
+        {/* ===== TOP: MST Overview + Algorithm Selector ===== */}
+        <div className="grid lg:grid-cols-3 gap-4">
+          {/* MST Overview */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-lg">What is a Minimum Spanning Tree (MST)?</CardTitle>
+              <CardDescription>
+                An MST is a subset of edges that connects all vertices of a connected, undirected, weighted graph
+                with the minimum possible total edge weight, without cycles (|V|-1 edges).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-3">
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Applicable to connected, undirected, weighted graphs.</li>
+                <li>If edge weights are unique, the MST is unique; otherwise multiple MSTs can exist.</li>
+                <li>Typical uses: network design, clustering, approximation algorithms.</li>
+              </ul>
+              <div className="text-muted-foreground">
+                Select an algorithm on the right to learn how it constructs an MST, then press <b>Play</b> or step through.
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Algorithm Tabs Selector */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Choose Algorithm</CardTitle>
+              <CardDescription>Switch to see detailed guidance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs
+                value={algorithm}
+                onValueChange={(val: string) => setAlgorithm(val as AlgorithmType)}
+                className="w-full"
+              >
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="prim">Prim&apos;s</TabsTrigger>
+                  <TabsTrigger value="kruskal">Kruskal&apos;s</TabsTrigger>
+                </TabsList>
+                {/* Small inline hints */}
+                <TabsContent value="prim" className="mt-3 text-sm text-muted-foreground">
+                  Start-based, great for dense graphs. Set a <b>Start Node</b> below if needed.
+                </TabsContent>
+                <TabsContent value="kruskal" className="mt-3 text-sm text-muted-foreground">
+                  Edge-sorted approach, simple with Union–Find, ideal for sparse graphs.
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Deep-dive info panel that swaps with selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Detailed Algorithm Info</CardTitle>
+            <CardDescription>{currentAlgorithm.name}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
+            <div className="md:col-span-2 space-y-2">
+              <div><b>How it works:</b> {currentAlgorithm.description}</div>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <div>
+                  <b>When to use</b>
+                  <ul className="list-disc pl-5">
+                    {currentAlgorithm.whenToUse.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <b>Key ideas</b>
+                  <ul className="list-disc pl-5">
+                    {currentAlgorithm.keyIdeas.map((k, i) => <li key={i}>{k}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div><b>Time:</b> {currentAlgorithm.timeComplexity}</div>
+              <div><b>Space:</b> {currentAlgorithm.spaceComplexity}</div>
+              {algorithm === "prim" && (
+                <div className="text-muted-foreground">
+                  Tip: Choose a <b>Start Node</b> for Prim’s in the controls below before running.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Graph */}
         <div className="flex justify-center p-4 bg-muted/10 rounded-lg">{renderGraph()}</div>
 
+        {/* Pseudocode */}
         <Card className="h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">Pseudocode</CardTitle>
@@ -658,13 +747,11 @@ export default function MSTVisualizerPage() {
             {currentPseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`
-                  py-1 px-2 rounded
-                  ${currentCodeLine === index + 1
+                className={`py-1 px-2 rounded ${
+                  currentCodeLine === index + 1
                     ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
                     : "text-muted-foreground"
-                  }
-                `}
+                }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
@@ -675,52 +762,43 @@ export default function MSTVisualizerPage() {
 
         {/* Controls */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* (Moved algorithm selection to top — this card now shows start node + actions/info) */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Algorithm</CardTitle>
+              <CardTitle className="text-lg">Start Node (Prim&apos;s)</CardTitle>
+              <CardDescription>Only used when Prim&apos;s is selected</CardDescription>
             </CardHeader>
             <CardContent>
-              <Select value={algorithm} onValueChange={(value: AlgorithmType) => setAlgorithm(value)}>
+              <Select value={startNode} onValueChange={setStartNode} disabled={algorithm !== "prim"}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Start node" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="prim">Prim's</SelectItem>
-                  <SelectItem value="kruskal">Kruskal's</SelectItem>
+                  {nodes.map((node) => (
+                    <SelectItem key={node.id} value={node.id}>
+                      {node.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">Start Node (Prim's)</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <Select value={startNode} onValueChange={setStartNode} disabled={algorithm !== "prim"}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Start node" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {nodes.map((node) => (
-                            <SelectItem key={node.id} value={node.id}>
-                            {node.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </CardContent>
-           </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Generate</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-2">
               <Button onClick={generateRandomGraph} className="w-full">
                 <Shuffle className="h-4 w-4 mr-2" />
                 Random Graph
               </Button>
+              <Button variant="secondary" onClick={startAlgorithm} className="w-full">
+                Run {algorithm === "prim" ? "Prim's" : "Kruskal's"}
+              </Button>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Graph Info</CardTitle>
@@ -729,6 +807,17 @@ export default function MSTVisualizerPage() {
               <div>Vertices: {nodes.length}</div>
               <div>Edges: {edges.length}</div>
               <div className="text-muted-foreground mt-1">MST requires undirected, weighted graph</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Run Tips</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-1">
+              <div>• Press <b>Play</b> for auto steps or step manually.</div>
+              <div>• Add/remove nodes/edges to test scenarios.</div>
+              <div>• Edge colors: <span className="text-green-600 font-medium">MST</span>, <span className="text-blue-600 font-medium">Candidate</span>.</div>
             </CardContent>
           </Card>
         </div>
@@ -787,6 +876,7 @@ export default function MSTVisualizerPage() {
           </Card>
         </div>
 
+        {/* Delete */}
         <div className="grid md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
@@ -800,10 +890,14 @@ export default function MSTVisualizerPage() {
                     {nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Button variant="destructive" onClick={() => {
-                  if (deleteVertexId) removeNode(deleteVertexId)
-                  setDeleteVertexId("")
-                }} disabled={!deleteVertexId}>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (deleteVertexId) removeNode(deleteVertexId)
+                    setDeleteVertexId("")
+                  }}
+                  disabled={!deleteVertexId}
+                >
                   Delete
                 </Button>
               </div>
@@ -827,13 +921,17 @@ export default function MSTVisualizerPage() {
                     {nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Button variant="destructive" onClick={() => {
-                  if (deleteEdgeFrom && deleteEdgeTo) {
-                    removeEdge(deleteEdgeFrom, deleteEdgeTo)
-                    setDeleteEdgeFrom("")
-                    setDeleteEdgeTo("")
-                  }
-                }} disabled={!deleteEdgeFrom || !deleteEdgeTo}>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (deleteEdgeFrom && deleteEdgeTo) {
+                      removeEdge(deleteEdgeFrom, deleteEdgeTo)
+                      setDeleteEdgeFrom("")
+                      setDeleteEdgeTo("")
+                    }
+                  }}
+                  disabled={!deleteEdgeFrom || !deleteEdgeTo}
+                >
                   Delete
                 </Button>
               </div>
@@ -841,6 +939,7 @@ export default function MSTVisualizerPage() {
           </Card>
         </div>
 
+        {/* Current Step */}
         {mstSteps.length > 0 && (
           <Card>
             <CardHeader>
@@ -864,6 +963,7 @@ export default function MSTVisualizerPage() {
           </Card>
         )}
 
+        {/* Legend */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Legend</CardTitle>
@@ -884,7 +984,7 @@ export default function MSTVisualizerPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
-                <span>Visited (Prim's)</span>
+                <span>Visited (Prim&apos;s)</span>
               </div>
             </div>
           </CardContent>

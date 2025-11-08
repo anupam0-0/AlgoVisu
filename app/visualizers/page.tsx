@@ -3,9 +3,12 @@ import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import Link from "next/link"
 import Header from "@/components/header"
-import { ArrowLeft, Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, ImageIcon, Printer, Search, Shuffle } from "lucide-react"
+import { Play, BarChart3, GitBranch, Layers, Network, Music, Zap, Sigma, Printer, Search, Shuffle, FolderTree, Trophy, TrendingUp } from "lucide-react"
 
-export default function VisualizersPage() {
+
+
+
+const VisualizersPage = () => {
   const visualizers = [
     {
       id: "array",
@@ -48,6 +51,16 @@ export default function VisualizersPage() {
       type: "visualizer"
     },
     {
+      id: "hash-table",
+      title: "Hash Table Visualizer",
+      description: "Explore key-value storage, hash functions, and collision resolution strategies like chaining and open addressing",
+      icon: <Sigma className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Hashing", "Collision Resolution", "Load Factor", "Chaining", "Open Addressing"],
+      available: true,
+      type: "visualizer"
+    },
+    {
       id: "linked-list",
       title: "Linked List Visualizer",
       description: "Single, doubly, and circular linked lists",
@@ -64,36 +77,6 @@ export default function VisualizersPage() {
       icon: <GitBranch className="h-6 w-6" />,
       difficulty: "Intermediate",
       topics: ["Binary Tree", "BST", "Traversals", "Insert/Delete"],
-      available: true,
-      type: "visualizer"
-    },
-    {
-      id: "graph",
-      title: "Graph Algorithms",
-      description: "BFS, DFS, shortest path algorithms",
-      icon: <Network className="h-6 w-6" />,
-      difficulty: "Advanced",
-      topics: ["BFS", "DFS", "Graph Traversal", "Shortest Path"],
-      available: true,
-      type: "visualizer"
-    },
-    {
-      id: "mst",
-      title: "Minimum Spanning Tree Visualizer",
-      description: "Kruskal's and Prim's algorithms",
-      icon: <Network className="h-6 w-6" />,
-      difficulty: "Advanced",
-      topics: ["Kruskal's", "Prim's"],
-      available: true,
-      type: "visualizer"
-    },
-    {
-      id: "hash-table",
-      title: "Hash Table Visualizer",
-      description: "Explore key-value storage, hash functions, and collision resolution strategies like chaining and open addressing",
-      icon: <Sigma className="h-6 w-6" />,
-      difficulty: "Intermediate",
-      topics: ["Hashing", "Collision Resolution", "Load Factor", "Chaining", "Open Addressing"],
       available: true,
       type: "visualizer"
     },
@@ -118,6 +101,26 @@ export default function VisualizersPage() {
       type: "visualizer"
     },
     {
+      id: "graph",
+      title: "Graph Algorithms",
+      description: "BFS, DFS, shortest path algorithms",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["BFS", "DFS", "Graph Traversal", "Shortest Path"],
+      available: true,
+      type: "visualizer"
+    },
+    {
+      id: "mst",
+      title: "Minimum Spanning Tree Visualizer",
+      description: "Kruskal's and Prim's algorithms",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["Kruskal's", "Prim's"],
+      available: true,
+      type: "visualizer"
+    },
+    {
       id: "avl",
       title: "AVL Tree Visualizer",
       description: "Self-balancing binary search trees with automatic rotations to maintain O(log n) height",
@@ -127,6 +130,8 @@ export default function VisualizersPage() {
       available: true,
       type: "visualizer"
     },
+
+    /** -------------------- Applications (with mapping) -------------------- **/
     {
       id: "sna",
       title: "Social Network Analyzer",
@@ -135,7 +140,8 @@ export default function VisualizersPage() {
       difficulty: "Advanced",
       topics: ["Real-World", "Case Studies"],
       available: true,
-      type: "application"
+      type: "application",
+      relatedTo: ["graph"]
     },
     {
       id: "navigation-system",
@@ -145,7 +151,8 @@ export default function VisualizersPage() {
       difficulty: "Advanced",
       topics: ["Real-World", "Case Studies"],
       available: true,
-      type: "application"
+      type: "application",
+      relatedTo: ["graph"]
     },
     {
       id: "music-playlist",
@@ -155,7 +162,8 @@ export default function VisualizersPage() {
       difficulty: "Intermediate",
       topics: ["Real-World", "Media Apps", "User Experience"],
       available: true,
-      type: "application"
+      type: "application",
+      relatedTo: ["linked-list"]
     },
     {
       id: "lru-cache",
@@ -165,7 +173,8 @@ export default function VisualizersPage() {
       difficulty: "Advanced",
       topics: ["Systems Design", "Caching", "Performance"],
       available: true,
-      type: "application"
+      type: "application",
+      relatedTo: ["linked-list"]
     },
     {
       id: "mst-clustering",
@@ -175,7 +184,8 @@ export default function VisualizersPage() {
       difficulty: "Intermediate",
       topics: ["Clustering", "Graph Algorithms", "Data Analysis"],
       available: true,
-      type: "application"
+      type: "application",
+      relatedTo: ["mst"]
     },
     {
       id: "prefix-search-visualizer",
@@ -185,7 +195,8 @@ export default function VisualizersPage() {
       difficulty: "Beginner",
       topics: ["String Algorithms", "User Experience", "Data Structures"],
       available: true,
-      type: "application"
+      type: "application",
+      relatedTo: ["array"]
     },
     {
       id: "print-queue",
@@ -195,9 +206,44 @@ export default function VisualizersPage() {
       difficulty: "Beginner",
       topics: ["Queues", "Operating Systems", "Real-World Algorithms"],
       available: true,
-      type: "application"
-    }
-  ]
+      type: "application",
+      relatedTo: ["queue"]
+    },
+    {
+      id: "file-system-explorer",
+      title: "File System & Folder Explorer",
+      description: "Model hierarchical file systems as trees: navigate folders, create/move/delete nodes, and understand traversals and path operations.",
+      icon: <FolderTree className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Hierarchy", "Tree Traversal", "Paths", "CRUD on Nodes"],
+      available: true,
+      type: "application",
+      relatedTo: ["tree"]
+    },
+    {
+      id: "ecommerce-ranking",
+      title: "E-Commerce Ranking",
+      description: "Understand how products are sorted dynamically by price, date, ratings, or popularity in online marketplaces.",
+      icon: <TrendingUp className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Sorting", "Ranking Systems", "Custom Comparators", "User Experience"],
+      available: true,
+      type: "application",
+      relatedTo: ["sorting"]
+    },
+
+    {
+      id: "realtime-leaderboard",
+      title: "Real-Time Leaderboards (Ordered Inserts)",
+      description: "Use AVL rotations to maintain a sorted scoreboard with fast inserts, deletes, and rank queries",
+      icon: <Trophy className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["AVL Tree", "Rotations", "Order Statistics", "Rank Queries"],
+      available: true,
+      type: "application",
+      relatedTo: ["avl"]
+    },
+  ] as any[]
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -215,11 +261,29 @@ export default function VisualizersPage() {
   // Group visualizers by structure type
   const linearVisualizers = visualizers
     .filter(v => v.type === 'visualizer')
-    .filter(v => ['array', 'stack', 'queue', 'sorting', 'linked-list', 'hash-table'].includes(v.id))
+    .filter(v => ['array', 'stack', 'queue', 'sorting', 'hash-table', 'linked-list'].includes(v.id))
 
   const nonLinearVisualizers = visualizers
     .filter(v => v.type === 'visualizer')
     .filter(v => ['tree', 'avl', 'trie', 'graph', 'mst', 'heap'].includes(v.id))
+
+  // Build visualizer meta for easy lookup
+  const visualizerMeta = Object.fromEntries(
+    [...linearVisualizers, ...nonLinearVisualizers].map(v => [v.id, { title: v.title, icon: v.icon }])
+  )
+
+  // Group applications under their related visualizers
+  const applications = visualizers.filter(v => v.type === 'application') as Array<
+    typeof visualizers[number] & { relatedTo: string[] }
+  >
+
+  const appsByVisualizer: Record<string, typeof applications> = {}
+  for (const app of applications) {
+    for (const vid of app.relatedTo) {
+      if (!appsByVisualizer[vid]) appsByVisualizer[vid] = []
+      appsByVisualizer[vid].push(app)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-orange-200">
@@ -356,66 +420,99 @@ export default function VisualizersPage() {
             </div>
           </div>
 
-          {/* Applications Section (unchanged) */}
+          {/* Applications by Visualizer (grouped view) */}
           <div>
             <h2 className="text-3xl font-bold mb-6 text-primary flex items-center">
               <Layers className="h-8 w-8 mr-2" />
-              Applications
+              Applications by Visualizer
             </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visualizers
-                .filter(v => v.type === 'application')
-                .map((visualizer) => (
-                  <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : "hover:shadow-lg transition-shadow"}`}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
-                            {visualizer.icon}
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
-                            <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
-                              {visualizer.difficulty}
-                            </Badge>
-                          </div>
-                        </div>
+
+            <div className="space-y-10">
+              {Object.entries(appsByVisualizer).map(([vizId, apps]) => {
+                const viz = visualizerMeta[vizId]
+                if (!viz) return null
+                return (
+                  <div key={vizId}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-8 w-8 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                        {viz.icon}
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {visualizer.topics.map((topic, index) => (
-                          <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
-                            {topic}
-                          </Badge>
-                        ))}
-                      </div>
-                      {visualizer.available ? (
-                        <Button asChild className="w-full">
-                          <Link href={`/visualizers/${visualizer.id}`}>
-                            <Play className="h-4 w-4 mr-2" />
-                            Start Learning
-                          </Link>
-                        </Button>
-                      ) : (
-                        <Button disabled className="w-full">
-                          Coming Soon
-                        </Button>
-                      )}
-                    </CardContent>
-                    {!visualizer.available && (
-                      <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
-                        <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl">Coming Soon</h1>
-                      </div>
-                    )}
-                  </Card>
-                ))}
+                      <Link href={`/visualizers/${vizId}`} className="text-2xl font-semibold text-primary hover:underline">
+                        {viz.title}
+                      </Link>
+                      <Badge variant="outline" className="ml-2 border-2 border-primary bg-orange-50">
+                        {apps.length} application{apps.length > 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {apps.map((visualizer) => (
+                        <Card key={visualizer.id} className={`relative bg-orange-100 rounded border-4 border-primary ${!visualizer.available ? "opacity-60" : "hover:shadow-lg transition-shadow"}`}>
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                                  {visualizer.icon}
+                                </div>
+                                <div>
+                                  <CardTitle className="text-lg text-primary">{visualizer.title}</CardTitle>
+                                  <Badge className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(visualizer.difficulty)}`}>
+                                    {visualizer.difficulty}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <CardDescription className="mb-4 font-medium text-primary">{visualizer.description}</CardDescription>
+                            <div className="flex flex-wrap gap-1 mb-4">
+                              {visualizer.topics.map((topic, index) => (
+                                <Badge key={index} variant="outline" className="text-xs border-2 border-primary rounded bg-orange-50">
+                                  {topic}
+                                </Badge>
+                              ))}
+                            </div>
+
+                            {/* Shows which visualizers this app is linked to */}
+                            <div className="mb-4 flex flex-wrap gap-2">
+                              {(visualizer as any).relatedTo?.map((rid: string) => (
+                                <Badge key={rid} className="text-xs border border-primary bg-white">
+                                  <Link href={`/visualizers/${rid}`} className="hover:underline">
+                                    {visualizerMeta[rid]?.title ?? rid}
+                                  </Link>
+                                </Badge>
+                              ))}
+                            </div>
+
+                            {visualizer.available ? (
+                              <Button asChild className="w-full">
+                                <Link href={`/visualizers/${visualizer.id}`}>
+                                  <Play className="h-4 w-4 mr-2" />
+                                  Start Learning
+                                </Link>
+                              </Button>
+                            ) : (
+                              <Button disabled className="w-full">
+                                Coming Soon
+                              </Button>
+                            )}
+                          </CardContent>
+                          {!visualizer.available && (
+                            <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
+                              <h1 className="-rotate-45 font-extrabold text-muted-foreground text-4xl">Coming Soon</h1>
+                            </div>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
 
-        {/* Learning Tips (unchanged) */}
+        {/* Learning Tips */}
         <div className="mt-16 bg-orange-100 rounded-lg p-6 ">
           <h2 className="text-xl font-semibold mb-4 ">Learning Tips</h2>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
@@ -437,3 +534,5 @@ export default function VisualizersPage() {
     </div>
   )
 }
+
+export default VisualizersPage

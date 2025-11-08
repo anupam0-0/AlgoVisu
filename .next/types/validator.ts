@@ -63,6 +63,24 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
   type __Unused = __Check
 }
 
+// Validate ../../app/visualizers/ecommerce-ranking/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/ecommerce-ranking">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/ecommerce-ranking/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/visualizers/file-system-explorer/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/file-system-explorer">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/file-system-explorer/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/visualizers/graph/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/visualizers/graph">> = Specific
@@ -175,6 +193,15 @@ type LayoutConfig<Route extends LayoutRoutes = LayoutRoutes> = {
 {
   type __IsExpected<Specific extends AppPageConfig<"/visualizers/queue">> = Specific
   const handler = {} as typeof import("../../app/visualizers/queue/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/visualizers/realtime-leaderboard/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/visualizers/realtime-leaderboard">> = Specific
+  const handler = {} as typeof import("../../app/visualizers/realtime-leaderboard/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

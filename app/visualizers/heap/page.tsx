@@ -24,7 +24,7 @@ const pseudocode = [
   "function heapifyUp(index):",
   "  while index > 0:",
   "    parent = (index - 1) // 2",
-  "    if heap[parent] <= heap[index]: break  // for max-heap, reverse",
+  "    if satisfiesHeapProperty(parent, index): break",
   "    swap(heap[parent], heap[index])",
   "    index = parent",
   "",
@@ -39,12 +39,10 @@ const pseudocode = [
   "  while true:",
   "    left = 2*index + 1",
   "    right = 2*index + 2",
-  "    smallest = index",
-  "    if left < size and heap[left] < heap[smallest]: smallest = left",
-  "    if right < size and heap[right] < heap[smallest]: smallest = right",
-  "    if smallest == index: break",
-  "    swap(heap[index], heap[smallest])",
-  "    index = smallest",
+  "    bestChild = chooseChildByHeapType(left, right)", // min: smaller; max: larger
+  "    if bestChild out of range or satisfiesHeapProperty(index, bestChild): break",
+  "    swap(heap[index], heap[bestChild])",
+  "    index = bestChild",
   "",
   "// Floyd's Build-Heap (O(n))",
   "function buildHeap(arr):",
@@ -88,122 +86,174 @@ export default function HeapVisualizer() {
     setCurrentCodeLine(-1)
   }
 
-  const compare = (a: number, b: number): boolean => {
-    return heapType === "min" ? a > b : a < b
+  // --- Heap helpers that adapt to min/max cleanly ---
+
+  /** True if the pair (parentIdx, childIdx) already satisfies the heap property. */
+  const satisfiesProperty = (parentIdx: number, childIdx: number, arr: number[]) => {
+    if (childIdx < 0 || childIdx >= arr.length) return true
+    if (heapType === "min") return arr[parentIdx] <= arr[childIdx]
+    return arr[parentIdx] >= arr[childIdx]
+  }
+
+  /** For heapify-up: should parent and child be swapped? */
+  const shouldSwapUp = (parentIdx: number, childIdx: number, arr: number[]) => {
+    if (heapType === "min") return arr[parentIdx] > arr[childIdx]
+    return arr[parentIdx] < arr[childIdx]
+  }
+
+  /** For heapify-down: pick the child (left/right) that should win the comparison. */
+  const selectSwapChild = (index: number, arr: number[]) => {
+    const left = 2 * index + 1
+    const right = 2 * index + 2
+    const n = arr.length
+    if (left >= n) return -1
+    if (right >= n) return left
+    if (heapType === "min") {
+      return arr[left] <= arr[right] ? left : right
+    } else {
+      return arr[left] >= arr[right] ? left : right
+    }
   }
 
   const addStep = (description: string, heapState: number[], highlighted: number[], codeLine: number) => {
     setSteps(prev => [...prev, { description, heap: [...heapState], highlightedIndices: [...highlighted], codeLine }])
   }
 
+  // --- Insert (heapify up) ---
   const handleInsert = () => {
     const val = Number(inputValue)
     if (isNaN(val)) return
 
-    let currentHeap = [...heap, val]
-    const stepsSnapshot: HeapStep[] = []
-    let index = currentHeap.length - 1
+    let arr = [...heap, val]
+    const localSteps: HeapStep[] = []
 
-    stepsSnapshot.push({
-      description: `Inserted ${val} at end of heap.`,
-      heap: [...currentHeap],
-      highlightedIndices: [index],
+    localSteps.push({
+      description: `Inserted ${val} at index ${arr.length - 1}.`,
+      heap: [...arr],
+      highlightedIndices: [arr.length - 1],
       codeLine: 2,
     })
 
-    while (index > 0) {
-      const parent = Math.floor((index - 1) / 2)
-      stepsSnapshot.push({
-        description: `Compare ${currentHeap[index]} (index ${index}) with parent ${currentHeap[parent]} (index ${parent}).`,
-        heap: [...currentHeap],
-        highlightedIndices: [index, parent],
+    let idx = arr.length - 1
+    while (idx > 0) {
+      const parent = Math.floor((idx - 1) / 2)
+
+      localSteps.push({
+        description: `Compare child index ${idx} (value ${arr[idx]}) with parent index ${parent} (value ${arr[parent]}).`,
+        heap: [...arr],
+        highlightedIndices: [idx, parent],
         codeLine: 7,
       })
 
-      if (!compare(currentHeap[parent], currentHeap[index])) break
+      if (!shouldSwapUp(parent, idx, arr)) {
+        localSteps.push({
+          description: `Heap property satisfied. Stop heapify-up.`,
+          heap: [...arr],
+          highlightedIndices: [idx, parent],
+          codeLine: 8,
+        })
+        break
+      }
 
-      [currentHeap[parent], currentHeap[index]] = [currentHeap[index], currentHeap[parent]]
-      index = parent
-      stepsSnapshot.push({
-        description: `Swapped ${currentHeap[index]} and ${currentHeap[parent]}.`,
-        heap: [...currentHeap],
-        highlightedIndices: [index],
-        codeLine: 8,
+      // capture values for correct narration before swap
+      const beforeParentVal = arr[parent]
+      const beforeChildVal = arr[idx]
+        ;[arr[parent], arr[idx]] = [arr[idx], arr[parent]]
+      localSteps.push({
+        description: `Swapped child (${beforeChildVal}) with parent (${beforeParentVal}).`,
+        heap: [...arr],
+        highlightedIndices: [parent, idx],
+        codeLine: 9,
+      })
+      idx = parent
+      localSteps.push({
+        description: `Move up to index ${idx}.`,
+        heap: [...arr],
+        highlightedIndices: [idx],
+        codeLine: 10,
       })
     }
 
-    setHeap(currentHeap)
-    setSteps(stepsSnapshot)
+    setHeap(arr)
+    setSteps(localSteps)
     setCurrentStep(0)
     setInputValue("")
   }
 
+  // --- Extract root (heapify down) ---
   const handleExtract = () => {
     if (heap.length === 0) return
 
-    let currentHeap = [...heap]
-    const root = currentHeap[0]
-    const last = currentHeap.pop()!
-    if (currentHeap.length === 0) {
+    let arr = [...heap]
+    const root = arr[0]
+    const last = arr.pop()!
+
+    if (arr.length === 0) {
+      // only one element
       setHeap([])
-      setSteps([{ description: `Extracted root ${root}. Heap is now empty.`, heap: [], highlightedIndices: [], codeLine: -1 }])
+      setSteps([{ description: `Extracted root ${root}. Heap is now empty.`, heap: [], highlightedIndices: [], codeLine: 12 }])
       setCurrentStep(0)
       return
     }
 
-    currentHeap[0] = last
-    const stepsSnapshot: HeapStep[] = []
-    let index = 0
+    arr[0] = last
+    const localSteps: HeapStep[] = []
 
-    stepsSnapshot.push({
-      description: `Replaced root with last element: ${last}.`,
-      heap: [...currentHeap],
+    localSteps.push({
+      description: `Replaced root (${root}) with last element (${last}).`,
+      heap: [...arr],
       highlightedIndices: [0],
       codeLine: 15,
     })
 
+    let idx = 0
     while (true) {
-      const left = 2 * index + 1
-      const right = 2 * index + 2
-      let target = index
+      const left = 2 * idx + 1
+      const right = 2 * idx + 2
+      const best = selectSwapChild(idx, arr)
 
-      if (left < currentHeap.length && compare(currentHeap[target], currentHeap[left])) {
-        target = left
-      }
-      if (right < currentHeap.length && compare(currentHeap[target], currentHeap[right])) {
-        target = right
-      }
-
-      stepsSnapshot.push({
-        description: `Checking children of index ${index} (value ${currentHeap[index]}).`,
-        heap: [...currentHeap],
-        highlightedIndices: [index, left, right].filter(i => i < currentHeap.length),
-        codeLine: 23,
+      localSteps.push({
+        description: `Check children of index ${idx} → left: ${left}, right: ${right}.`,
+        heap: [...arr],
+        highlightedIndices: [idx, left, right].filter(i => i < arr.length),
+        codeLine: 21,
       })
 
-      if (target === index) break
+      if (best === -1 || satisfiesProperty(idx, best, arr)) {
+        localSteps.push({
+          description: `Heap property satisfied at index ${idx}. Stop heapify-down.`,
+          heap: [...arr],
+          highlightedIndices: [idx],
+          codeLine: 22,
+        })
+        break
+      }
 
-      [currentHeap[index], currentHeap[target]] = [currentHeap[target], currentHeap[index]]
-      stepsSnapshot.push({
-        description: `Swapped with child at index ${target} (value ${currentHeap[index]}).`,
-        heap: [...currentHeap],
-        highlightedIndices: [target],
-        codeLine: 26,
+      const beforeParentVal = arr[idx]
+      const beforeChildVal = arr[best]
+        ;[arr[idx], arr[best]] = [arr[best], arr[idx]]
+      localSteps.push({
+        description: `Swapped parent (${beforeParentVal}) with child (${beforeChildVal}) at index ${best}.`,
+        heap: [...arr],
+        highlightedIndices: [idx, best],
+        codeLine: 24,
       })
-      index = target
+      idx = best
     }
 
-    setHeap(currentHeap)
-    stepsSnapshot.push({
+    localSteps.push({
       description: `Extracted root ${root}.`,
-      heap: [...currentHeap],
+      heap: [...arr],
       highlightedIndices: [],
       codeLine: 16,
     })
-    setSteps(stepsSnapshot)
+
+    setHeap(arr)
+    setSteps(localSteps)
     setCurrentStep(0)
   }
 
+  // --- Build heap (Floyd) ---
   const buildHeapFromArray = () => {
     const arr = arrayInput
       .split(",")
@@ -214,53 +264,44 @@ export default function HeapVisualizer() {
 
     if (arr.length === 0) return
 
-    let currentHeap = [...arr]
-    const stepsSnapshot: HeapStep[] = []
+    let a = [...arr]
+    const localSteps: HeapStep[] = []
 
-    stepsSnapshot.push({
+    localSteps.push({
       description: `Starting with array: [${arr.join(", ")}]`,
-      heap: [...currentHeap],
+      heap: [...a],
       highlightedIndices: [],
-      codeLine: -1,
+      codeLine: 29,
     })
 
-    const n = currentHeap.length
+    const n = a.length
     for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-      stepsSnapshot.push({
-        description: `Heapifying from index ${i} (value ${currentHeap[i]})`,
-        heap: [...currentHeap],
+      localSteps.push({
+        description: `Heapify-down from index ${i} (value ${a[i]}).`,
+        heap: [...a],
         highlightedIndices: [i],
         codeLine: 33,
       })
 
-      let index = i
+      let idx = i
       while (true) {
-        const left = 2 * index + 1
-        const right = 2 * index + 2
-        let target = index
-
-        if (left < n && compare(currentHeap[target], currentHeap[left])) {
-          target = left
-        }
-        if (right < n && compare(currentHeap[target], currentHeap[right])) {
-          target = right
-        }
-
-        if (target === index) break
-
-        [currentHeap[index], currentHeap[target]] = [currentHeap[target], currentHeap[index]]
-        stepsSnapshot.push({
-          description: `Swapped ${currentHeap[target]} and ${currentHeap[index]} during heapify.`,
-          heap: [...currentHeap],
-          highlightedIndices: [index, target],
-          codeLine: 26,
+        const best = selectSwapChild(idx, a)
+        if (best === -1 || satisfiesProperty(idx, best, a)) break
+        const beforeParentVal = a[idx]
+        const beforeChildVal = a[best]
+          ;[a[idx], a[best]] = [a[best], a[idx]]
+        localSteps.push({
+          description: `Swapped (${beforeParentVal}) with (${beforeChildVal}) during heapify.`,
+          heap: [...a],
+          highlightedIndices: [idx, best],
+          codeLine: 24,
         })
-        index = target
+        idx = best
       }
     }
 
-    setHeap(currentHeap)
-    setSteps(stepsSnapshot)
+    setHeap(a)
+    setSteps(localSteps)
     setCurrentStep(0)
     setArrayInput("")
   }
@@ -310,8 +351,8 @@ export default function HeapVisualizer() {
       description="Understand min-heaps and max-heaps, heapify operations, and priority queue implementations"
       difficulty="Intermediate"
       isPlaying={false}
-      onPlay={() => {}}
-      onPause={() => {}}
+      onPlay={() => { }}
+      onPause={() => { }}
       onStepBack={stepBack}
       onStepForward={stepForward}
       onReset={reset}
@@ -334,13 +375,77 @@ export default function HeapVisualizer() {
           <CardContent>
             <CardDescription className="space-y-2 text-sm">
               <p>
-                A <strong>heap</strong> is a complete binary tree that satisfies the <em>heap property</em>.
-                It is implemented as an array for efficiency.
+                A <strong>heap</strong> is a complete binary tree stored as an array that satisfies the{" "}
+                <em>heap property</em>:
+                <br />
+                • <strong>Min-heap</strong>: each parent ≤ its children (root is the <em>minimum</em>).<br />
+                • <strong>Max-heap</strong>: each parent ≥ its children (root is the <em>maximum</em>).
               </p>
               <p>
-                <strong>Floyd’s Build-Heap</strong> constructs a heap from an unsorted array in <strong>O(n)</strong> time by heapifying from the last non-leaf node upward.
+                Operations: <strong>insert</strong> (heapify-up), <strong>extract-root</strong> (heapify-down),
+                <strong> peek</strong> (read root).
+              </p>
+              <p>
+                <strong>Floyd’s Build-Heap</strong> builds a heap from an array in <strong>O(n)</strong> by heapifying
+                from the last non-leaf up to the root.
               </p>
             </CardDescription>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Deep Dive: How Heaps Work</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-4">
+            <div>
+              <h4 className="font-semibold mb-1">Array Representation (0-based indexing)</h4>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Node at index <code>i</code> has:
+                  <ul className="list-disc pl-5">
+                    <li>Left child: <code>2*i + 1</code></li>
+                    <li>Right child: <code>2*i + 2</code></li>
+                    <li>Parent: <code>Math.floor((i - 1) / 2)</code></li>
+                  </ul>
+                </li>
+                <li>Because the tree is <em>complete</em>, there are no gaps in the array.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-1">Operations & Costs</h4>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong>Insert:</strong> append &amp; <em>heapify-up</em> — <code>O(log n)</code></li>
+                <li><strong>Extract Root:</strong> swap with last, pop, <em>heapify-down</em> — <code>O(log n)</code></li>
+                <li><strong>Peek Root:</strong> read <code>heap[0]</code> — <code>O(1)</code></li>
+                <li><strong>Build-Heap (Floyd):</strong> <code>O(n)</code> (better than inserting one-by-one)</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-1">Min vs Max</h4>
+              <p>
+                This visualizer toggles comparison logic so the same functions act as either min-heap or max-heap.
+                We simply invert the comparator used during heapify.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-1">Common Pitfalls</h4>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Using 1-based formulas with a 0-based array (causes wrong parent/children indices).</li>
+                <li>Forgetting to <em>heapify-down</em> after extracting the root.</li>
+                <li>Assuming a heap is sorted; it’s <em>partially ordered</em>, not globally sorted.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-1">Where Heaps Shine</h4>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Priority queues (schedulers, simulation event queues).</li>
+                <li>Graph algorithms (Dijkstra, Prim with a PQ variant).</li>
+                <li>Top-K queries and streaming medians (with two heaps).</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
 
@@ -442,8 +547,7 @@ export default function HeapVisualizer() {
                   py-1 px-2 rounded
                   ${currentCodeLine === index + 1
                     ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                  }
+                    : "text-muted-foreground"}
                 `}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
