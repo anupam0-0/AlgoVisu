@@ -1,8 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/visualizers/sorting/page": "app/visualizers/sorting/page.js",
-  "/visualizers/tree/page": "app/visualizers/tree/page.js",
-  "/visualizers/print-queue/page": "app/visualizers/print-queue/page.js",
-  "/visualizers/linked-list/page": "app/visualizers/linked-list/page.js",
-  "/visualizers/page": "app/visualizers/page.js"
-}

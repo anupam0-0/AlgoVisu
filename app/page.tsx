@@ -1,8 +1,8 @@
 // app/page.tsx
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -13,20 +13,29 @@ import {
   Linkedin,
   Mail,
   Twitter,
-} from "lucide-react"
-import Header from "@/components/header"
+  Puzzle,
+  ArrowRightIcon,
+} from "lucide-react";
+import Header from "@/components/header";
+import { AnimatedShinyText } from "@/components/ui/animated-shiny-text";
+import { AuroraText } from "@/components/ui/aurora-text";
+import { Highlighter } from "@/components/ui/highlighter";
+import { RainbowButton } from "@/components/ui/rainbow-button";
+import star from "@/lib/assets/star.png";
+import Image from "next/image";
+import { Description } from "@radix-ui/react-dialog";
 
 // -----------------------------
 // Minimal in-file UI primitives
 // -----------------------------
 type ButtonProps = {
-  children: React.ReactNode
-  href?: string
-  onClick?: () => void
-  variant?: "solid" | "outline"
-  size?: "sm" | "md" | "lg"
-  className?: string
-}
+  children: React.ReactNode;
+  href?: string;
+  onClick?: () => void;
+  variant?: "solid" | "outline";
+  size?: "sm" | "md" | "lg";
+  className?: string;
+};
 function Button({
   children,
   href,
@@ -35,28 +44,29 @@ function Button({
   size = "md",
   className = "",
 }: {
-  children: React.ReactNode
-  href?: string
-  onClick?: () => void
-  variant?: "solid" | "outline"
-  size?: "sm" | "md" | "lg"
-  className?: string
+  children: React.ReactNode;
+  href?: string;
+  onClick?: () => void;
+  variant?: "solid" | "outline";
+  size?: "sm" | "md" | "lg";
+  className?: string;
 }) {
   const sizes =
     size === "lg"
       ? "px-6 py-3 text-base rounded-xl"
       : size === "sm"
-        ? "px-3 py-1.5 text-sm rounded-lg"
-        : "px-4 py-2 text-sm rounded-lg"
+      ? "px-3 py-1.5 text-sm rounded-lg"
+      : "px-4 py-2 text-sm rounded-lg";
 
-  const base = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 select-none"
+  const base =
+    "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 select-none";
 
   const styles =
     variant === "outline"
       ? "border border-black/20 bg-white hover:bg-black/5 text-black"
-      : "bg-orange-300/70 hover:bg-orange-300 text-black border border-orange-300 shadow-sm"
+      : "bg-orange-300/70 hover:bg-orange-300 text-black border border-orange-300 shadow-sm";
 
-  const Comp: any = href ? Link : "button"
+  const Comp: any = href ? Link : "button";
 
   return (
     <Comp
@@ -66,7 +76,7 @@ function Button({
     >
       {children}
     </Comp>
-  )
+  );
 }
 
 function Badge({
@@ -74,31 +84,31 @@ function Badge({
   variant = "outline",
   className = "",
 }: {
-  children: React.ReactNode
-  variant?: "outline" | "solid" | "secondary"
-  className?: string
+  children: React.ReactNode;
+  variant?: "outline" | "solid" | "secondary";
+  className?: string;
 }) {
   const styles =
     variant === "solid"
       ? "bg-black text-white"
       : variant === "secondary"
-        ? "bg-orange-200 text-black border border-orange-300/60"
-        : "border border-black/10 text-black"
+      ? "bg-orange-200 text-black border border-orange-300/60"
+      : "border border-black/10 text-black";
   return (
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${styles} ${className}`}
     >
       {children}
     </span>
-  )
+  );
 }
 
 function Card({
   children,
   className = "",
 }: {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <div
@@ -106,76 +116,63 @@ function Card({
     >
       {children}
     </div>
-  )
+  );
 }
 function CardHeader({
   children,
   className = "",
 }: {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }) {
-  return <div className={`p-5 ${className}`}>{children}</div>
+  return <div className={`p-5 ${className}`}>{children}</div>;
 }
 function CardTitle({
   children,
   className = "",
 }: {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <h3 className={`text-lg font-semibold tracking-tight ${className}`}>
       {children}
     </h3>
-  )
+  );
 }
 function CardDescription({
   children,
   className = "",
 }: {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }) {
-  return <p className={`text-sm text-black/60 ${className}`}>{children}</p>
+  return <p className={`text-sm text-black/60 ${className}`}>{children}</p>;
 }
 function CardContent({
   children,
   className = "",
 }: {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }) {
-  return <div className={`p-5 pt-0 ${className}`}>{children}</div>
-}
-
-// AuroraText-like accent text (kept minimal, original theme mostly)
-function AuroraText({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="relative inline-block">
-      <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-black via-black/80 to-black">
-        {children}
-      </span>
-      <span className="pointer-events-none absolute inset-0 -z-0 blur-2xl opacity-20 bg-gradient-to-r from-orange-400 via-orange-300 to-orange-500" />
-    </span>
-  )
+  return <div className={`p-5 pt-0 ${className}`}>{children}</div>;
 }
 
 // -----------------------------
 // Header & Footer (single file)
 // -----------------------------
 
-
 function Footer() {
   return (
-    <footer className="border-t border-black/10 bg-white/70">
-      <div className="container mx-auto max-w-7xl px-4 py-12">
+    <footer className="border-t border-black/10 bg-orange-50 ">
+      <div className="container mx-auto max-w-[85rem] px-4 py-10">
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <div className="text-xl font-bold mb-2">VTRACE</div>
-            <p className="text-sm text-black/60">
-              Visualization Tool for Real-Time Algorithm Exploration.
-              Build intuition through clean, interactive visuals.
+            <p className="text-sm  text-black font-medium">
+              Visualization Tool for Real-Time Algorithm Exploration. Build
+              intuition through clean, interactive visuals.
             </p>
           </div>
           <div>
@@ -229,7 +226,11 @@ function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Twitter className="h-4 w-4" />
-                <a className="hover:opacity-80" href="#" aria-label="Twitter / X">
+                <a
+                  className="hover:opacity-80"
+                  href="#"
+                  aria-label="Twitter / X"
+                >
                   Twitter / X
                 </a>
               </li>
@@ -239,33 +240,18 @@ function Footer() {
                   LinkedIn
                 </a>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <a className="hover:opacity-80" href="mailto:hello@vtrace.app">
-                  hello@vtrace.app
-                </a>
-              </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-black/60">
-          <p>© {new Date().getFullYear()} VTRACE. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="hover:opacity-80">
-              Terms
-            </Link>
-            <Link href="#" className="hover:opacity-80">
-              Privacy
-            </Link>
-            <Link href="#" className="hover:opacity-80">
-              Cookies
-            </Link>
-          </div>
+        <div className="w-full h-0.5 mt-20 my-8 bg-black rounded"></div>
+
+        <div className="flex flex-col md:flex-row -my-2 items-center justify-between gap-4 text-xs text-black/60">
+          <p>© {new Date().getFullYear()} VTRACE. Open source project.</p>
         </div>
       </div>
     </footer>
-  )
+  );
 }
 
 // -----------------------------
@@ -282,29 +268,29 @@ const DS_TEXT = [
   "Trie",
   "Hash Map",
   "Union-Find",
-]
+];
 
 type Bubble = {
-  id: number
-  label: string
-  top: number // percentage inside container
-  right: number // percentage from right
-  size: number // px
-  life: number // ms
-}
+  id: number;
+  label: string;
+  top: number; // percentage inside container
+  right: number; // percentage from right
+  size: number; // px
+  life: number; // ms
+};
 
 function useBubbles(max = 4) {
-  const [bubbles, setBubbles] = useState<Bubble[]>([])
-  const nextId = useRef(1)
+  const [bubbles, setBubbles] = useState<Bubble[]>([]);
+  const nextId = useRef(1);
 
   const spawn = () => {
     setBubbles((curr) => {
-      const arr = [...curr]
+      const arr = [...curr];
       // keep at most `max`
-      while (arr.length >= max) arr.shift()
-      const label = DS_TEXT[Math.floor(Math.random() * DS_TEXT.length)]
-      const size = 60 + Math.round(Math.random() * 40) // 60-100
-      const life = 4000 + Math.round(Math.random() * 3000)
+      while (arr.length >= max) arr.shift();
+      const label = DS_TEXT[Math.floor(Math.random() * DS_TEXT.length)];
+      const size = 60 + Math.round(Math.random() * 40); // 60-100
+      const life = 4000 + Math.round(Math.random() * 3000);
       arr.push({
         id: nextId.current++,
         label,
@@ -312,17 +298,17 @@ function useBubbles(max = 4) {
         right: 0 + Math.round(Math.random() * 5), // stay near the right edge
         size,
         life,
-      })
-      return arr
-    })
-  }
+      });
+      return arr;
+    });
+  };
 
   useEffect(() => {
-    spawn()
-    const t = setInterval(spawn, 1500)
-    return () => clearInterval(t)
+    spawn();
+    const t = setInterval(spawn, 1500);
+    return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   // auto-remove on life expiry
   useEffect(() => {
@@ -331,15 +317,15 @@ function useBubbles(max = 4) {
         () => setBubbles((curr) => curr.filter((x) => x.id !== b.id)),
         b.life
       )
-    )
-    return () => timers.forEach(clearTimeout)
-  }, [bubbles])
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [bubbles]);
 
-  return bubbles
+  return bubbles;
 }
 
 function RightBubbles() {
-  const bubbles = useBubbles(4)
+  const bubbles = useBubbles(4);
   return (
     <div
       aria-hidden
@@ -368,13 +354,13 @@ function RightBubbles() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // -----------------------------
 // Features with hover fade anim
 // -----------------------------
-type Feature = { icon: React.ReactNode; title: string; description: string }
+type Feature = { icon: React.ReactNode; title: string; description: string };
 function FeaturesGrid({ features }: { features: Feature[] }) {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -402,85 +388,84 @@ function FeaturesGrid({ features }: { features: Feature[] }) {
         </Card>
       ))}
     </div>
-  )
+  );
 }
 
 // -----------------------------
 // Page
 // -----------------------------
 export default function HomePage() {
-  const features: Feature[] = useMemo(
-    () => [
-      {
-        icon: <Code className="h-6 w-6" />,
-        title: "Interactive Visualizations",
-        description:
-          "Step-by-step animations for arrays, linked lists, trees, graphs, and sorting algorithms.",
-      },
-      {
-        icon: <Zap className="h-6 w-6" />,
-        title: "Real-time Controls",
-        description:
-          "Play, pause, and step through execution. Adjust speed to learn at your pace.",
-      },
-      {
-        icon: <BookOpen className="h-6 w-6" />,
-        title: "Educational Content",
-        description:
-          "Clear notes, complexity breakdowns, and real-world use cases to cement understanding.",
-      },
-      {
-        icon: <Users className="h-6 w-6" />,
-        title: "Student-Friendly",
-        description:
-          "Built for learners, educators, and bootcamp students with approachable language.",
-      },
-    ],
-    []
-  )
+  const dataStructures = [
+    "Arrays",
+    "Linked Lists",
+    "Stacks",
+    "Queues",
+    "Binary Trees",
+    "Graphs",
+  ];
+  const algorithms = [
+    "Bubble Sort",
+    "Merge Sort",
+    "Quick Sort",
+    "BFS",
+    "DFS",
+    "Dijkstra's",
+  ];
 
-  const dataStructures = ["Arrays", "Linked Lists", "Stacks", "Queues", "Binary Trees", "Graphs"]
-  const algorithms = ["Bubble Sort", "Merge Sort", "Quick Sort", "BFS", "DFS", "Dijkstra's"]
+  const applications = [
+    "applications1",
+    "applications2",
+    "applications3",
+    "applications4",
+    "applications5",
+    "applications6",
+  ];
 
-  const screenshots = [
+  const features = [
     {
-      src: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1400&auto=format&fit=crop",
-      caption: "Array Visualization",
+      img: "",
+      title: "Interactive Visualizations",
+      description:
+        "Step-by-step animations for arrays, linked lists, trees, graphs, and sorting algorithms.",
     },
     {
-      src: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=1400&auto=format&fit=crop",
-      caption: "Graph Traversal",
+      img: "",
+      title: "Real-time Controls",
+      description:
+        "Play, pause, and step through execution. Adjust speed to learn at your pace.",
     },
     {
-      src: "https://images.unsplash.com/photo-1555949963-aa79dcee981d?q=80&w=1400&auto=format&fit=crop",
-      caption: "Sorting Animation",
+      img: "",
+      title: "Student-Friendly",
+      description:
+        "Built for learners, educators, and bootcamp students with approachable language.",
     },
-  ]
+  ];
 
   // Hover proximity fade around the "Why Choose" section
-  const proximityRef = useRef<HTMLDivElement>(null)
-  const [cursorStyle, setCursorStyle] = useState({ x: 0, y: 0, show: false })
+  const proximityRef = useRef<HTMLDivElement>(null);
+  const [cursorStyle, setCursorStyle] = useState({ x: 0, y: 0, show: false });
   useEffect(() => {
-    const el = proximityRef.current
-    if (!el) return
-    const rect = () => el.getBoundingClientRect()
+    const el = proximityRef.current;
+    if (!el) return;
+    const rect = () => el.getBoundingClientRect();
 
     const onMove = (e: MouseEvent) => {
-      const r = rect()
+      const r = rect();
       setCursorStyle({
         x: e.clientX - r.left,
         y: e.clientY - r.top,
         show: true,
-      })
-    }
-    const onLeave = () => setCursorStyle((s) => ({ ...s, show: false }))
-    el.addEventListener("mousemove", onMove)
-    el.addEventListener("mouseleave", onLeave)
+      });
+    };
+    const onLeave = () => setCursorStyle((s) => ({ ...s, show: false }));
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
     return () => {
-      el.removeEventListener("mousemove", onMove)
-      el.removeEventListener("mouseleave", onLeave)
-    }
-  }, [])
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseleave", onLeave);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col text-black">
@@ -492,221 +477,196 @@ export default function HomePage() {
         <section className="relative overflow-hidden h-[calc(100vh-6rem)] w-full">
           <div className="container mx-auto max-w-7xl px-4 pt-20 pb-16">
             <div className="text-center max-w-4xl mx-auto px-4 ">
-              <Badge variant="outline" className="mt-4 bg-green-100 border border-green-400">
-                Interactive Learning Tool
-              </Badge>
+              <div className="z-10 flex items-center justify-center">
+                <div
+                  className={
+                    "group rounded-full border border-black/5 bg-green-100 text-base text-white transition-all ease-in hover:cursor-pointer hover:bg-green-50 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+                  }
+                >
+                  <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
+                    <span>✨ Interactive Learning Tool</span>
+                    <ArrowRightIcon className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+                  </AnimatedShinyText>
+                </div>
+              </div>
+
               <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight my-8 leading-10">
                 VTRACE — Visualization Tool for Real-Time{" "}
                 <AuroraText>Algorithm</AuroraText> Exploration
               </h1>
               <p className="text-lg md:text-xl text-black/70 font-medium my-8 ">
-                Turn complex computer science concepts into clear, interactive animations.
-                Perfect for students, educators, and anyone learning DSA.
+                Turn{" "}
+                <Highlighter action="underline" color="#FF9800">
+                  complex
+                </Highlighter>{" "}
+                computer science algorithms into clear,{" "}
+                <Highlighter action="highlight" color="#87CEFA">
+                  {" "}
+                  interactive animations{" "}
+                </Highlighter>
+                . Perfect for students, educators, and anyone learning{" "}
+                <Highlighter
+                  action="underline"
+                  animationDuration={2000}
+                  color="#39AF88"
+                >
+                  {" "}
+                  Data Structures and Algorithms{" "}
+                </Highlighter>
+                .
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button href="/visualizers" size="lg" className="justify-center">
+              <div className="flex flex-col mt-12 sm:flex-row gap-4 justify-center">
+                {/* <Button
+                  href="/visualizers"
+                  className="justify-center border-2 border-black"
+                >
                   Start Visualizing <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button href="#about" variant="outline" size="lg" className="justify-center">
-                  Learn More
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
+                </Button> */}
 
-        {/* Why Choose + Floating bubbles on right (bg-orange-200 as requested) */}
-        <section id="features" className="relative bg-orange-200">
-          <div className="container mx-auto max-w-7xl px-4 py-20 relative">
-            {/* Right-side floating bubbles */}
-            <RightBubbles />
-
-            <div
-              ref={proximityRef}
-              className="relative z-10 grid lg:grid-cols-[1fr,0.35fr] gap-10 items-start"
-            >
-              <div className="relative">
-                {/* hover proximity spotlight */}
-                <div
-                  className="pointer-events-none absolute -inset-8 transition-opacity"
-                  style={{
-                    opacity: cursorStyle.show ? 1 : 0,
-                    background: `radial-gradient(180px 180px at ${cursorStyle.x}px ${cursorStyle.y}px, rgba(255,255,255,0.65), transparent 70%)`,
-                  }}
-                />
-                <div className="relative">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-3">
-                    Why Choose Our DSA Visualizer?
-                  </h2>
-                  <p className="text-black/70 mb-10 max-w-2xl">
-                    Our interactive approach makes complex algorithms easy to understand and
-                    remember. Explore, tweak, and truly see how data structures transform.
+                <Link
+                  href="/visualizers"
+                  className="relative justify-center border-2 border-black px-6 py-2 rounded-2xl bg-orange-500 font-medium"
+                >
+                  <p className="inline-flex items-center relative top-0.5  ">
+                    Start Visualizing <ArrowRight className="ml-2 h-4 w-4" />
                   </p>
-                  <FeaturesGrid features={features} />
-                </div>
-              </div>
-              {/* right column empty—occupied by bubbles visually */}
-              <div className="hidden lg:block" />
-            </div>
-          </div>
-        </section>
+                  <div className="absolute top-1.5 left-1.5 bg-black w-full h-full rounded-2xl -z-10"></div>
+                </Link>
 
-        {/* What You'll Learn (keep original vibe, not all orange) */}
-        <section id="learn" className="py-16 px-4">
-          <div className="container mx-auto max-w-7xl">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold mb-3">What You&apos;ll Learn</h2>
-              <p className="text-black/70">
-                Comprehensive coverage of fundamental computer science concepts
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-orange-300" />
-                    Data Structures
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {dataStructures.map((ds) => (
-                      <Badge key={ds} variant="outline">
-                        {ds}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-orange-400" />
-                    Algorithms
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {algorithms.map((algo) => (
-                      <Badge key={algo} variant="outline">
-                        {algo}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* About Us */}
-        <section id="about" className="py-20 px-4 bg-orange-200">
-          <div className="container mx-auto max-w-7xl">
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">About Us</h2>
-                <p className="text-black/70 leading-relaxed">
-                  VTRACE is built by a small team of educators and engineers who believe
-                  complex ideas should feel simple. We value clarity, accuracy, and a little bit
-                  of fun. Our mission is to help learners build rock-solid intuition for how data
-                  structures and algorithms behave through high-quality visuals.
-                </p>
-                <div className="mt-6 flex gap-3">
-                  <Button href="/visualizers" size="md">
-                    Try Visualizers
-                  </Button>
-                  <Button href="#features" size="md" variant="outline">
-                    See Features
-                  </Button>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute -inset-8 bg-orange-200/50 rounded-3xl blur-2xl" />
-                <div className="relative rounded-2xl border border-black/10 bg-white p-6">
-                  <ul className="space-y-3 text-sm">
-                    <li>• Clean, student-friendly UI</li>
-                    <li>• Step-by-step execution and speed controls</li>
-                    <li>• Complexity breakdowns and real-world contexts</li>
-                    <li>• Works great in classrooms and study groups</li>
-                  </ul>
-                </div>
+                <RainbowButton
+                  variant="outline"
+                  size="lg"
+                  className="text-primary text-base w-44 h-12 font-medium border-2 border-black"
+                >
+                  {" "}
+                  Learn More
+                  <div className="absolute top-1.5 left-1.5 bg-black w-full h-full rounded-2xl -z-10"></div>
+                </RainbowButton>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Screenshots (avoid next/image config by using <img>) */}
-        <section id="screenshots" className="py-20 px-4">
-          <div className="container mx-auto max-w-7xl">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl md:text-4xl font-bold mb-3">Screenshots</h2>
-              <p className="text-black/70">
-                A quick peek at how visualizations look and feel.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {screenshots.map((s, i) => (
-                <Card key={i} className="overflow-hidden group">
-                  <div className="relative h-52">
-                    <img
-                      src={s.src}
-                      alt={s.caption}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="text-sm text-black/70">{s.caption}</div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+        {/* featured */}
+        <section className="relative flex flex-col gap-8 h-screen w-full bg-green-300 px-4 md:px-12 xl:px-24 py-12 xl:py-24">
+          <Image
+            src={star}
+            alt="star"
+            height={50}
+            width={50}
+            className="absolute top-44 right-10"
+          />
+          <h2 className="text-lg md:text-4xl xl:text-6xl font-bold  text-center">
+            Goodbye to boring methods of{" "}
+            <span className="relative">
+              learning
+              <div className="absolute -top-5 -right-6 text-base rotate-12">
+                Z
+              </div>
+              <div className="absolute -top-1 -right-4 text-sm rotate-6">Z</div>
+              <div className="absolute top-3 -right-2 text-xs rotate-">Z</div>
+            </span>
+          </h2>
+          <p className="mt-2 font-medium text-center text-lg max-w-5xl mx-auto">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quos maxime
+            corrupti repudiandae molestiae placeat quibusdam esse autem
+            veritatis veniam eius.
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-20 mt-12 max-w-7xl mx-auto">
+            {features.map((item, i) => (
+              <NeuCard
+                key={i}
+                img={item.img}
+                title={item.title}
+                description={item.description}
+              />
+            ))}
           </div>
         </section>
 
-        {/* CTA — orange background, black text & buttons */}
-        <section id="cta" className="py-20 px-4 bg-orange-200">
-          <div className="container mx-auto max-w-7xl">
-            <div className="rounded-2xl border border-black/10 bg-white/70 backdrop-blur-sm p-10 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Ready to Start Learning?
-              </h2>
-              <p className="text-black/70 text-lg mb-8 max-w-2xl mx-auto">
-                Join thousands of students improving their understanding of data structures
-                and algorithms with VTRACE.
-              </p>
-              <Button
-                href="/visualizers"
-                size="lg"
-                className="bg-orange-300/70 hover:bg-orange-300 text-black border border-orange-300 shadow-sm transition-all"
-              >
-                Explore Visualizers <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+        {/* what you will learn */}
+        <section className="relative flex flex-col gap-8 h-screen w-full bg-orange-300 px-4 md:px-12 xl:px-24 py-12 xl:py-24">
+          <Image
+            src={star}
+            alt="star"
+            height={100}
+            width={100}
+            className="absolute top-5 left-10"
+          />
+          <h2 className="text-lg md:text-4xl xl:text-6xl font-bold  text-center">
+            What you'll learn
+          </h2>
+          <p className="mt-2 font-medium text-center text-lg max-w-5xl mx-auto">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quos maxime
+            corrupti repudiandae molestiae placeat quibusdam esse autem
+            veritatis veniam eius.
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-20 mt-12 max-w-7xl mx-auto">
+            <NeuCard2 title={"Data Structure"} list={dataStructures} />
+            <NeuCard2 title={"Algorithms"} list={algorithms} />
+            <NeuCard2 title={"Application"} list={applications} />
           </div>
         </section>
+
+        {/* <section className="relative flex flex-col gap-8 h-screen w-full bg-purple-300 px-4 md:px-12 xl:px-24 py-12 xl:py-24"></section> */}
       </main>
 
-      {/* Footer */}
-      <Footer />
-
-      {/* Styled-JSX animations */}
-      <style jsx global>{`
-        @keyframes floaty {
-          0% {
-            transform: translateY(0px) translateX(0px);
-            opacity: 0.85;
-          }
-          50% {
-            transform: translateY(-12px) translateX(-6px);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(0px) translateX(0px);
-            opacity: 0.9;
-          }
-        }
-      `}</style>
+      <div className="bg-red-400 py-20 flex justify-center">
+        {/* Footer */}
+        <div className="relative">
+          <div className="border-4 border-black px-4 bg-orange-50 relative z-10">
+            <Footer />
+          </div>
+          <div className="absolute top-2 left-2 h-full w-full bg-black"></div>
+        </div>
+      </div>
     </div>
-  )
+  );
+}
+
+function NeuCard({ img, title, description }) {
+  return (
+    <div className="border size-96 rounded relative  ">
+      <div className="bg-white grid grid-rows-3 p-8 gap-4 size-full z-10 relative border-4 border-black">
+        <Image
+          src={img}
+          alt={title}
+          height={150}
+          width={150}
+          className="row-span-3"
+        />
+        <h3 className="text-2xl text-md md:text-2xl font-semibold text-center">
+          {title}
+        </h3>
+        <p className="text-xs md:text-sm text-center font-medium">
+          {description}
+        </p>
+      </div>
+
+      <div className="absolute size-full bg-black  -bottom-2 -right-2"></div>
+    </div>
+  );
+}
+
+function NeuCard2({ title, list }) {
+  return (
+    <div className="border size-96 rounded relative ">
+      <div className="bg-white flex flex-col p-8 size-full z-10 relative border-4 border-black">
+        <h3 className=" text-sm md:text-2xl font-semibold text-left">
+          {title}
+        </h3>
+        <div className="flex flex-col gap-2 mt-8">
+          {list.map((item, i) => (
+            <p className="text-xs md:text-base text-left font-medium" key={i}>
+              - {item}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute size-full bg-black  -bottom-2 -right-2"></div>
+    </div>
+  );
 }
