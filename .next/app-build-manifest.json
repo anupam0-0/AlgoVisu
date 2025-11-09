@@ -16,15 +16,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/page.js"
     ],
-    "/visualizers/linked-list/loading": [
+    "/trial/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/linked-list/loading.js"
+      "static/chunks/app/trial/page.js"
     ],
-    "/visualizers/linked-list/page": [
+    "/visualizers/tree/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/linked-list/page.js"
+      "static/chunks/app/visualizers/tree/loading.js"
+    ],
+    "/visualizers/tree/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/tree/page.js"
     ],
     "/visualizers/mst/loading": [
       "static/chunks/webpack.js",
@@ -36,105 +41,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/mst/page.js"
     ],
-    "/visualizers/trie/loading": [
+    "/visualizers/array/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/trie/loading.js"
+      "static/chunks/app/visualizers/array/loading.js"
     ],
-    "/visualizers/trie/page": [
+    "/visualizers/array/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/trie/page.js"
-    ],
-    "/visualizers/heap/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/heap/loading.js"
-    ],
-    "/visualizers/heap/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/heap/page.js"
-    ],
-    "/visualizers/avl/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/avl/loading.js"
-    ],
-    "/visualizers/avl/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/avl/page.js"
-    ],
-    "/visualizers/queue/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/queue/loading.js"
-    ],
-    "/visualizers/queue/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/queue/page.js"
-    ],
-    "/visualizers/print-queue/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/print-queue/loading.js"
-    ],
-    "/visualizers/print-queue/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/print-queue/page.js"
-    ],
-    "/visualizers/navigation-system/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/navigation-system/loading.js"
-    ],
-    "/visualizers/navigation-system/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/navigation-system/page.js"
-    ],
-    "/visualizers/graph/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/graph/loading.js"
-    ],
-    "/visualizers/graph/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/graph/page.js"
-    ],
-    "/visualizers/mst-clustering/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst-clustering/loading.js"
-    ],
-    "/visualizers/mst-clustering/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/mst-clustering/page.js"
-    ],
-    "/visualizers/file-system-explorer/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/file-system-explorer/loading.js"
-    ],
-    "/visualizers/file-system-explorer/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/file-system-explorer/page.js"
-    ],
-    "/visualizers/realtime-leaderboard/loading": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/realtime-leaderboard/loading.js"
-    ],
-    "/visualizers/realtime-leaderboard/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/realtime-leaderboard/page.js"
+      "static/chunks/app/visualizers/array/page.js"
     ],
     "/visualizers/sorting/loading": [
       "static/chunks/webpack.js",
@@ -146,15 +61,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/visualizers/sorting/page.js"
     ],
-    "/visualizers/ecommerce-ranking/loading": [
+    "/visualizers/print-queue/loading": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/ecommerce-ranking/loading.js"
+      "static/chunks/app/visualizers/print-queue/loading.js"
     ],
-    "/visualizers/ecommerce-ranking/page": [
+    "/visualizers/print-queue/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/visualizers/ecommerce-ranking/page.js"
+      "static/chunks/app/visualizers/print-queue/page.js"
+    ],
+    "/visualizers/linked-list/loading": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/linked-list/loading.js"
+    ],
+    "/visualizers/linked-list/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/visualizers/linked-list/page.js"
     ]
   }
 }

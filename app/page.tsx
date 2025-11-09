@@ -14,6 +14,7 @@ import {
   Mail,
   Twitter,
 } from "lucide-react"
+import Header from "@/components/header"
 
 // -----------------------------
 // Minimal in-file UI primitives
@@ -163,59 +164,7 @@ function AuroraText({ children }: { children: React.ReactNode }) {
 // -----------------------------
 // Header & Footer (single file)
 // -----------------------------
-function Header() {
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener("scroll", onScroll)
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-  return (
-    <header
-      className={`sticky top-0 z-50 transition-all ${scrolled ? "backdrop-blur-md bg-white/70 border-b border-black/10" : "bg-white/60"
-        }`}
-    >
-      <div className="container mx-auto max-w-7xl px-4 py-4">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="group inline-flex items-baseline gap-2"
-            aria-label="VTRACE home"
-          >
-            <span className="text-2xl md:text-3xl font-extrabold tracking-tight">
-              VTRACE
-            </span>
-            <Badge variant="secondary" className="group-hover:scale-105 transition">
-              DSA
-            </Badge>
-          </Link>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm">
-            <Link className="hover:opacity-80" href="#features">
-              Features
-            </Link>
-            <Link className="hover:opacity-80" href="#about">
-              About
-            </Link>
-            <Link className="hover:opacity-80" href="#screenshots">
-              Screenshots
-            </Link>
-            <Link className="hover:opacity-80" href="#learn">
-              Learn
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <Button href="/visualizers" size="md">
-              Start Visualizing <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-}
 
 function Footer() {
   return (
@@ -540,17 +489,17 @@ export default function HomePage() {
 
       {/* Hero */}
       <main className="flex-grow">
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden h-[calc(100vh-6rem)] w-full">
           <div className="container mx-auto max-w-7xl px-4 pt-20 pb-16">
-            <div className="text-center max-w-4xl mx-auto">
-              <Badge variant="secondary" className="mb-4">
+            <div className="text-center max-w-4xl mx-auto px-4 ">
+              <Badge variant="outline" className="mt-4 bg-green-100 border border-green-400">
                 Interactive Learning Tool
               </Badge>
-              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight my-8 leading-10">
                 VTRACE — Visualization Tool for Real-Time{" "}
                 <AuroraText>Algorithm</AuroraText> Exploration
               </h1>
-              <p className="text-lg md:text-xl text-black/70 font-medium mb-8">
+              <p className="text-lg md:text-xl text-black/70 font-medium my-8 ">
                 Turn complex computer science concepts into clear, interactive animations.
                 Perfect for students, educators, and anyone learning DSA.
               </p>
@@ -564,9 +513,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
-          {/* soft orange wash like original but subtle */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-orange-200/60 to-transparent" />
         </section>
 
         {/* Why Choose + Floating bubbles on right (bg-orange-200 as requested) */}
