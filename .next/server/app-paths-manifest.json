@@ -1,8 +1,3 @@
 {
-  "/visualizers/mst-clustering/page": "app/visualizers/mst-clustering/page.js",
-  "/visualizers/file-system-explorer/page": "app/visualizers/file-system-explorer/page.js",
-  "/visualizers/realtime-leaderboard/page": "app/visualizers/realtime-leaderboard/page.js",
-  "/visualizers/sorting/page": "app/visualizers/sorting/page.js",
-  "/visualizers/ecommerce-ranking/page": "app/visualizers/ecommerce-ranking/page.js",
-  "/visualizers/page": "app/visualizers/page.js"
+  "/page": "app/page.js"
 }
