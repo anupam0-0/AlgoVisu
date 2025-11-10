@@ -768,6 +768,7 @@ export default function NavigationSystemsVisualizer() {
         </div>
 
         {/* Delete Location */}
+        {/*fix*/}
         <Card className="border-0 shadow-md">
           <CardHeader><CardTitle>Delete Location</CardTitle></CardHeader>
           <CardContent>
