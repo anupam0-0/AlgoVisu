@@ -25,6 +25,7 @@ import {
   FolderTree,
   Trophy,
   TrendingUp,
+  ArrowLeft,
 } from "lucide-react";
 import Footer from "@/components/Footer";
 
@@ -354,10 +355,36 @@ const VisualizersPage = () => {
 
       <main className="container mx-auto px-4 py-6 max-w-[80rem]">
         <div className="my-8 mb-16">
-          <h1 className="text-5xl font-bold mb-4">Choose Your Learning Path</h1>
-          <p className="text-primary text-lg">
-            Select a visualizer to start exploring data structures and
-            algorithms interactively
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              aria-label="Back to Home"
+              className={[
+                // neo-brutalism: chunky borders + offset shadow
+                "relative inline-flex items-center gap-2 px-3 py-2",
+                "bg-white text-black border-4 border-black",
+                "shadow-[6px_6px_0_0_#000] hover:shadow-[4px_4px_0_0_#000]",
+                "active:shadow-[2px_2px_0_0_#000]",
+                "transition-all",
+                "rounded-none",                // square look
+                "hover:translate-x-[2px] hover:translate-y-[2px]",
+                "active:translate-x-[4px] active:translate-y-[4px]",
+                "select-none"
+              ].join(" ")}
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="text-sm font-extrabold tracking-wide uppercase">
+                Back
+              </span>
+            </Link>
+
+            <h1 className="text-5xl font-bold">
+              Choose Your Learning Path
+            </h1>
+          </div>
+
+          <p className="text-primary text-lg mt-3">
+            Select a visualizer to start exploring data structures and algorithms interactively
           </p>
         </div>
 
@@ -380,11 +407,10 @@ const VisualizersPage = () => {
                   {linearVisualizers.map((visualizer) => (
                     <Card
                       key={visualizer.id}
-                      className={`relative bg-sky-400 rounded border-4 border-primary ${
-                        !visualizer.available
+                      className={`relative bg-sky-400 rounded border-4 border-primary ${!visualizer.available
                           ? "opacity-60"
                           : "hover:shadow-lg transition-shadow"
-                      }`}
+                        }`}
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">
@@ -460,11 +486,10 @@ const VisualizersPage = () => {
                   {nonLinearVisualizers.map((visualizer) => (
                     <Card
                       key={visualizer.id}
-                      className={`relative bg-orange-200 rounded border-4 border-primary ${
-                        !visualizer.available
+                      className={`relative bg-orange-200 rounded border-4 border-primary ${!visualizer.available
                           ? "opacity-60"
                           : "hover:shadow-lg transition-shadow"
-                      }`}
+                        }`}
                     >
                       <CardHeader>
                         <div className="flex items-start justify-between">
@@ -557,11 +582,10 @@ const VisualizersPage = () => {
                         {apps.map((visualizer) => (
                           <Card
                             key={visualizer.id}
-                            className={`relative bg-[#23A094] rounded border-4 border-primary ${
-                              !visualizer.available
+                            className={`relative bg-[#23A094] rounded border-4 border-primary ${!visualizer.available
                                 ? "opacity-60"
                                 : "hover:shadow-lg transition-shadow"
-                            }`}
+                              }`}
                           >
                             <CardHeader>
                               <div className="flex items-start justify-between">

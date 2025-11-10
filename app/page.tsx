@@ -387,18 +387,21 @@ export default function HomePage() {
     "Bubble Sort",
     "Merge Sort",
     "Quick Sort",
-    "BFS",
-    "DFS",
+    "BFS/DFS",
     "Dijkstra's",
+    "Heap Sort",
+    "Kruskal's",
+    "Prim's",
   ];
 
   const applications = [
-    "applications1",
-    "applications2",
-    "applications3",
-    "applications4",
-    "applications5",
-    "applications6",
+    "Social Network Analyzer",
+    "Navigation System Analyzer",
+    "MST Clustering Visualizer",
+    "Prefix Search Visualizer",
+    "Print Job Queue Visualizer",
+    "E-Commerce Ranking",
+    "Real-Time Leaderboards",
   ];
 
   const features = [
