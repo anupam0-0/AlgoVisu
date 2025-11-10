@@ -429,7 +429,7 @@ export default function TrieVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="space-y-2 text-sm">
+            <CardDescription className="space-y-2 text-sm text-black">
               <span className="block">
                 A <strong>trie</strong> (prefix tree) stores strings by characters along a path from the root.
                 Shared prefixes are stored once, enabling super-fast <em>prefix</em> lookups.

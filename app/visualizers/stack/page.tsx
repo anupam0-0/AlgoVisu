@@ -393,7 +393,7 @@ export default function StackVisualizerPage() {
               {details.title}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-black space-y-2">
             <div className="font-medium">{details.description}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -483,7 +483,7 @@ export default function StackVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">Edge Case Demo</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 text-black">
             <label className="inline-flex items-center gap-2">
               <input
                 type="checkbox"

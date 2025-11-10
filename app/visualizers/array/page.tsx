@@ -258,7 +258,7 @@ export default function ArrayVisualizerPage() {
               Understanding Arrays
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-gray-700 leading-relaxed space-y-3 text-sm md:text-base">
+          <CardContent className="text-black leading-relaxed space-y-3 text-sm md:text-base">
             <div>
               An <strong>Array</strong> is a linear data structure used to store a fixed-size sequence of
               elements of the same type. Each element is accessed by its <em>index</em>, which represents its
@@ -286,7 +286,7 @@ export default function ArrayVisualizerPage() {
             <div>
               In this visualizer, you can <strong>add elements</strong>, <strong>sort</strong> them, and observe
               how different search algorithms like <strong>Linear Search</strong> and <strong>Binary Search</strong>
-              work step-by-step in real time. The visualization demonstrates how comparisons and highlights
+               work step-by-step in real time. The visualization demonstrates how comparisons and highlights
               change dynamically as the algorithm progresses.
             </div>
           </CardContent>

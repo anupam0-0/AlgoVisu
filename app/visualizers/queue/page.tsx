@@ -458,7 +458,7 @@ export default function QueueVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Queues</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-black space-y-2">
             <div>
               A <strong>queue</strong> is a linear data structure that follows the <strong>First-In-First-Out (FIFO)</strong> principle:
               the first element added is the first one removed. Enqueue adds to the rear, dequeue removes from the front.
@@ -498,7 +498,7 @@ export default function QueueVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{typeInfo.label} — Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-black space-y-2">
             <div className="font-medium text-foreground">{typeInfo.description}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

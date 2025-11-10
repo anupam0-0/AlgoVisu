@@ -373,7 +373,7 @@ export default function HeapVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="space-y-2 text-sm">
+            <CardDescription className="space-y-2 text-sm text-black">
               <p>
                 A <strong>heap</strong> is a complete binary tree stored as an array that satisfies the{" "}
                 <em>heap property</em>:

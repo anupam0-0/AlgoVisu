@@ -146,12 +146,12 @@ export default function MusicPlaylistApplication() {
               Why Linked Lists for Playlists?
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-muted-foreground">
+          <CardContent className="space-y-4 text-black">
             <p>
               Music playlists require frequent additions, deletions, and reordering — all while maintaining playback order.
               Linked lists excel here because:
             </p>
-            <ul className="list-disc pl-5 space-y-1">
+            <ul className="list-disc pl-5 space-y-1 text-black">
               <li><strong>Appending a song</strong> is O(1) — no need to shift existing tracks.</li>
               <li><strong>Removing a song</strong> is O(1) if you have a reference (e.g., user clicks "Remove").</li>
               <li><strong>Circular linking</strong> enables seamless looped playback without extra logic.</li>

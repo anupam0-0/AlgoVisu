@@ -451,7 +451,7 @@ export default function AVLVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="text-sm text-gray-600 leading-relaxed">
+            <CardDescription className="text-sm text-black-800 leading-relaxed">
               <span className="block">
                 An <strong>AVL Tree</strong> is a type of <em>self-balancing binary search tree</em>.
                 After every insertion or deletion, it checks the balance factor of each node to

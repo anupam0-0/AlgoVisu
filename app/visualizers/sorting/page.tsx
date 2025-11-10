@@ -534,7 +534,7 @@ export default function SortingVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Sorting</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-black space-y-2">
             <div><strong>Sorting</strong> reorders data to a defined order. It’s key for fast lookup, grouping, and analytics. Algorithms trade off speed, space, stability, and in-place behavior.</div>
             <div className="rounded-md border bg-muted/30 p-3 font-mono text-xs text-foreground">
               Input: [7, 3, 8, 2] → Sorted: [2, 3, 7, 8]<br />
@@ -564,7 +564,7 @@ export default function SortingVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{currentAlgorithm.name} — Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-black space-y-2">
             <div className="font-medium text-foreground">{currentAlgorithm.description}</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">

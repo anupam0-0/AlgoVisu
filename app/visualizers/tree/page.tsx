@@ -535,7 +535,7 @@ export default function TreeVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Trees</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="space-y-3 text-sm text-black">
             <ul className="list-disc list-inside space-y-1">
               {treesIntro.bullets.map((b, i) => <li key={i}>{b}</li>)}
             </ul>
@@ -582,7 +582,7 @@ export default function TreeVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{modeDetails[mode].title}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="space-y-4 text-sm text-black">
             <div>{modeDetails[mode].summary}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

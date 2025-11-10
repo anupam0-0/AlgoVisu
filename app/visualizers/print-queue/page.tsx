@@ -138,7 +138,7 @@ export default function PrintQueueVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📘 How Print Queues Work</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
+          <CardContent className="text-sm text-black space-y-2">
             <p>
               Print jobs are added to the <strong>back</strong> of a queue and processed from the <strong>front</strong> (FIFO).
             </p>

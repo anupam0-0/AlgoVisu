@@ -654,18 +654,18 @@ export default function MSTVisualizerPage() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg">What is a Minimum Spanning Tree (MST)?</CardTitle>
-              <CardDescription>
+              <CardDescription className="space-y-4 text-sm text-black">
                 An MST is a subset of edges that connects all vertices of a connected, undirected, weighted graph
                 with the minimum possible total edge weight, without cycles (|V|-1 edges).
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-sm space-y-3">
+            <CardContent className="text-sm space-y-3 text-black">
               <ul className="list-disc pl-5 space-y-1">
                 <li>Applicable to connected, undirected, weighted graphs.</li>
                 <li>If edge weights are unique, the MST is unique; otherwise multiple MSTs can exist.</li>
                 <li>Typical uses: network design, clustering, approximation algorithms.</li>
               </ul>
-              <div className="text-muted-foreground">
+              <div className="text-black">
                 Select an algorithm on the right to learn how it constructs an MST, then press <b>Play</b> or step through.
               </div>
             </CardContent>
@@ -675,7 +675,7 @@ export default function MSTVisualizerPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Choose Algorithm</CardTitle>
-              <CardDescription>Switch to see detailed guidance</CardDescription>
+              <CardDescription className="space-y-4 text-sm text-black">Switch to see detailed guidance</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs
@@ -688,7 +688,7 @@ export default function MSTVisualizerPage() {
                   <TabsTrigger value="kruskal">Kruskal&apos;s</TabsTrigger>
                 </TabsList>
                 {/* Small inline hints */}
-                <TabsContent value="prim" className="mt-3 text-sm text-muted-foreground">
+                <TabsContent value="prim" className="mt-3 text-sm text-black">
                   Start-based, great for dense graphs. Set a <b>Start Node</b> below if needed.
                 </TabsContent>
                 <TabsContent value="kruskal" className="mt-3 text-sm text-muted-foreground">
@@ -702,10 +702,10 @@ export default function MSTVisualizerPage() {
         {/* Deep-dive info panel that swaps with selection */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Detailed Algorithm Info</CardTitle>
+            <CardTitle className="text-lg text-black">Detailed Algorithm Info</CardTitle>
             <CardDescription>{currentAlgorithm.name}</CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
+          <CardContent className="grid md:grid-cols-3 gap-4 text-sm text-black">
             <div className="md:col-span-2 space-y-2">
               <div><b>How it works:</b> {currentAlgorithm.description}</div>
               <div className="grid sm:grid-cols-2 gap-2">
@@ -727,7 +727,7 @@ export default function MSTVisualizerPage() {
               <div><b>Time:</b> {currentAlgorithm.timeComplexity}</div>
               <div><b>Space:</b> {currentAlgorithm.spaceComplexity}</div>
               {algorithm === "prim" && (
-                <div className="text-muted-foreground">
+                <div className="text-black">
                   Tip: Choose a <b>Start Node</b> for Prim’s in the controls below before running.
                 </div>
               )}

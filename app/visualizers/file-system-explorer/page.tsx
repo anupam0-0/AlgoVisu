@@ -386,7 +386,7 @@ export default function FileSystemExplorerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📁 What is this?</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-black space-y-2">
             <p>{description}</p>
             <div className="rounded-md bg-muted/40 p-3">
               <div className="text-foreground font-medium mb-1">How it reuses the Tree Visualizer</div>

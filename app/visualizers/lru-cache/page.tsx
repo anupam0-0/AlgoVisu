@@ -143,7 +143,7 @@ export default function LRUCacheApplication() {
                             How LRU Caching Works
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-muted-foreground">
+                    <CardContent className="space-y-4 text-black">
                         <p>
                             An LRU (Least Recently Used) cache stores frequently accessed data for fast retrieval.
                             When full, it removes the <strong>least recently used</strong> item.

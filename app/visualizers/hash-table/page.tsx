@@ -276,7 +276,7 @@ export default function HashTableVisualizer() {
               Hash Table Visualizer
             </CardTitle>
 
-            <CardDescription className="text-sm text-muted-foreground leading-relaxed space-y-4">
+            <CardDescription className="text-sm text-black space-y-2">
               <div>
                 A <strong>hash table</strong> (also called a <em>hash map</em>) is a powerful data structure
                 that stores data in <strong>key–value pairs</strong> for extremely fast access and updates.
@@ -314,7 +314,7 @@ export default function HashTableVisualizer() {
           </CardHeader>
 
           <CardContent>
-            <CardDescription className="text-sm leading-relaxed space-y-2">
+            <CardDescription className="text-sm text-black space-y-2">
               <div>
                 Use the controls below to <strong>insert</strong> or <strong>delete</strong> keys and watch how
                 the hash table updates dynamically. Each operation is visualized step-by-step, so you can

@@ -1145,7 +1145,7 @@ export default function GraphVisualizerPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="space-y-2 text-sm">
+            <CardDescription className="space-y-2 text-sm text-black">
               <span className="block">
                 A <strong>graph</strong> is a non-linear data structure consisting of <strong>vertices (nodes)</strong> connected by <strong>edges</strong>.
                 It models pairwise relationships—think social networks, road maps, and the internet.
@@ -1178,7 +1178,7 @@ export default function GraphVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">About {detail.name}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="space-y-4 text-sm text-black">
             <p>{detail.overview}</p>
 
             <div className="grid md:grid-cols-2 gap-4">

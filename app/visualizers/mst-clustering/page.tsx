@@ -182,7 +182,7 @@ export default function MSTClusteringPage() {
                     <CardHeader>
                         <CardTitle>How It Works</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground">
+                    <CardContent className="text-sm text-black">
                         To get <strong>exactly k clusters</strong>:
                         <ol className="list-decimal pl-5 mt-2 space-y-1">
                             <li>Build the MST of all points.</li>

@@ -737,7 +737,7 @@ export default function SocialNetworkAnalyzer() {
             <CardTitle className="text-lg">Social Network Analysis</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-black-900 mb-2">
               This application demonstrates real-world graph algorithms on social networks:
               friend recommendations (common neighbors), community detection (connected components with edge thresholds),
               influence ranking (PageRank), and advanced metrics like betweenness centrality and clustering coefficient.
