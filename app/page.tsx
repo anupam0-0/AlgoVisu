@@ -211,7 +211,7 @@ function Footer() {
                   href="#"
                   aria-label="Twitter / X"
                 >
-                  Twitter / X
+                  X
                 </a>
               </li>
               <li className="flex items-center gap-2">
@@ -388,10 +388,9 @@ export default function HomePage() {
     "Merge Sort",
     "Quick Sort",
     "BFS/DFS",
-    "Dijkstra's",
     "Heap Sort",
-    "Kruskal's",
-    "Prim's",
+    "Kruskal's , Prim's",
+    "Dijkstra's",
   ];
 
   const applications = [
