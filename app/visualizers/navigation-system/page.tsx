@@ -64,14 +64,7 @@ const pseudocodeShortest = [
   "        parent[neighbor].add(node)",
 ]
 
-const navigationApplications = [
-  {
-    title: "Navigation Systems",
-    description: "GPS and mapping services use graph algorithms to find optimal routes",
-    examples: ["Google Maps routing", "Traffic optimization", "Shortest path finding"],
-  },
-]
-
+// Initial graph
 const initialNodes: LocationNode[] = [
   { id: "A", label: "Downtown", x: 200, y: 150 },
   { id: "B", label: "Airport", x: 600, y: 120 },
@@ -91,7 +84,7 @@ const initialEdges: RoadEdge[] = [
   { from: "B", to: "F", baseTime: 15, trafficDelay: 0 },
 ]
 
-// Generate unique ID (A, B, ..., Z, AA, etc.)
+// Generate unique IDs A..Z, AA, AB, ...
 const generateId = (existingIds: string[]): string => {
   let id = ""
   let n = existingIds.length
@@ -102,7 +95,7 @@ const generateId = (existingIds: string[]): string => {
   return id
 }
 
-// Find all shortest paths from start to target using parent map
+// All shortest paths from start to target using parent map
 function findAllPaths(
   start: string,
   target: string,
@@ -171,9 +164,7 @@ export default function NavigationSystemsVisualizer() {
     simulateTraffic()
   }, [trafficEnabled])
 
-  const getActualTime = (edge: RoadEdge) => {
-    return edge.baseTime + (trafficEnabled ? edge.trafficDelay : 0)
-  }
+  const getActualTime = (edge: RoadEdge) => edge.baseTime + (trafficEnabled ? edge.trafficDelay : 0)
 
   // ===== STEP CONTROLS =====
   const stepForward = () => {
@@ -187,9 +178,7 @@ export default function NavigationSystemsVisualizer() {
     setIsPlaying(true)
   }
   const pause = () => setIsPlaying(false)
-  const reset = () => {
-    resetState()
-  }
+  const reset = () => resetState()
 
   useEffect(() => {
     if (isPlaying && currentStep < steps.length - 1) {
@@ -206,7 +195,7 @@ export default function NavigationSystemsVisualizer() {
     }
   }, [currentStep])
 
-  // ===== ALGORITHM IMPLEMENTATIONS =====
+  // ===== ALGORITHMS =====
   const runFastestRoute = () => {
     resetState()
     const dist: { [id: string]: number } = {}
@@ -214,9 +203,7 @@ export default function NavigationSystemsVisualizer() {
     const visited = new Set<string>()
     const allNodes = nodes.map(n => n.id)
 
-    allNodes.forEach(id => {
-      dist[id] = id === start ? 0 : Infinity
-    })
+    allNodes.forEach(id => { dist[id] = id === start ? 0 : Infinity })
 
     const newSteps: NavigationStep[] = []
     newSteps.push({
@@ -233,14 +220,13 @@ export default function NavigationSystemsVisualizer() {
       let minDist = Infinity
       for (const id of allNodes) {
         if (!visited.has(id) && dist[id] < minDist) {
-          minDist = dist[id]
-          u = id
+          minDist = dist[id]; u = id
         }
       }
-
       if (u === null || dist[u] === Infinity) break
 
       visited.add(u)
+
       const neighbors = edges
         .filter(e => e.from === u || e.to === u)
         .map(e => e.from === u ? e.to : e.from)
@@ -285,7 +271,7 @@ export default function NavigationSystemsVisualizer() {
     }
     if (curr === start) path.unshift(start)
 
-    const pathEdges = []
+    const pathEdges: string[] = []
     for (let i = 0; i < path.length - 1; i++) {
       pathEdges.push(`${path[i]}-${path[i + 1]}`, `${path[i + 1]}-${path[i]}`)
     }
@@ -360,14 +346,14 @@ export default function NavigationSystemsVisualizer() {
     }
 
     let allPaths: string[][] = []
-    let pathEdgesSet = new Set<string>()
+    const pathEdgesSet = new Set<string>()
 
     if (distances[target] !== undefined) {
       allPaths = findAllPaths(start, target, parents)
-      for (const path of allPaths) {
-        for (let i = 0; i < path.length - 1; i++) {
-          pathEdgesSet.add(`${path[i]}-${path[i + 1]}`)
-          pathEdgesSet.add(`${path[i + 1]}-${path[i]}`)
+      for (const p of allPaths) {
+        for (let i = 0; i < p.length - 1; i++) {
+          pathEdgesSet.add(`${p[i]}-${p[i + 1]}`)
+          pathEdgesSet.add(`${p[i + 1]}-${p[i]}`)
         }
       }
     }
@@ -397,11 +383,7 @@ export default function NavigationSystemsVisualizer() {
       setError("Start and target cannot be the same!")
       return
     }
-    if (routingMode === "fastest") {
-      runFastestRoute()
-    } else {
-      runShortestPath()
-    }
+    routingMode === "fastest" ? runFastestRoute() : runShortestPath()
   }
 
   // ===== GRAPH EDITING =====
@@ -453,7 +435,6 @@ export default function NavigationSystemsVisualizer() {
       (e.from === fromNode && e.to === toNode) ||
       (e.from === toNode && e.to === fromNode)
     )
-
     if (exists) {
       setError("A road already exists between these locations.")
       return
@@ -483,7 +464,7 @@ export default function NavigationSystemsVisualizer() {
     const step = steps[currentStep] || { visited: [], currentNode: "", pathEdges: [], distances: {} }
     return (
       <svg width="800" height="500" className="border rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg">
-        {/* Background map grid */}
+        {/* Background grid */}
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" strokeWidth="0.5" opacity="0.6" />
@@ -615,7 +596,8 @@ export default function NavigationSystemsVisualizer() {
   return (
     <VisualizerLayout
       title="Navigation Systems Visualizer"
-      description="See how Google Maps uses graph algorithms for routing with traffic"
+      /* IMPORTANT: leave description empty so nothing goes to the sidebar */
+      description=""
       difficulty="Advanced"
       currentStep={currentStep}
       totalSteps={steps.length}
@@ -623,9 +605,54 @@ export default function NavigationSystemsVisualizer() {
         time: routingMode === "fastest" ? "O((V + E) log V)" : "O(V + E)",
         space: "O(V)",
       }}
-      applications={navigationApplications}
     >
       <div className="w-full space-y-6">
+        {/* TOP-OF-PAGE DESCRIPTION (full width) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">What this application demonstrates</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-3 text-black [&_p]:text-black [&_li]:text-black [&_strong]:text-black [&_em]:text-black">
+            <p>
+              This interactive visualizer models a small city as a <strong>graph</strong>—locations are nodes and roads are edges with travel times.
+              You can experiment with traffic and compare two routing strategies used by real navigation apps.
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                <strong>Fastest Route (Traffic-Aware Dijkstra)</strong>: Minimizes total <em>time</em>.
+                Each road has a <em>base time</em> plus a possible <em>traffic delay</em>. During “Rush Hour,” selected roads become slower, and the algorithm adapts.
+              </li>
+              <li>
+                <strong>Shortest Path (Unweighted BFS)</strong>: Minimizes the <em>number of hops</em> (road segments), ignoring times. Useful when every edge cost is treated equally (e.g., counting turns).
+              </li>
+            </ul>
+            <p className="pt-1">
+              You can <strong>add/delete locations</strong>, <strong>create roads</strong> with custom base times and delays, and then
+              <strong> run the route finder</strong>. The map shows the current node, visited nodes, congestion, edge weights, and the final path.
+            </p>
+            <div className="grid md:grid-cols-2 gap-3 pt-1">
+              <div className="bg-muted/30 p-3 rounded">
+                <div className="font-medium mb-1">How to use</div>
+                <ol className="list-decimal pl-5 space-y-1">
+                  <li>Pick <em>Start</em> and <em>Destination</em>.</li>
+                  <li>Choose <em>Routing Mode</em> (Fastest or Shortest).</li>
+                  <li>Toggle <em>Rush Hour</em> to simulate traffic.</li>
+                  <li>Click <em>Find Route</em> to step through the algorithm.</li>
+                </ol>
+              </div>
+              <div className="bg-muted/30 p-3 rounded">
+                <div className="font-medium mb-1">Learning outcomes</div>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Understand Dijkstra vs. BFS and when to use each.</li>
+                  <li>See how traffic transforms edge weights in real time.</li>
+                  <li>Connect routing concepts with real navigation apps.</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Map */}
         <div className="flex justify-center p-6 bg-gradient-to-b from-gray-50 to-gray-100 rounded-xl shadow-inner">
           {renderMap()}
         </div>
@@ -660,7 +687,7 @@ export default function NavigationSystemsVisualizer() {
             <CardHeader><CardTitle className="text-base">Start</CardTitle></CardHeader>
             <CardContent>
               <Select value={start} onValueChange={setStart}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select start" /></SelectTrigger>
                 <SelectContent>
                   {nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>)}
                 </SelectContent>
@@ -671,7 +698,7 @@ export default function NavigationSystemsVisualizer() {
             <CardHeader><CardTitle className="text-base">Destination</CardTitle></CardHeader>
             <CardContent>
               <Select value={target} onValueChange={setTarget}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select destination" /></SelectTrigger>
                 <SelectContent>
                   {nodes.map(n => <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>)}
                 </SelectContent>
@@ -682,7 +709,7 @@ export default function NavigationSystemsVisualizer() {
             <CardHeader><CardTitle className="text-base">Routing Mode</CardTitle></CardHeader>
             <CardContent>
               <Select value={routingMode} onValueChange={(v) => setRoutingMode(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select mode" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="fastest">Fastest Route (Time)</SelectItem>
                   <SelectItem value="shortest">Shortest Path (Hops)</SelectItem>
@@ -768,7 +795,6 @@ export default function NavigationSystemsVisualizer() {
         </div>
 
         {/* Delete Location */}
-        {/*fix*/}
         <Card className="border-0 shadow-md">
           <CardHeader><CardTitle>Delete Location</CardTitle></CardHeader>
           <CardContent>
@@ -795,10 +821,14 @@ export default function NavigationSystemsVisualizer() {
         {/* Run Navigation */}
         <Card className="border-0 shadow-lg">
           <CardHeader><CardTitle>Run Navigation</CardTitle></CardHeader>
-          <CardContent>
-            <Button onClick={play} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg font-medium">
+          <CardContent className="flex flex-wrap gap-2">
+            <Button onClick={play} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-lg font-medium">
               Find Route
             </Button>
+            <Button variant="outline" onClick={stepBack} disabled={currentStep === 0}>Step Back</Button>
+            <Button variant="outline" onClick={stepForward} disabled={currentStep >= steps.length - 1}>Step Forward</Button>
+            <Button variant="ghost" onClick={pause} disabled={!isPlaying}>Pause</Button>
+            <Button variant="secondary" onClick={reset}>Reset</Button>
           </CardContent>
         </Card>
 
