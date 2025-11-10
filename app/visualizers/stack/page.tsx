@@ -179,17 +179,14 @@ const typeDetails: Record<
 export default function StackVisualizerPage() {
   const [stackType, setStackType] = useState<StackType>("basic");
   const [stack, setStack] = useState<StackElement[]>(() => getInitialStack("basic"));
-  const [minStack, setMinStack] = useState<number[]>([10, 10]); // for min-stack
-  const [history, setHistory] = useState<StackElement[][]>([getInitialStack("persistent")]); // for persistent
+  const [minStack, setMinStack] = useState<number[]>([10, 10]); 
+  const [history, setHistory] = useState<StackElement[][]>([getInitialStack("persistent")]);
   const [inputValue, setInputValue] = useState("");
   const [lastOperation, setLastOperation] = useState<string>("");
   const [peekedValue, setPeekedValue] = useState<string | number | null>(null)
-
-  // NEW: Edge-case demo toggles
   const [demoOverflow, setDemoOverflow] = useState(false)
   const [demoUnderflow, setDemoUnderflow] = useState(false)
 
-  // Reset on type change
   useEffect(() => {
     const initStack = getInitialStack(stackType);
     setStack(initStack);
@@ -220,25 +217,18 @@ export default function StackVisualizerPage() {
     }
   };
 
-  // --- Helpers (capacity calc for demo) ---
-  // For bounded stacks, capacity is fixed at 6 total elements (including "Base")
-  // For others, if demoOverflow is ON, cap at 4; else no cap.
   const effectiveCapacity =
     stackType === "bounded" ? 6 : demoOverflow ? 4 : Number.MAX_SAFE_INTEGER
 
   const isBoundedFull = stack.length >= effectiveCapacity
-  const currentMin =
-    stackType === "min" && minStack.length > 0 ? minStack[minStack.length - 1] : null
   const details = typeDetails[stackType];
 
-  // --- Operations ---
   const pushElement = () => {
     if (!inputValue.trim()) return;
     const raw = inputValue.trim();
     const val = !isNaN(Number(raw)) ? Number(raw) : raw;
     const id = Date.now();
 
-    // Overflow guard (bounded OR demo overflow)
     if (isBoundedFull) {
       setLastOperation("❌ Overflow: capacity reached — cannot push")
       return
@@ -267,7 +257,6 @@ export default function StackVisualizerPage() {
   };
 
   const popElement = () => {
-    // Underflow demo: explicitly surface the error when empty
     if (stack.length <= 1) {
       if (demoUnderflow) {
         setLastOperation("❌ Underflow: cannot pop from empty stack")
@@ -319,8 +308,6 @@ export default function StackVisualizerPage() {
     setLastOperation(`👁️ Peeked: ${top.value}`);
   };
 
-  // --- Render Stack ---
-  // --- Render Stack (BIGGER) ---
   const renderStack = () => (
     <div className="flex flex-col-reverse space-y-reverse space-y-2 min-h-[320px] justify-end">
       {stack.map((el, idx) => (
@@ -349,7 +336,6 @@ export default function StackVisualizerPage() {
     </div>
   )
 
-
   return (
     <VisualizerLayout
       title="Stack Visualizer"
@@ -364,7 +350,7 @@ export default function StackVisualizerPage() {
       }))}
     >
       <div className="w-full space-y-6">
-        {/* Type Selector */}
+
         <div className="flex justify-center">
           <div className="inline-flex rounded-md border p-1 bg-muted w-full max-w-2xl">
             {(["basic", "bounded", "resizable", "persistent", "min"] as const).map((type) => (
@@ -385,7 +371,6 @@ export default function StackVisualizerPage() {
           </div>
         </div>
 
-        {/* Knowledge Card */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -393,13 +378,15 @@ export default function StackVisualizerPage() {
               {details.title}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-black space-y-2">
-            <div className="font-medium">{details.description}</div>
+          <CardContent className="text-base text-black space-y-3 leading-relaxed">
+            <div className="font-medium text-[1.05rem]">
+              {details.description}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div>
                 <h4 className="font-semibold text-foreground mb-2">How It Works</h4>
-                <ul className="list-disc list-inside space-y-1 text-xs">
+                <ul className="list-disc list-inside space-y-1 text-sm leading-relaxed">
                   {details.howItWorks.map((item, i) => (
                     <li key={i}>{item}</li>
                   ))}
@@ -407,7 +394,7 @@ export default function StackVisualizerPage() {
               </div>
               <div>
                 <h4 className="font-semibold text-foreground mb-2">Common Use Cases</h4>
-                <ul className="list-disc list-inside space-y-1 text-xs">
+                <ul className="list-disc list-inside space-y-1 text-sm leading-relaxed">
                   {details.useCases.map((item, i) => (
                     <li key={i}>{item}</li>
                   ))}
@@ -415,10 +402,10 @@ export default function StackVisualizerPage() {
               </div>
             </div>
 
-            {details.advancedInsights && details.advancedInsights.length > 0 && (
+            {details.advancedInsights && (
               <div className="pt-2">
                 <h4 className="font-semibold text-foreground mb-2">Advanced Insights</h4>
-                <ul className="list-disc list-inside space-y-1 text-xs">
+                <ul className="list-disc list-inside space-y-1 text-sm leading-relaxed">
                   {details.advancedInsights.map((item, i) => (
                     <li key={i}>{item}</li>
                   ))}
@@ -426,10 +413,10 @@ export default function StackVisualizerPage() {
               </div>
             )}
 
-            {details.visualizationNotes && details.visualizationNotes.length > 0 && (
+            {details.visualizationNotes && (
               <div className="pt-2">
                 <h4 className="font-semibold text-foreground mb-2">Visualization Notes</h4>
-                <ul className="list-disc list-inside space-y-1 text-xs">
+                <ul className="list-disc list-inside space-y-1 text-sm leading-relaxed">
                   {details.visualizationNotes.map((item, i) => (
                     <li key={i}>{item}</li>
                   ))}
@@ -437,13 +424,12 @@ export default function StackVisualizerPage() {
               </div>
             )}
 
-            <div className="pt-2 text-xs">
+            <div className="pt-2 text-sm">
               <strong>Complexity:</strong> Time – {details.complexity.time}, Space – {details.complexity.space}
             </div>
           </CardContent>
         </Card>
 
-        {/* Visualization */}
         <div className="flex flex-col items-center space-y-2">
           <div className="text-sm text-muted-foreground mb-2">
             Top of Stack{" "}
@@ -454,10 +440,8 @@ export default function StackVisualizerPage() {
             )}
           </div>
           {renderStack()}
-          
         </div>
 
-        {/* Visualization Key */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Visualization Key</CardTitle>
@@ -478,7 +462,6 @@ export default function StackVisualizerPage() {
           </CardContent>
         </Card>
 
-        {/* Edge Case Demo */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Edge Case Demo</CardTitle>
@@ -512,7 +495,6 @@ export default function StackVisualizerPage() {
           </CardContent>
         </Card>
 
-        {/* Controls */}
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
@@ -588,10 +570,8 @@ export default function StackVisualizerPage() {
               </div>
             </CardContent>
           </Card>
-
         </div>
 
-        {/* Info Panel */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Stack Status</CardTitle>
@@ -621,6 +601,7 @@ export default function StackVisualizerPage() {
             </div>
           </CardContent>
         </Card>
+
       </div>
     </VisualizerLayout>
   );
