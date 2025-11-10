@@ -130,18 +130,7 @@ export default function PrintQueueVisualizerPage() {
       difficulty="Beginner"
       onReset={resetQueue}
       complexity={{ time: "O(1)", space: "O(n)" }}
-      applications={[
-        {
-          title: "Shared Office Printers",
-          description: "Multiple users submit jobs to a common queue processed in order.",
-          examples: ["University labs", "Corporate offices", "Library printers"],
-        },
-        {
-          title: "Load Balancing",
-          description: "Multiple printers reduce wait time by processing jobs in parallel.",
-          examples: ["Print farms", "Cloud print services"],
-        },
-      ]}
+      
     >
       <div className="w-full space-y-6">
         {/* Knowledge Card */}

@@ -363,23 +363,7 @@ export default function FileSystemExplorerPage() {
     "The same spacing math (H_GAP, V_GAP) lays out the diagram",
   ]
 
-  const applications = [
-    {
-      title: "Operating Systems",
-      description: "Directory hierarchies, access paths, and shell navigation",
-      examples: ["NTFS/EXT trees", "Finder/Explorer", "POSIX paths"],
-    },
-    {
-      title: "IDEs & Editors",
-      description: "Project trees, quick-open, and refactor operations",
-      examples: ["VS Code Explorer", "JetBrains Project View"],
-    },
-    {
-      title: "Cloud Storage",
-      description: "Drive folder trees and sharing",
-      examples: ["Google Drive", "Dropbox", "OneDrive"],
-    },
-  ]
+  
 
   // Breadcrumbs for selected node
   const breadcrumbs = useMemo(() => {
@@ -394,7 +378,7 @@ export default function FileSystemExplorerPage() {
       description="Explore, edit, and visualize a folder tree. Built on the same tree-rendering logic as the Binary Tree/BST visualizer."
       difficulty="Beginner"
       complexity={{ time: "O(n) traversal", space: "O(h)" }}
-      applications={applications}
+      
     >
       <div className="w-full space-y-6">
         {/* Intro / Description */}

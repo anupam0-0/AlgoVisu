@@ -18,11 +18,9 @@ interface Player {
   id: PlayerID
   name: string
   score: number
-  // extra metadata could be added here (country, avatar url, etc.)
 }
 
 interface Key {
-  // higher score sorts first; ties broken by name (asc) then id (asc)
   score: number
   name: string
   id: PlayerID
@@ -33,16 +31,16 @@ interface AVLNode {
   left: AVLNode | null
   right: AVLNode | null
   height: number
-  size: number // subtree node count for rank queries
-  id: string   // stable render id
+  size: number
+  id: string
 }
 
 const cmpKey = (a: Key, b: Key): number => {
-  // We want descending by score: higher score comes "before"
+  // Descending by score
   if (a.score !== b.score) return b.score - a.score
-  // tie-break by name (ascending)
+  // Asc by name
   if (a.name !== b.name) return a.name < b.name ? -1 : 1
-  // final tie-break by id (ascending)
+  // Asc by id
   if (a.id === b.id) return 0
   return a.id < b.id ? -1 : 1
 }
@@ -88,43 +86,39 @@ const rebalance = (node: AVLNode): AVLNode => {
   update(node)
   const bf = balanceFactor(node)
   if (bf > 1) {
-    // left heavy
     if (balanceFactor(node.left) < 0) node.left = rotateLeft(node.left!)
     return rotateRight(node)
   }
   if (bf < -1) {
-    // right heavy
     if (balanceFactor(node.right) > 0) node.right = rotateRight(node.right!)
     return rotateLeft(node)
   }
   return node
 }
 
-// standard BST insert with AVL rebalancing
+// Insert
 const insertNode = (root: AVLNode | null, key: Key): AVLNode => {
   if (!root) return makeNode(key)
   const c = cmpKey(key, root.key)
   if (c < 0) root.left = insertNode(root.left, key)
   else if (c > 0) root.right = insertNode(root.right, key)
   else {
-    // equal key (same (score, name, id)): overwrite
     root.key = key
     return root
   }
   return rebalance(root)
 }
 
-// min node helper
+// Min node
 const minNode = (n: AVLNode): AVLNode => (n.left ? minNode(n.left) : n)
 
-// delete by key
+// Delete
 const deleteNode = (root: AVLNode | null, key: Key): AVLNode | null => {
   if (!root) return null
   const c = cmpKey(key, root.key)
   if (c < 0) root.left = deleteNode(root.left, key)
   else if (c > 0) root.right = deleteNode(root.right, key)
   else {
-    // found
     if (!root.left || !root.right) {
       return root.left || root.right
     } else {
@@ -136,28 +130,18 @@ const deleteNode = (root: AVLNode | null, key: Key): AVLNode | null => {
   return rebalance(root)
 }
 
-// rank (1-based): number of nodes strictly "before" + 1
-// Since cmpKey sorts descending by score, "before" means: go right for lower, left for higher? Careful.
-// We defined: cmpKey(a,b) negative => a goes to LEFT of b in tree.
-// Therefore, in-order traversal yields ASCENDING by our comparator.
-// But we want rank where "best" (highest score) has rank 1.
-// We'll compute rank by counting how many keys compare LESS (i.e., c > 0 means a should be right).
+// 1-based rank
 const getRankOfKey = (root: AVLNode | null, key: Key): number | null => {
   let rank = 1
   let curr = root
   while (curr) {
     const c = cmpKey(key, curr.key)
     if (c < 0) {
-      // key should be in LEFT subtree (key is "less" by comparator → better position)
-      // no nodes skipped
       curr = curr.left
     } else if (c > 0) {
-      // key is in RIGHT subtree (key "greater" by comparator → worse position)
-      // we skip left subtree + current node
       rank += sz(curr.left) + 1
       curr = curr.right
     } else {
-      // equal
       rank += sz(curr.left)
       return rank
     }
@@ -165,17 +149,15 @@ const getRankOfKey = (root: AVLNode | null, key: Key): number | null => {
   return null
 }
 
-// topN via reverse in-order using comparator to yield best-first
+// Top N (best-first)
 const collectTopN = (root: AVLNode | null, n: number, acc: Key[] = []): Key[] => {
   if (!root || acc.length >= n) return acc
-  // best entries are in LEFT subtree (since cmpKey negative goes left)
   collectTopN(root.left, n, acc)
   if (acc.length < n) acc.push(root.key)
   if (acc.length < n) collectTopN(root.right, n, acc)
   return acc
 }
 
-// utility to generate unique IDs
 const uid = () => Math.random().toString(36).slice(2, 9)
 
 // -----------------------------
@@ -191,12 +173,9 @@ export default function LeaderboardPage() {
   const [topCount, setTopCount] = useState<number>(10)
   const [queryName, setQueryName] = useState("")
 
-  // diagram sizing
   const containerRef = useRef<HTMLDivElement | null>(null)
 
-  // -----------------------------
-  // Core operations
-  // -----------------------------
+  // Core ops
   const keyOf = (p: Player): Key => ({ score: p.score, name: p.name, id: p.id })
 
   const upsertPlayer = (name: string, score: number) => {
@@ -205,7 +184,6 @@ export default function LeaderboardPage() {
     let nextRoot = root
 
     if (byName) {
-      // remove old key
       nextRoot = deleteNode(nextRoot, keyOf(byName))
       const updated: Player = { ...byName, score }
       nextRoot = insertNode(nextRoot, keyOf(updated))
@@ -254,9 +232,7 @@ export default function LeaderboardPage() {
     return out
   }
 
-  // -----------------------------
-  // Demo / Simulator
-  // -----------------------------
+  // Demo
   const demoNames = useMemo(
     () => ["Ava", "Noah", "Liam", "Mia", "Ishan", "Zara", "Arjun", "Kiara", "Vivaan", "Anaya", "Ivy", "Leo"],
     []
@@ -280,7 +256,6 @@ export default function LeaderboardPage() {
     const target = list[Math.floor(Math.random() * list.length)]
     const delta = Math.random() < 0.6 ? Math.ceil(Math.random() * 50) : -Math.ceil(Math.random() * 30)
     const newScore = Math.max(0, target.score + delta)
-    // reinsert
     let nextRoot = deleteNode(root, keyOf(target))
     const updated: Player = { ...target, score: newScore }
     nextRoot = insertNode(nextRoot, keyOf(updated))
@@ -290,9 +265,7 @@ export default function LeaderboardPage() {
     setRoot(nextRoot)
   }
 
-  // -----------------------------
   // Render helpers
-  // -----------------------------
   const renderNode = (node: AVLNode | null): JSX.Element | null => {
     if (!node) return null
     return (
@@ -341,7 +314,6 @@ export default function LeaderboardPage() {
         time: "Insert/Update/Delete/Rank: O(log n)",
         space: "O(n)",
       }}
-      
     >
       <div className="w-full space-y-8">
         {/* Intro / Explanation */}
@@ -353,11 +325,11 @@ export default function LeaderboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="text-sm text-gray-700 leading-relaxed space-y-2">
+            {/* Make description text black */}
+            <CardDescription className="text-sm text-black leading-relaxed space-y-2">
               <p>
-                This leaderboard keeps players ordered by <strong>score (descending)</strong> using an{" "}
-                <em>AVL Tree</em>. Every add, update, or delete operation rebalances the tree so that it stays
-                near-perfectly balanced.
+                This leaderboard keeps players ordered by <strong>score (descending)</strong> using an <em>AVL Tree</em>.
+                Every add, update, or delete operation rebalances the tree so that it stays near-perfectly balanced.
               </p>
               <ul className="list-disc pl-5">
                 <li><strong>Ordered inserts:</strong> players slot into the correct position by score in O(log n).</li>
@@ -367,8 +339,8 @@ export default function LeaderboardPage() {
                 <li><strong>Real-time:</strong> simulate frequent updates without losing performance.</li>
               </ul>
               <p className="pt-1">
-                This pattern scales well for in-memory leaderboards (game servers, hackathons, classrooms) and can be
-                persisted by periodically snapshotting the tree or mirroring updates to a database.
+                This pattern fits real-time leaderboards for games, hackathons, classrooms and more. Persist by
+                snapshotting the tree or mirroring updates to a database.
               </p>
             </CardDescription>
           </CardContent>
@@ -437,9 +409,10 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Rank & Top-N */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* SMALLER Find Rank card */}
+          <Card className="md:col-span-1 self-start max-w-[520px]">
+            <CardHeader className="pb-2">
               <CardTitle className="text-lg">Find Rank</CardTitle>
             </CardHeader>
             <CardContent className="flex items-center gap-2 flex-wrap">
@@ -447,17 +420,22 @@ export default function LeaderboardPage() {
                 placeholder="Player name"
                 value={queryName}
                 onChange={(e) => setQueryName(e.target.value)}
-                className="min-w-[160px]"
+                className="min-w-[160px] flex-1"
               />
-              <Button variant="outline" className="gap-1">
+              <Button
+                variant="outline"
+                className="gap-1"
+                onClick={() => setQueryName((v) => v.trim())}
+              >
                 <Search className="h-4 w-4" /> Check
               </Button>
               <div className="text-sm">
                 {queryName.trim()
                   ? (() => {
                       const r = rankOfName(queryName)
-                      return r ? <span><strong>{queryName}</strong> is currently <strong>#{r}</strong></span>
-                              : <span className="text-muted-foreground">No such player.</span>
+                      return r
+                        ? <span><strong>{queryName}</strong> is currently <strong>#{r}</strong></span>
+                        : <span className="text-muted-foreground">No such player.</span>
                     })()
                   : <span className="text-muted-foreground">Enter a name to view rank.</span>
                 }
@@ -465,9 +443,13 @@ export default function LeaderboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          {/* Wider Top-N card */}
+          <Card className="md:col-span-2">
+            <CardHeader className="pb-2">
               <CardTitle className="text-lg">Top-N</CardTitle>
+              <CardDescription className="text-black">
+                Show the best performing players at a glance.
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center gap-2">
               <Input
@@ -506,9 +488,8 @@ export default function LeaderboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>AVL Tree Diagram</CardTitle>
-            <CardDescription>
-              Players are placed so that higher scores appear toward the left side of the tree.
-              The view below is scrollable and roomy for larger datasets.
+            <CardDescription className="text-black">
+              Players are arranged so that higher scores appear toward the left. The canvas below is scrollable for larger datasets.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -536,9 +517,9 @@ export default function LeaderboardPage() {
           </CardHeader>
           <CardContent className="text-sm space-y-2">
             <p>
-              Each node shows <strong>name</strong>, <strong>score</strong>, and small metrics:
+              Each node shows <strong>name</strong>, <strong>score</strong>, plus small metrics:
               <code className="mx-1">h</code> (height) and <code className="mx-1">sz</code> (subtree size).
-              Rank is computed using subtree sizes in O(log n).
+              Rank is computed with subtree sizes in O(log n).
             </p>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2">

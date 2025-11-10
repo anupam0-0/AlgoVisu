@@ -7,45 +7,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui
 import { Badge } from "../../../components/ui/badge"
 import { Slider } from "../../../components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
-import { Input } from "../../../components/ui/input"
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
 import { Shuffle, Play, Square, StepBack, StepForward, Zap, DollarSign, Calendar, Flame, Info, RefreshCcw, Sparkles } from "lucide-react"
 
+// ------------------------------------
+// Types
+// ------------------------------------
 type RankBy = "price" | "date" | "popularity"
 type Algorithm = "bubble" | "selection" | "insertion" | "merge" | "quick" | "heap"
 type SortOrder = "asc" | "desc"
 
 interface Product {
-  id: number;            // catalog id (can repeat in dataset variants)
-  instanceId: string;    // unique-per-render instance id for React keys
-  name: string;
-  price: number;         // currency in INR (example)
-  date: number;          // timestamp (ms)
-  popularity: number;    // sales/score
-  image?: string;        // optional img/emoji
-  isComparing?: boolean;
-  isSwapping?: boolean;
-  isSorted?: boolean;
-  isPivot?: boolean;
-  isSelected?: boolean;
+  id: number // catalog id (can repeat in dataset variants)
+  instanceId: string // unique-per-render instance id for React keys
+  name: string
+  price: number // INR
+  date: number // timestamp (ms)
+  popularity: number // sales/score
+  image?: string
+  isComparing?: boolean
+  isSwapping?: boolean
+  isSorted?: boolean
+  isPivot?: boolean
+  isSelected?: boolean
 }
 
 interface SortStep {
-  data: Product[];
-  description: string;
-  comparisons: number;
-  swaps: number;
-  comparing?: number[];  // indices
-  swapping?: number[];   // indices
-  pivot?: number;        // index
+  data: Product[]
+  description: string
+  comparisons: number
+  swaps: number
+  comparing?: number[]
+  swapping?: number[]
+  pivot?: number
 }
 
+// ------------------------------------
+// Utils
+// ------------------------------------
 function uid() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID()
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return (crypto as any).randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-// ---------- Helper: comparator per rankBy ----------
 function makeComparator(rankBy: RankBy, order: SortOrder) {
   const dir = order === "asc" ? 1 : -1
   return (a: Product, b: Product) => {
@@ -53,16 +57,17 @@ function makeComparator(rankBy: RankBy, order: SortOrder) {
     if (rankBy === "price") { va = a.price; vb = b.price }
     else if (rankBy === "date") { va = a.date; vb = b.date }
     else { va = a.popularity; vb = b.popularity }
+
     if (va < vb) return -1 * dir
     if (va > vb) return 1 * dir
-    // tie-break deterministically by name then catalog id
+
+    // Deterministic tiebreaks so feeds look stable across runs
     if (a.name < b.name) return -1
     if (a.name > b.name) return 1
     return a.id - b.id
   }
 }
 
-// ---------- Dataset generator ----------
 const SAMPLE_NAMES = [
   "Nova Drone","Quartz Watch","Echo Buds","Pixel Hoodie","Aero Kettle","Terra Mug",
   "Zen Lamp","Comet Phone Case","Vega Tripod","Aurora Keyboard","Lumen Lightbar","Nimbus Router",
@@ -79,8 +84,8 @@ function makeDataset(count: number): Product[] {
   for (let i = 0; i < count; i++) {
     const baseIndex = i % SAMPLE_NAMES.length
     items.push({
-      id: baseIndex + 1, // catalog id repeats across variants
-      instanceId: uid(), // unique per render -> fixes duplicate key crash
+      id: baseIndex + 1,           // catalog id repeats across variants
+      instanceId: uid(),           // unique key per render (fixes duplicate key issues)
       name: SAMPLE_NAMES[baseIndex],
       price: randomInt(499, 49999),
       date: now - randomInt(0, 1000 * 60 * 60 * 24 * 60), // up to ~60 days old
@@ -91,8 +96,20 @@ function makeDataset(count: number): Product[] {
   return items
 }
 
-// ---------- Sorting algorithms over Product[] ----------
-// Each returns a steps array for animation
+// ------------------------------------
+// Visual mark helpers
+// ------------------------------------
+function mark(a: Product[], opts?: { comparing?: number[]; swapping?: number[]; pivot?: number }) {
+  const out = a.map(p => ({ ...p, isComparing: false, isSwapping: false, isSelected: false, isPivot: false }))
+  if (opts?.comparing) opts.comparing.forEach(i => (out[i] && (out[i].isComparing = true)))
+  if (opts?.swapping) opts.swapping.forEach(i => (out[i] && (out[i].isSwapping = true)))
+  if (typeof opts?.pivot === "number" && out[opts.pivot]) out[opts.pivot].isPivot = true
+  return out
+}
+
+// ------------------------------------
+// Sorting algorithms (return step arrays)
+// ------------------------------------
 function bubbleSort(arr: Product[], cmp: (a: Product, b: Product) => number): SortStep[] {
   const steps: SortStep[] = []
   const a = arr.map(p => ({ ...p }))
@@ -111,7 +128,7 @@ function bubbleSort(arr: Product[], cmp: (a: Product, b: Product) => number): So
     a[a.length - 1 - i].isSorted = true
     steps.push({ data: mark(a), description: `Position ${a.length - 1 - i} fixed`, comparisons, swaps })
   }
-  a[0].isSorted = true
+  if (a.length) a[0].isSorted = true
   steps.push({ data: mark(a), description: "Ranking complete!", comparisons, swaps })
   return steps
 }
@@ -122,22 +139,20 @@ function selectionSort(arr: Product[], cmp: (a: Product, b: Product) => number):
   let comparisons = 0, swaps = 0
 
   for (let i = 0; i < a.length - 1; i++) {
-    let min = i
+    let best = i
     for (let j = i + 1; j < a.length; j++) {
       comparisons++
-      steps.push({ data: mark(a, { comparing: [min, j] }), description: `Find best among ${i}..${a.length - 1}`, comparisons, swaps, comparing: [min, j] })
-      if (cmp(a[j], a[min]) < 0) {
-        min = j
-      }
+      steps.push({ data: mark(a, { comparing: [best, j] }), description: `Find best among ${i}..${a.length - 1}`, comparisons, swaps, comparing: [best, j] })
+      if (cmp(a[j], a[best]) < 0) best = j
     }
-    if (min !== i) {
-      ;[a[i], a[min]] = [a[min], a[i]]
+    if (best !== i) {
+      ;[a[i], a[best]] = [a[best], a[i]]
       swaps++
-      steps.push({ data: mark(a, { swapping: [i, min] }), description: `Place best at ${i}`, comparisons, swaps, swapping: [i, min] })
+      steps.push({ data: mark(a, { swapping: [i, best] }), description: `Place best at ${i}`, comparisons, swaps, swapping: [i, best] })
     }
     a[i].isSorted = true
   }
-  a[a.length - 1].isSorted = true
+  if (a.length) a[a.length - 1].isSorted = true
   steps.push({ data: mark(a), description: "Ranking complete!", comparisons, swaps })
   return steps
 }
@@ -147,19 +162,24 @@ function insertionSort(arr: Product[], cmp: (a: Product, b: Product) => number):
   const a = arr.map(p => ({ ...p }))
   let comparisons = 0, swaps = 0
 
+  if (!a.length) return [{ data: [], description: "Empty", comparisons, swaps }]
+
   a[0].isSorted = true
   steps.push({ data: mark(a), description: "Seed sorted prefix with 1 item", comparisons, swaps })
 
   for (let i = 1; i < a.length; i++) {
     const key = a[i]
     let j = i - 1
-    steps.push({ data: mark(a, { comparing: [j, i] }), description: `Insert item at ${i} into prefix`, comparisons, swaps, comparing: [j, i] })
-    while (j >= 0 && cmp(a[j], key) > 0) {
+    while (j >= 0) {
       comparisons++
-      a[j + 1] = a[j]
-      swaps++
-      j--
-      steps.push({ data: mark(a, { swapping: [j + 1, j + 2] }), description: `Shift right`, comparisons, swaps, swapping: [j + 1, j + 2] })
+      if (cmp(a[j], key) > 0) {
+        a[j + 1] = a[j]
+        swaps++
+        steps.push({ data: mark(a, { swapping: [j + 1, j] }), description: `Shift right`, comparisons, swaps, swapping: [j + 1, j] })
+        j--
+      } else {
+        break
+      }
     }
     a[j + 1] = key
     for (let k = 0; k <= i; k++) a[k].isSorted = true
@@ -184,7 +204,7 @@ function mergeSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sor
     let i = 0, j = 0, k = l
     while (i < left.length && j < right.length) {
       comparisons++
-      if (cmp(left[i], right[j]) <= 0) a[k++] = left[i++]
+      if (cmp(left[i], right[j]) <= 0) a[k++] = left[i++] 
       else a[k++] = right[j++]
       steps.push({ data: mark(a), description: `Merge ${l}-${m} and ${m + 1}-${r}`, comparisons, swaps: 0 })
     }
@@ -193,8 +213,10 @@ function mergeSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sor
     steps.push({ data: mark(a), description: `Merged block ${l}-${r}`, comparisons, swaps: 0 })
   }
 
-  mergeSortRec(0, a.length - 1)
-  a.forEach(p => (p.isSorted = true))
+  if (a.length) {
+    mergeSortRec(0, a.length - 1)
+    a.forEach(p => (p.isSorted = true))
+  }
   steps.push({ data: mark(a), description: "Ranking complete!", comparisons, swaps: 0 })
   return steps
 }
@@ -238,7 +260,7 @@ function quickSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sor
     }
   }
 
-  qs(0, a.length - 1)
+  if (a.length) qs(0, a.length - 1)
   a.forEach(p => (p.isSorted = true))
   steps.push({ data: mark(a), description: "Ranking complete!", comparisons, swaps })
   return steps
@@ -249,21 +271,14 @@ function heapSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sort
   const a = arr.map(p => ({ ...p }))
   let comparisons = 0, swaps = 0
 
-  // We'll build a max-heap under the provided comparator: we need 'bigger' according to cmp
   const greater = (i: number, j: number) => cmp(a[i], a[j]) > 0
 
   function heapify(n: number, i: number) {
     let largest = i
     const l = 2 * i + 1
     const r = 2 * i + 2
-    if (l < n) {
-      comparisons++
-      if (greater(l, largest)) largest = l
-    }
-    if (r < n) {
-      comparisons++
-      if (greater(r, largest)) largest = r
-    }
+    if (l < n) { comparisons++; if (greater(l, largest)) largest = l }
+    if (r < n) { comparisons++; if (greater(r, largest)) largest = r }
     if (largest !== i) {
       ;[a[i], a[largest]] = [a[largest], a[i]]
       swaps++
@@ -283,21 +298,14 @@ function heapSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sort
     steps.push({ data: mark(a, { swapping: [0, i] }), description: `Extract max to ${i}`, comparisons, swaps, swapping: [0, i] })
     heapify(i, 0)
   }
-  a[0].isSorted = true
+  if (a.length) a[0].isSorted = true
   steps.push({ data: mark(a), description: "Ranking complete!", comparisons, swaps })
   return steps
 }
 
-// ---------- Mark helpers for visual hints ----------
-function mark(a: Product[], opts?: { comparing?: number[]; swapping?: number[]; pivot?: number }) {
-  const out = a.map(p => ({ ...p, isComparing: false, isSwapping: false, isSelected: false, isPivot: false }))
-  if (opts?.comparing) opts.comparing.forEach(i => (out[i] && (out[i].isComparing = true)))
-  if (opts?.swapping) opts.swapping.forEach(i => (out[i] && (out[i].isSwapping = true)))
-  if (typeof opts?.pivot === "number" && out[opts.pivot]) out[opts.pivot].isPivot = true
-  return out
-}
-
-// ---------- Product Card ----------
+// ------------------------------------
+// UI Subcomponents
+// ------------------------------------
 function ProductCard({ p, rankBy }: { p: Product; rankBy: RankBy }) {
   const primary =
     rankBy === "price" ? `₹${p.price.toLocaleString("en-IN")}` :
@@ -361,12 +369,15 @@ function ProductCard({ p, rankBy }: { p: Product; rankBy: RankBy }) {
   )
 }
 
+// ------------------------------------
+// Main Component
+// ------------------------------------
 export default function EcommerceRankingPage() {
   const [items, setItems] = useState<Product[]>([])
   const [original, setOriginal] = useState<Product[]>([])
   const [rankBy, setRankBy] = useState<RankBy>("price")
   const [order, setOrder] = useState<SortOrder>("asc")
-  const [algorithm, setAlgorithm] = useState<Algorithm>("quick") // default fast choice
+  const [algorithm, setAlgorithm] = useState<Algorithm>("quick")
   const [arraySize, setArraySize] = useState([12])
   const [speed, setSpeed] = useState([600])
   const [steps, setSteps] = useState<SortStep[]>([])
@@ -375,6 +386,16 @@ export default function EcommerceRankingPage() {
   const [comparisons, setComparisons] = useState(0)
   const [swaps, setSwaps] = useState(0)
   const playTimer = useRef<number | undefined>(undefined)
+
+  // Auto-recommend order when switching rank signal
+  useEffect(() => {
+    const recommended: SortOrder = rankBy === "price" ? "asc" : "desc"
+    setOrder(recommended)
+    // Stop any running animation to avoid stale steps
+    setSteps([])
+    setStepIndex(0)
+    setIsPlaying(false)
+  }, [rankBy])
 
   const comparator = useMemo(() => makeComparator(rankBy, order), [rankBy, order])
 
@@ -391,7 +412,7 @@ export default function EcommerceRankingPage() {
 
   useEffect(() => { generate() }, [generate])
 
-  // Build steps
+  // Compute steps (pure function by algorithm/comparator)
   const computeSteps = useCallback((data: Product[]) => {
     switch (algorithm) {
       case "bubble": return bubbleSort(data, comparator)
@@ -403,6 +424,7 @@ export default function EcommerceRankingPage() {
     }
   }, [algorithm, comparator])
 
+  // Playback controls
   const start = () => {
     const s = computeSteps(original)
     setSteps(s)
@@ -433,14 +455,21 @@ export default function EcommerceRankingPage() {
     })
   }
 
-  const pause = () => setIsPlaying(false)
+  const pause = () => {
+    setIsPlaying(false)
+    if (playTimer.current) {
+      window.clearTimeout(playTimer.current)
+      playTimer.current = undefined
+    }
+  }
+
   const reset = () => {
+    pause()
     setItems(original.map(p => ({ ...p })))
     setSteps([])
     setStepIndex(0)
     setComparisons(0)
     setSwaps(0)
-    setIsPlaying(false)
   }
 
   // Auto-advance while playing
@@ -452,95 +481,115 @@ export default function EcommerceRankingPage() {
     return () => window.clearTimeout(t)
   }, [isPlaying, stepIndex, steps.length, speed])
 
-  // If user changes size, instantly regenerate
+  // Regenerate on size change
   useEffect(() => {
-    // defer to after slider change
     const t = setTimeout(() => generate(), 0)
     return () => clearTimeout(t)
-  }, [arraySize])
+  }, [arraySize, generate])
+
+  // Clearing steps if algo/order changes mid-run
+  useEffect(() => {
+    if (steps.length) {
+      setIsPlaying(false)
+      setSteps([])
+      setStepIndex(0)
+    }
+  }, [algorithm, order])
 
   return (
     <VisualizerLayout
       title="E-commerce Ranking Visualizer"
-      description="See how different sorting algorithms re-order a product feed by price, date, or popularity with smooth, step-by-step animations."
+      description="A hands-on simulation of how product feeds get ranked in online stores. Choose a signal (Price, Newest, or Popular), generate a dataset, and watch the feed re-order—step by step."
       difficulty="Intermediate"
-      
       currentStep={stepIndex}
       totalSteps={steps.length}
       complexity={{ time: "varies", space: "varies" }}
-      // No applications passed; and no separate algorithm panel
     >
       <div className="space-y-6">
 
-        {/* Intro / What this is */}
+        {/* What this project is */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Info className="h-4 w-4" /> What is this?
+              <Info className="h-4 w-4" /> About this project
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
+          <CardContent className="text-sm text-black space-y-2">
             <p>
-              This tool simulates how a storefront or feed might <strong>rank products</strong> by a chosen signal:
-              <em> Price</em>, <em>Newest</em>, or <em>Popularity</em>. Pick an algorithm and watch products smoothly
-              re-order with visual hints for comparisons, swaps, pivots, and fixed positions.
+              This app mirrors a simplified <strong>ranking pipeline</strong> like the one behind most e-commerce homepages and category pages.
+              You pick a ranking signal, and the UI shows how the feed reshuffles over time.
             </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Signals</strong> you can rank by: <em>Price</em>, <em>Newest</em>, <em>Popularity</em>.</li>
+              <li><strong>Deterministic ties</strong> make the feed stable: ties fall back to product name and catalog id.</li>
+              <li><strong>Transparency</strong>: the progress bar on each card and colored rings show comparisons, swaps, pivots, and “fixed” positions.</li>
+            </ul>
             <p className="rounded-md border bg-muted/30 p-3">
-              Tip: For <strong>Top-K</strong> (e.g., “Top 20 popular”), a <strong>Heap</strong> is handy.
-              For large batches needing stable ordering, <strong>Merge</strong> is predictable. For in-memory speed, <strong>Quick</strong> often wins on average.
+              Why this matters: ranking affects <em>discoverability, revenue, and user experience</em>. Product teams iterate on signals,
+              tie-breaks, and constraints (e.g., “keep prices balanced” or “promote new arrivals”)—this tool makes those changes visible.
             </p>
           </CardContent>
         </Card>
 
-        {/* Compact Ranking Settings (no separate algorithm control card) */}
+        {/* Dataset notes */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Ranking Settings</CardTitle>
+            <CardTitle className="text-lg">Dataset & UI at a glance</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-black space-y-2">
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Synthetic catalog</strong>: products are generated with random price, age (up to ~60 days), and popularity.</li>
+              <li><strong>Badges</strong> show raw values; the bar beneath reflects the current ranking signal.</li>
+              <li><strong>Metrics</strong> (top-right) summarize total comparisons, swaps, and the current step.</li>
+              <li><strong>Unique keys</strong> are enforced via an <code>instanceId</code> per item (plus index) to prevent React key collisions during animations.</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Ranking settings</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
-              <div className="text-sm font-medium flex items-center gap-2"><DollarSign className="h-4 w-4" /> Rank By</div>
-              <Select value={rankBy} onValueChange={(v: RankBy) => { setRankBy(v); setSteps([]); setStepIndex(0); setIsPlaying(false) }}>
+              <div className="text-sm font-medium flex items-center gap-2"><DollarSign className="h-4 w-4" /> Rank by</div>
+              <Select value={rankBy} onValueChange={(v: RankBy) => setRankBy(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="price">Price (low → high)</SelectItem>
-                  <SelectItem value="date">Newest (recent → old)</SelectItem>
-                  <SelectItem value="popularity">Popularity (high → low)</SelectItem>
+                  <SelectItem value="price">Price</SelectItem>
+                  <SelectItem value="date">Newest</SelectItem>
+                  <SelectItem value="popularity">Popularity</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="text-xs text-muted-foreground">Recommended: Price → Asc, Newest/Popularity → Desc</div>
             </div>
 
             <div className="space-y-2">
               <div className="text-sm font-medium"><Sparkles className="h-4 w-4 inline mr-1" /> Algorithm</div>
-              <Select value={algorithm} onValueChange={(v: Algorithm) => { setAlgorithm(v); setSteps([]); setStepIndex(0); setIsPlaying(false) }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={algorithm} onValueChange={(v: Algorithm) => setAlgorithm(v)}>
+                <SelectTrigger><SelectValue placeholder="Choose a sort" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="quick">Quick Sort</SelectItem>
-                  <SelectItem value="merge">Merge Sort</SelectItem>
-                  <SelectItem value="heap">Heap Sort</SelectItem>
-                  <SelectItem value="insertion">Insertion Sort</SelectItem>
-                  <SelectItem value="selection">Selection Sort</SelectItem>
-                  <SelectItem value="bubble">Bubble Sort</SelectItem>
+                  <SelectItem value="quick">Quick</SelectItem>
+                  <SelectItem value="merge">Merge</SelectItem>
+                  <SelectItem value="heap">Heap</SelectItem>
+                  <SelectItem value="insertion">Insertion</SelectItem>
+                  <SelectItem value="selection">Selection</SelectItem>
+                  <SelectItem value="bubble">Bubble</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="text-xs text-muted-foreground">Pick any — the visuals are the point.</div>
             </div>
 
-            {/* Order is derived from rankBy defaults but keep it visible */}
             <div className="space-y-2">
               <div className="text-sm font-medium"><Calendar className="h-4 w-4 inline mr-1" /> Order</div>
-              <Select
-                value={order}
-                onValueChange={(v: SortOrder) => { setOrder(v); setSteps([]); setStepIndex(0); setIsPlaying(false) }}
-              >
+              <Select value={order} onValueChange={(v: SortOrder) => setOrder(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="asc">Ascending</SelectItem>
                   <SelectItem value="desc">Descending</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="text-xs text-muted-foreground">
-                Default best practices: Price → Asc, Date → Desc, Popularity → Desc
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -556,13 +605,13 @@ export default function EcommerceRankingPage() {
               <Slider value={arraySize} onValueChange={setArraySize} min={6} max={24} step={1} />
               <div className="text-xs text-center text-muted-foreground">{arraySize[0]} products</div>
               <div className="flex gap-2">
-                <Button onClick={generate} className="w-full" variant="secondary"><Shuffle className="h-4 w-4 mr-2" /> New Dataset</Button>
+                <Button onClick={generate} className="w-full" variant="secondary"><Shuffle className="h-4 w-4 mr-2" /> New dataset</Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Controls row (uses the VisualizerLayout’s top controls too, but keep inline buttons here for convenience) */}
+        {/* Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => { if (steps.length === 0) start(); else setIsPlaying(true) }}>
             <Play className="h-4 w-4 mr-2" /> Play
@@ -587,7 +636,7 @@ export default function EcommerceRankingPage() {
           </div>
         </div>
 
-        {/* Product list (animated) */}
+        {/* Product list */}
         <LayoutGroup>
           <div className="
             grid gap-4
@@ -595,17 +644,18 @@ export default function EcommerceRankingPage() {
             min-h-[420px] p-2 rounded-lg bg-muted/10
           ">
             <AnimatePresence mode="popLayout">
-              {items.map((p) => (
-                <ProductCard key={p.instanceId} p={p} rankBy={rankBy} />
+              {items.map((p, idx) => (
+                // Use instanceId + index to avoid duplicate keys when an algorithm shifts items
+                <ProductCard key={`${p.instanceId}-${idx}`} p={p} rankBy={rankBy} />
               ))}
             </AnimatePresence>
           </div>
         </LayoutGroup>
 
-        {/* Current action/description */}
+        {/* Current step */}
         {steps.length > 0 && (
           <Card>
-            <CardHeader><CardTitle className="text-lg">Current Step</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">Current step</CardTitle></CardHeader>
             <CardContent>
               <div className="text-sm p-3 bg-accent/10 rounded-lg border border-accent/20">
                 {steps[stepIndex]?.description || "Ready."}
@@ -634,6 +684,7 @@ export default function EcommerceRankingPage() {
             </div>
           </CardContent>
         </Card>
+
       </div>
     </VisualizerLayout>
   )
