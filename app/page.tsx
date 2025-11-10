@@ -23,7 +23,9 @@ import { Highlighter } from "@/components/ui/highlighter";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import star from "@/lib/assets/star.png";
 import Image from "next/image";
-import { Description } from "@radix-ui/react-dialog";
+import illusInteract from "@/lib/assets/illus-interactive.png"
+import illusControl from "@/lib/assets/illus-controls.png"
+import illusStudent from "@/lib/assets/illus-student.png"
 
 // -----------------------------
 // Minimal in-file UI primitives
@@ -79,29 +81,7 @@ function Button({
   );
 }
 
-function Badge({
-  children,
-  variant = "outline",
-  className = "",
-}: {
-  children: React.ReactNode;
-  variant?: "outline" | "solid" | "secondary";
-  className?: string;
-}) {
-  const styles =
-    variant === "solid"
-      ? "bg-black text-white"
-      : variant === "secondary"
-      ? "bg-orange-200 text-black border border-orange-300/60"
-      : "border border-black/10 text-black";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${styles} ${className}`}
-    >
-      {children}
-    </span>
-  );
-}
+
 
 function Card({
   children,
@@ -423,19 +403,19 @@ export default function HomePage() {
 
   const features = [
     {
-      img: "",
+      img: illusInteract,
       title: "Interactive Visualizations",
       description:
         "Step-by-step animations for arrays, linked lists, trees, graphs, and sorting algorithms.",
     },
     {
-      img: "",
+      img: illusControl,
       title: "Real-time Controls",
       description:
         "Play, pause, and step through execution. Adjust speed to learn at your pace.",
     },
     {
-      img: "",
+      img: illusStudent,
       title: "Student-Friendly",
       description:
         "Built for learners, educators, and bootcamp students with approachable language.",
@@ -633,9 +613,9 @@ function NeuCard({ img, title, description }) {
         <Image
           src={img}
           alt={title}
-          height={150}
-          width={150}
-          className="row-span-3"
+          height={200}
+          width={200}
+          className="row-span-3 mx-auto"
         />
         <h3 className="text-2xl text-md md:text-2xl font-semibold text-center">
           {title}
