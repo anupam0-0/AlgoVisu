@@ -143,7 +143,7 @@ export function VisualizerLayout({
           {/* Main Visualization Area */}
           <div className="lg:col-span-3 ">
             {/* Enhanced Visualization Card */}
-            <Card className="mb-6 shadow-lg bg-orange-50 backdrop-blur-sm border-2 border-primary rounded">
+            <Card className="mb-6 shadow-lg bg-[#C2C9FF] backdrop-blur-sm border-2 border-primary rounded">
               <CardContent className="p-0 ">
                 {/* Progress Bar — only show if steps exist AND algorithm controls are active */}
                 {hasAlgorithmControls && totalSteps > 0 && (
@@ -171,7 +171,7 @@ export function VisualizerLayout({
 
             {/* ✅ Conditionally render Algorithm Controls */}
             {hasAlgorithmControls && (
-              <Card className="shadow-lg bg-white/90 backdrop-blur-sm border-4 border-primary rounded">
+              <Card className="shadow-lg bg-white backdrop-blur-sm border-4 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Play className="h-5 w-5 text-blue-600" />
@@ -247,7 +247,7 @@ export function VisualizerLayout({
           <div className="space-y-6">
             {/* Complexity Analysis */}
             {complexity && (
-              <Card className="shadow-lg bg-orange-50 backdrop-blur-sm border-2 border-primary rounded">
+              <Card className="shadow-lg bg-yellow-200 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Zap className="h-5 w-5 text-yellow-600" />
@@ -289,7 +289,7 @@ export function VisualizerLayout({
 
             {/* Algorithm Steps — only show if controls exist */}
             {hasAlgorithmControls && (
-              <Card className="shadow-lg bg-white/90 backdrop-blur-sm border-2 border-primary rounded">
+              <Card className="shadow-lg bg-white backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Algorithm Steps</CardTitle>
                 </CardHeader>
@@ -304,7 +304,7 @@ export function VisualizerLayout({
 
             {/* Real-world Applications */}
             {applications.length > 0 && (
-              <Card className="shadow-lg bg-orange-50 backdrop-blur-sm border-2 border-primary rounded">
+              <Card className="shadow-lg bg-sky-300 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg">
                     Real-world Applications
