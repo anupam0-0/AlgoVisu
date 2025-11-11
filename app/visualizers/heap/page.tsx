@@ -334,8 +334,8 @@ export default function HeapVisualizer() {
             key={i}
             className={`w-12 h-12 flex items-center justify-center rounded border font-mono text-sm
               ${currentStepData.highlightedIndices.includes(i)
-                ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                : "border-muted bg-background"}
+                ? "border-primary bg-primary/10 bg-orange-200 ring-2 ring-primary/30"
+                : "border-muted bg-background bg-orange-200"}
             `}
           >
             {val}
@@ -364,8 +364,8 @@ export default function HeapVisualizer() {
       }}
       applications={applications}
     >
-      <div className="w-full space-y-6">
-        <Card className="bg-orange-50 border-primary">
+      <div className="w-full space-y-6 bg-orange-100">
+        <Card className="bg-orange-200 border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <BarChart3 className="h-5 w-5" />
@@ -392,7 +392,7 @@ export default function HeapVisualizer() {
             </CardDescription>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-orange-200">
           <CardHeader>
             <CardTitle className="text-lg">Deep Dive: How Heaps Work</CardTitle>
           </CardHeader>
@@ -529,7 +529,7 @@ export default function HeapVisualizer() {
             <CardTitle>Heap ({heapType})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="min-h-24 p-4 bg-muted/10 rounded flex items-center justify-center">
+            <div className="min-h-24 p-4 bg-orange-200 rounded flex items-center justify-center">
               {renderHeap()}
             </div>
           </CardContent>
@@ -539,15 +539,15 @@ export default function HeapVisualizer() {
           <CardHeader>
             <CardTitle>Pseudocode</CardTitle>
           </CardHeader>
-          <div className="font-mono text-sm bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
+          <div className="font-mono text-sm bg-orange-200 rounded-md max-h-96 overflow-y-auto">
             {pseudocode.map((line, index) => (
               <div
                 key={index}
                 className={`
                   py-1 px-2 rounded
                   ${currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"}
+                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground text-black"
+                    : "text-black"}
                 `}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
@@ -563,7 +563,7 @@ export default function HeapVisualizer() {
               <CardTitle>Current Step</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm p-3 bg-accent/10 rounded-lg border border-accent/20">
+              <div className="text-sm p-3 bg-accent/10 bg-orange-200 rounded-lg border border-accent/20">
                 {currentStepData.description}
               </div>
             </CardContent>
@@ -577,7 +577,7 @@ export default function HeapVisualizer() {
           <CardContent>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded border-2 border-primary bg-primary/10"></div>
+                <div className="w-6 h-6 rounded border-2 border-primary bg-primary/10 bg-orange-200"></div>
                 <span>Highlighted Node</span>
               </div>
               <div className="flex items-center gap-2">
