@@ -149,10 +149,10 @@ export function VisualizerLayout({
                 {hasAlgorithmControls && totalSteps > 0 && (
                   <div className="px-6 pt-6 pb-2">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">
+                      <span className="text-sm font-medium text-foreground">
                         Progress
                       </span>
-                      <span className="text-sm font-mono text-muted-foreground">
+                      <span className="text-sm font-mono text-foreground">
                         {currentStep}/{totalSteps}
                       </span>
                     </div>
@@ -171,7 +171,7 @@ export function VisualizerLayout({
 
             {/* ✅ Conditionally render Algorithm Controls */}
             {hasAlgorithmControls && (
-              <Card className="shadow-lg bg-white backdrop-blur-sm border-4 border-primary rounded">
+              <Card className="shadow-lg bg-neutral-50 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Play className="h-5 w-5 text-blue-600" />
@@ -289,7 +289,7 @@ export function VisualizerLayout({
 
             {/* Algorithm Steps — only show if controls exist */}
             {hasAlgorithmControls && (
-              <Card className="shadow-lg bg-white backdrop-blur-sm border-2 border-primary rounded">
+              <Card className="shadow-lg bg-red-200 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Algorithm Steps</CardTitle>
                 </CardHeader>
