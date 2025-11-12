@@ -184,6 +184,15 @@ export default function QueueVisualizerPage() {
     setInputValue("")
   }
 
+  const pushBack = () => {
+    const num = Number(inputValue)
+    if (!inputValue || isNaN(num)) return
+    const newEl: QueueElement = { id: makeId(), value: num, isNew: true }
+    setQueue(prev => [...prev, newEl])
+    setTimeout(() => setQueue(prev => prev.map(el => ({ ...el, isNew: false }))), 450)
+    setInputValue("")
+  }
+
   const popFront = () => dequeue()
 
   const popBack = () => {
@@ -314,6 +323,7 @@ export default function QueueVisualizerPage() {
               </CardContent>
             </Card>
 
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Dequeue</CardTitle>
@@ -349,6 +359,28 @@ export default function QueueVisualizerPage() {
                     onChange={(e) => setInputValue(e.target.value)}
                   />
                   <Button onClick={pushFront} disabled={!inputValue}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Layers className="h-4 w-4" />
+                  Push Back
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Value"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                  />
+                  <Button onClick={pushBack} disabled={!inputValue}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
