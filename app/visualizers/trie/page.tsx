@@ -336,7 +336,7 @@ export default function TrieVisualizer() {
     while (stack.length > 0 && !hasChildren(node) && !node.isEndOfWord) {
       const { parent, idx, childId } = stack.pop()!
       parent.children[idx] = null
-      makeStep(localSteps, `Pruned node '${childId.split("-").pop()}'`, work, [parent.id], [...pathIds], 30)
+      makeStep(localSteps, `Pruned node '${childId.split("-").pop() ?? ''}'`, work, [parent.id], [...pathIds], 30)
       node = parent
     }
 

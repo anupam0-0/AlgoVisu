@@ -30,15 +30,15 @@ interface TraversalStep {
 type TraversalType = "inorder" | "preorder" | "postorder" | "levelorder"
 type TreeMode = "binary" | "bst"
 
-/* ---------- Size constants (small nudge down) ---------- */
+/*\Size constants*/
 const SVG_W = 900
 const SVG_H = 430
-const NODE_RADIUS = 25               // was 26
-const H_GAP_BASE = 250               // was 260
-const V_GAP = 88                     // was 90
-const MIN_H_SPACING = 58             // was 60
+const NODE_RADIUS = 25               
+const H_GAP_BASE = 250               
+const V_GAP = 88                     
+const MIN_H_SPACING = 58
 
-/* ---------- New: Knowledge content ---------- */
+
 const treesIntro = {
   bullets: [
     "A tree is a hierarchical structure with a root node and child subtrees; there are no cycles.",
@@ -134,7 +134,7 @@ const modeDetails: Record<TreeMode, {
     ],
   },
 }
-/* ------------------------------------------- */
+
 
 export default function TreeVisualizerPage() {
   const [root, setRoot] = useState<TreeNode | null>(null)
@@ -241,7 +241,7 @@ export default function TreeVisualizerPage() {
       setRoot({ ...newRoot })
       calculateTreeMetrics(newRoot)
     } else {
-      // Level-order insertion (fill left-to-right)
+      
       const insertLevelOrder = (r: TreeNode, n: TreeNode): TreeNode => {
         const q: TreeNode[] = [r]
         while (q.length) {

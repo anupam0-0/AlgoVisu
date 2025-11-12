@@ -40,7 +40,7 @@ const typeDetails: Record<
   }
 > = {
   basic: {
-    title: "Basic Stack",
+    title: "Stack",
     icon: <Layers className="h-5 w-5 text-muted-foreground" />,
     description:
       "A stack follows the Last-In-First-Out (LIFO) principle — the last item pushed is the first one popped. Think of a stack of plates: you add and remove only from the top.",
@@ -351,7 +351,7 @@ export default function StackVisualizerPage() {
     >
       <div className="w-full space-y-6">
 
-        <div className="flex justify-center">
+        {/* <div className="flex justify-center">
           <div className="inline-flex rounded-md border p-1 bg-muted w-full max-w-2xl">
             {(["basic", "bounded", "resizable", "persistent", "min"] as const).map((type) => (
               <button
@@ -369,7 +369,7 @@ export default function StackVisualizerPage() {
               </button>
             ))}
           </div>
-        </div>
+        </div> */}
 
         <Card>
           <CardHeader>
