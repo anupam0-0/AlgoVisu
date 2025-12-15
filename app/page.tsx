@@ -57,8 +57,8 @@ function Button({
     size === "lg"
       ? "px-6 py-3 text-base rounded-xl"
       : size === "sm"
-      ? "px-3 py-1.5 text-sm rounded-lg"
-      : "px-4 py-2 text-sm rounded-lg";
+        ? "px-3 py-1.5 text-sm rounded-lg"
+        : "px-4 py-2 text-sm rounded-lg";
 
   const base =
     "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 select-none";
@@ -145,31 +145,31 @@ function CardContent({
 
 function Footer() {
   return (
-    <footer className="border-t border-black/10 bg-orange-50 ">
+    <footer className="border-t border-border bg-muted/50 ">
       <div className="container mx-auto max-w-[85rem] px-4 py-10">
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <div className="text-xl font-bold mb-2">VTRACE</div>
-            <p className="text-sm  text-black font-medium">
+            <p className="text-sm  text-muted-foreground font-medium">
               Visualization Tool for Real-Time Algorithm Exploration. Build
               intuition through clean, interactive visuals.
             </p>
           </div>
           <div>
             <div className="font-semibold mb-3">Product</div>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2 text-sm text-foreground/80">
               <li>
-                <Link href="/visualizers" className="hover:opacity-80">
+                <Link href="/visualizers" className="hover:text-primary">
                   Visualizers
                 </Link>
               </li>
               <li>
-                <Link href="#features" className="hover:opacity-80">
+                <Link href="#features" className="hover:text-primary">
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="#screenshots" className="hover:opacity-80">
+                <Link href="#screenshots" className="hover:text-primary">
                   Gallery
                 </Link>
               </li>
@@ -177,19 +177,19 @@ function Footer() {
           </div>
           <div>
             <div className="font-semibold mb-3">Resources</div>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2 text-sm text-foreground/80">
               <li>
-                <Link href="#learn" className="hover:opacity-80">
+                <Link href="#learn" className="hover:text-primary">
                   Learn DSA
                 </Link>
               </li>
               <li>
-                <Link href="#about" className="hover:opacity-80">
+                <Link href="#about" className="hover:text-primary">
                   About us
                 </Link>
               </li>
               <li>
-                <Link href="#cta" className="hover:opacity-80">
+                <Link href="#cta" className="hover:text-primary">
                   Get started
                 </Link>
               </li>
@@ -197,17 +197,17 @@ function Footer() {
           </div>
           <div>
             <div className="font-semibold mb-3">Connect</div>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2 text-sm text-foreground/80">
               <li className="flex items-center gap-2">
                 <Github className="h-4 w-4" />
-                <a className="hover:opacity-80" href="#" aria-label="GitHub">
+                <a className="hover:text-primary" href="#" aria-label="GitHub">
                   GitHub
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Twitter className="h-4 w-4" />
                 <a
-                  className="hover:opacity-80"
+                  className="hover:text-primary"
                   href="#"
                   aria-label="Twitter / X"
                 >
@@ -216,7 +216,7 @@ function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Linkedin className="h-4 w-4" />
-                <a className="hover:opacity-80" href="#" aria-label="LinkedIn">
+                <a className="hover:text-primary" href="#" aria-label="LinkedIn">
                   LinkedIn
                 </a>
               </li>
@@ -224,9 +224,9 @@ function Footer() {
           </div>
         </div>
 
-        <div className="w-full h-0.5 mt-20 my-8 bg-black rounded"></div>
+        <div className="w-full h-0.5 mt-20 my-8 bg-border rounded"></div>
 
-        <div className="flex flex-col md:flex-row -my-2 items-center justify-between gap-4 text-xs text-black/60">
+        <div className="flex flex-col md:flex-row -my-2 items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} VTRACE. Open source project.</p>
         </div>
       </div>
@@ -450,7 +450,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col text-black">
+    <div className="min-h-screen flex flex-col text-foreground bg-background">
       {/* Header */}
       <Header />
 
@@ -472,11 +472,11 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight my-8 leading-10">
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight my-8 leading-10 text-foreground">
                 VTRACE — Visualization Tool for Real-Time{" "}
                 <AuroraText>Algorithm</AuroraText> Exploration
               </h1>
-              <p className="text-lg md:text-xl text-black/70 font-medium my-8 ">
+              <p className="text-lg md:text-xl text-muted-foreground font-medium my-8 ">
                 Turn{" "}
                 <Highlighter action="underline" color="#FF9800">
                   complex
@@ -598,10 +598,10 @@ export default function HomePage() {
       <div className="bg-red-400 py-20 flex justify-center">
         {/* Footer */}
         <div className="relative">
-          <div className="border-4 border-black px-4 bg-orange-50 relative z-10">
+          <div className="border-4 border-foreground/20 dark:border-border px-4 bg-muted relative z-10">
             <Footer />
           </div>
-          <div className="absolute top-2 left-2 h-full w-full bg-black"></div>
+          <div className="absolute top-2 left-2 h-full w-full bg-foreground dark:bg-accent/50"></div>
         </div>
       </div>
     </div>
@@ -610,8 +610,8 @@ export default function HomePage() {
 
 function NeuCard({ img, title, description }) {
   return (
-    <div className="border size-96 rounded relative  ">
-      <div className="bg-white grid grid-rows-3 p-8 gap-4 size-full z-10 relative border-4 border-black">
+    <div className="border size-96 rounded relative">
+      <div className="bg-card text-card-foreground grid grid-rows-3 p-8 gap-4 size-full z-10 relative border-4 border-foreground/10 dark:border-border">
         <Image
           src={img}
           alt={title}
@@ -627,15 +627,15 @@ function NeuCard({ img, title, description }) {
         </p>
       </div>
 
-      <div className="absolute size-full bg-black  -bottom-2 -right-2"></div>
+      <div className="absolute size-full bg-foreground dark:bg-accent -bottom-2 -right-2"></div>
     </div>
   );
 }
 
 function NeuCard2({ title, list }) {
   return (
-    <div className="border size-96 rounded relative ">
-      <div className="bg-white flex flex-col p-8 size-full z-10 relative border-4 border-black">
+    <div className="border size-96 rounded relative">
+      <div className="bg-card text-card-foreground flex flex-col p-8 size-full z-10 relative border-4 border-foreground/10 dark:border-border">
         <h3 className=" text-sm md:text-2xl font-semibold text-left">
           {title}
         </h3>
@@ -648,7 +648,7 @@ function NeuCard2({ title, list }) {
         </div>
       </div>
 
-      <div className="absolute size-full bg-black  -bottom-2 -right-2"></div>
+      <div className="absolute size-full bg-foreground dark:bg-accent -bottom-2 -right-2"></div>
     </div>
   );
 }

@@ -252,13 +252,13 @@ export default function ArrayVisualizerPage() {
     >
       <div className="w-full space-y-8">
         {/* Introduction Section */}
-        <Card className="bg-gradient-to-br from-gray-50 to-white shadow-md border border-gray-200 rounded-2xl mb-8">
+        <Card className="bg-card shadow-md border border-border rounded-2xl mb-8">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-gray-800">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Understanding Arrays
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-black leading-relaxed space-y-3 text-sm md:text-base">
+          <CardContent className="text-muted-foreground leading-relaxed space-y-3 text-sm md:text-base">
             <div>
               An <strong>Array</strong> is a linear data structure used to store a fixed-size sequence of
               elements of the same type. Each element is accessed by its <em>index</em>, which represents its
@@ -272,7 +272,7 @@ export default function ArrayVisualizerPage() {
             </div>
 
             <div className="p-4 bg-gray-50 border rounded-lg shadow-sm space-y-2">
-              <h4 className="font-semibold text-gray-800">Example:</h4>
+              <h4 className="font-semibold text-foreground">Example:</h4>
               <div className="bg-gray-900 text-gray-100 p-3 rounded-lg text-sm overflow-x-auto font-mono leading-relaxed">
                 # Example of an array in Python<br />
                 numbers = [11, 22, 33, 44, 55]<br />
@@ -286,7 +286,7 @@ export default function ArrayVisualizerPage() {
             <div>
               In this visualizer, you can <strong>add elements</strong>, <strong>sort</strong> them, and observe
               how different search algorithms like <strong>Linear Search</strong> and <strong>Binary Search</strong>
-               work step-by-step in real time. The visualization demonstrates how comparisons and highlights
+              work step-by-step in real time. The visualization demonstrates how comparisons and highlights
               change dynamically as the algorithm progresses.
             </div>
           </CardContent>
@@ -456,8 +456,8 @@ export default function ArrayVisualizerPage() {
                       <div
                         key={index}
                         className={`p-3 rounded-lg text-sm transition-all ${index === currentStepIndex
-                            ? "bg-primary/10 border border-primary/30 font-medium text-primary"
-                            : "bg-background border border-border"
+                          ? "bg-primary/10 border border-primary/30 font-medium text-primary"
+                          : "bg-background border border-border"
                           }`}
                       >
                         <Badge variant="outline" className="mr-2">

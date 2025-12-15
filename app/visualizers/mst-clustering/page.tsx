@@ -175,7 +175,7 @@ export default function MSTClusteringPage() {
                 time: "O(n² log n)",
                 space: "O(n²)",
             }}
-            
+
         >
             <div className="w-full space-y-6">
                 <Card>
@@ -195,8 +195,8 @@ export default function MSTClusteringPage() {
 
                 {/* Visualization */}
                 <div className="flex justify-center">
-                    <div className="border rounded-lg bg-gray-50 p-4 w-full max-w-4xl">
-                        <svg width="600" height="500" className="bg-white rounded">
+                    <div className="border rounded-lg bg-gray-50 p-4 w-full flex justify-center">
+                        <svg viewBox="0 0 600 500" className="w-full h-auto max-w-[600px] bg-white rounded">
                             {/* Cluster edges (remaining MST edges) */}
                             {clusterEdges.map((edge, idx) => {
                                 const p1 = points.find(p => p.id === edge.from)!

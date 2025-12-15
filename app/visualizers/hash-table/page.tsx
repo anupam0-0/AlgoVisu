@@ -261,7 +261,7 @@ export default function HashTableVisualizer() {
       description="Visualize hash tables using chaining with Unicode-based hashing (w3schools style)"
       difficulty="Beginner"
       isPlaying={false}
-      
+
       complexity={{
         time: "O(1) average, O(n) worst-case",
         space: "O(n + tableSize)",
@@ -270,13 +270,13 @@ export default function HashTableVisualizer() {
     >
       <div className="w-full space-y-6">
         {/* Info Card */}
-        <Card className="bg-orange-50 border-primary">
+        <Card className="bg-card border-primary">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-gray-800 tracking-wide">
+            <CardTitle className="text-2xl font-bold text-foreground tracking-wide">
               Hash Table Visualizer
             </CardTitle>
 
-            <CardDescription className="text-sm text-black space-y-2">
+            <CardDescription className="text-sm text-muted-foreground space-y-2">
               <div>
                 A <strong>hash table</strong> (also called a <em>hash map</em>) is a powerful data structure
                 that stores data in <strong>key–value pairs</strong> for extremely fast access and updates.
@@ -314,7 +314,7 @@ export default function HashTableVisualizer() {
           </CardHeader>
 
           <CardContent>
-            <CardDescription className="text-sm text-black space-y-2">
+            <CardDescription className="text-sm text-muted-foreground space-y-2">
               <div>
                 Use the controls below to <strong>insert</strong> or <strong>delete</strong> keys and watch how
                 the hash table updates dynamically. Each operation is visualized step-by-step, so you can
@@ -395,7 +395,7 @@ export default function HashTableVisualizer() {
             <CardTitle>Hash Table (Buckets)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 max-h-[600px] overflow-y-auto pr-2">
               {currentStepData.tableState.map((bucket, idx) => {
                 const isHighlighted = currentStepData.highlightedIndex === idx
                 return (
@@ -437,8 +437,8 @@ export default function HashTableVisualizer() {
               <div
                 key={index}
                 className={`py-1 px-2 rounded ${currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
+                  ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                  : "text-muted-foreground"
                   }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>

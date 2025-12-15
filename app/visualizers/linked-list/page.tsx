@@ -531,7 +531,7 @@ export default function LinkedListVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Linked Lists</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-black space-y-2">
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
             <ul className="list-disc list-inside space-y-1">
               {linkedListIntro.bullets.map((b, i) => (
                 <li key={i}>{b}</li>
@@ -569,7 +569,7 @@ export default function LinkedListVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{t.title}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-black">
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
             <div>{t.description}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -639,8 +639,7 @@ export default function LinkedListVisualizerPage() {
           {listType === "circular" && <Badge variant="secondary">Circular wraps to head</Badge>}
         </div>
 
-        {/* Linked list visualization */}
-        <div className="flex-1 flex items-center justify-center gap-4 overflow-x-auto py-6 min-h-[220px]">
+        <div className="flex-1 flex items-center gap-4 overflow-x-auto py-12 px-4 min-h-[280px]">
           {renderNodes.length === 0 ? (
             <div className="text-muted-foreground">List is empty</div>
           ) : (
@@ -664,16 +663,15 @@ export default function LinkedListVisualizerPage() {
                       className={`
                         w-28 h-24 border-2 rounded-lg flex flex-col items-center justify-center relative
                         transition-all duration-300 z-10
-                        ${
-                          node.isRemoved
-                            ? "bg-red-100 border-red-500 opacity-60 line-through"
-                            : traversalIndex === node.index
+                        ${node.isRemoved
+                          ? "bg-red-100 border-red-500 opacity-60 line-through"
+                          : traversalIndex === node.index
                             ? "bg-blue-200 border-blue-500 scale-105 shadow-lg"
                             : node.isTraversed
-                            ? "bg-green-200 border-green-500"
-                            : node.isHighlighted
-                            ? "bg-accent/20 border-accent scale-105"
-                            : "bg-card border-border"
+                              ? "bg-green-200 border-green-500"
+                              : node.isHighlighted
+                                ? "bg-accent/20 border-accent scale-105"
+                                : "bg-card border-border"
                         }
                       `}
                       style={{
@@ -681,8 +679,8 @@ export default function LinkedListVisualizerPage() {
                           traversalIndex === node.index
                             ? "translateY(-4px)"
                             : node.isHighlighted
-                            ? "translateY(-2px)"
-                            : "translateY(0)",
+                              ? "translateY(-2px)"
+                              : "translateY(0)",
                       }}
                     >
                       <div className="font-mono font-bold text-lg">{node.value}</div>
@@ -771,10 +769,9 @@ export default function LinkedListVisualizerPage() {
                 key={index}
                 className={`
                   py-1 px-2 rounded
-                  ${
-                    currentCodeLine === index + 1
-                      ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                      : "text-muted-foreground"
+                  ${currentCodeLine === index + 1
+                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                    : "text-muted-foreground"
                   }
                 `}
               >
@@ -930,13 +927,12 @@ export default function LinkedListVisualizerPage() {
                 {operations.map((op, i) => (
                   <div
                     key={i}
-                    className={`text-sm p-2 rounded ${
-                      i === currentStep
-                        ? "bg-accent/20 border border-accent"
-                        : i < currentStep
+                    className={`text-sm p-2 rounded ${i === currentStep
+                      ? "bg-accent/20 border border-accent"
+                      : i < currentStep
                         ? "bg-muted/50 text-muted-foreground"
                         : "text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     <Badge variant="outline" className="mr-2 text-xs">
                       {i + 1}

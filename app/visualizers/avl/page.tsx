@@ -434,7 +434,7 @@ export default function AVLVisualizer() {
       title="AVL Tree Visualizer"
       description="Self-balancing binary search trees with automatic rotations to maintain O(log n) height"
       difficulty="Advanced"
-      
+
       complexity={{
         time: "Insert/Delete/Search: O(log n)",
         space: "O(n)",
@@ -443,7 +443,7 @@ export default function AVLVisualizer() {
     >
       <div className="w-full space-y-8">
         {/* Intro Card */}
-        <Card className="bg-orange-50 border-primary">
+        <Card className="bg-card border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <GitBranch className="h-5 w-5" />
@@ -451,7 +451,7 @@ export default function AVLVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="text-sm text-black-800 leading-relaxed">
+            <CardDescription className="text-sm text-muted-foreground leading-relaxed">
               <span className="block">
                 An <strong>AVL Tree</strong> is a type of <em>self-balancing binary search tree</em>.
                 After every insertion or deletion, it checks the balance factor of each node to

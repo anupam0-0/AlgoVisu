@@ -485,9 +485,8 @@ export default function MSTVisualizerPage() {
     return (
       <svg
         ref={svgRef}
-        width="600"
-        height="300"
-        className="border rounded-lg bg-white"
+        viewBox="0 0 600 300"
+        className="w-full h-auto max-w-[600px] border rounded-lg bg-white"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
@@ -654,18 +653,18 @@ export default function MSTVisualizerPage() {
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg">What is a Minimum Spanning Tree (MST)?</CardTitle>
-              <CardDescription className="space-y-4 text-sm text-black">
+              <CardDescription className="space-y-4 text-sm text-muted-foreground">
                 An MST is a subset of edges that connects all vertices of a connected, undirected, weighted graph
                 with the minimum possible total edge weight, without cycles (|V|-1 edges).
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-sm space-y-3 text-black">
+            <CardContent className="text-sm space-y-3 text-muted-foreground">
               <ul className="list-disc pl-5 space-y-1">
                 <li>Applicable to connected, undirected, weighted graphs.</li>
                 <li>If edge weights are unique, the MST is unique; otherwise multiple MSTs can exist.</li>
                 <li>Typical uses: network design, clustering, approximation algorithms.</li>
               </ul>
-              <div className="text-black">
+              <div className="text-muted-foreground">
                 Select an algorithm on the right to learn how it constructs an MST, then press <b>Play</b> or step through.
               </div>
             </CardContent>
@@ -675,7 +674,7 @@ export default function MSTVisualizerPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Choose Algorithm</CardTitle>
-              <CardDescription className="space-y-4 text-sm text-black">Switch to see detailed guidance</CardDescription>
+              <CardDescription className="space-y-4 text-sm text-muted-foreground">Switch to see detailed guidance</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs
@@ -688,7 +687,7 @@ export default function MSTVisualizerPage() {
                   <TabsTrigger value="kruskal">Kruskal&apos;s</TabsTrigger>
                 </TabsList>
                 {/* Small inline hints */}
-                <TabsContent value="prim" className="mt-3 text-sm text-black">
+                <TabsContent value="prim" className="mt-3 text-sm text-muted-foreground">
                   Start-based, great for dense graphs. Set a <b>Start Node</b> below if needed.
                 </TabsContent>
                 <TabsContent value="kruskal" className="mt-3 text-sm text-muted-foreground">
@@ -702,10 +701,10 @@ export default function MSTVisualizerPage() {
         {/* Deep-dive info panel that swaps with selection */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg text-black">Detailed Algorithm Info</CardTitle>
+            <CardTitle className="text-lg text-foreground">Detailed Algorithm Info</CardTitle>
             <CardDescription>{currentAlgorithm.name}</CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-3 gap-4 text-sm text-black">
+          <CardContent className="grid md:grid-cols-3 gap-4 text-sm text-muted-foreground">
             <div className="md:col-span-2 space-y-2">
               <div><b>How it works:</b> {currentAlgorithm.description}</div>
               <div className="grid sm:grid-cols-2 gap-2">
@@ -727,7 +726,7 @@ export default function MSTVisualizerPage() {
               <div><b>Time:</b> {currentAlgorithm.timeComplexity}</div>
               <div><b>Space:</b> {currentAlgorithm.spaceComplexity}</div>
               {algorithm === "prim" && (
-                <div className="text-black">
+                <div className="text-muted-foreground">
                   Tip: Choose a <b>Start Node</b> for Prim’s in the controls below before running.
                 </div>
               )}
@@ -747,11 +746,10 @@ export default function MSTVisualizerPage() {
             {currentPseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`py-1 px-2 rounded ${
-                  currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                }`}
+                className={`py-1 px-2 rounded ${currentCodeLine === index + 1
+                  ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                  : "text-muted-foreground"
+                  }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}

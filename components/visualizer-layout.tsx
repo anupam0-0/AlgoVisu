@@ -26,6 +26,7 @@ import type { ReactNode } from "react";
 import Header from "../components/header";
 import { FaGithub } from "react-icons/fa";
 
+
 interface VisualizerLayoutProps {
   title: string;
   description: string;
@@ -91,7 +92,7 @@ export function VisualizerLayout({
     totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 ">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Enhanced Header */}
       <header className="py-4 mb-4 backdrop-blur-md z-50 shadow-sm bg-green-400">
         <div className="container mx-auto px-4 py-4 max-w-[95rem]">
@@ -125,14 +126,17 @@ export function VisualizerLayout({
               </div>
             </div>
 
-            <div className="relative -top-1 h-12 w-40 rounded-xl bg-black">
-              <Link
-                href="https://github.com/darknight08zz/AlgoVisu"
-                className="absolute inset-0 border-2 bg-white border-black hover:-top-1 hover:-left-0.5 rounded-xl flex h-full w-full items-center justify-center z-50"
-              >
-                <FaGithub className="h-6 w-6 mr-4" />
-                <span className="font-semibold">Contribute</span>
-              </Link>
+            <div className="flex items-center gap-4">
+              <div className="relative -top-1 h-12 w-40 rounded-xl bg-black dark:bg-white">
+                <Link
+                  href="https://github.com/darknight08zz/AlgoVisu"
+                  className="absolute inset-0 border-2 bg-white dark:bg-black dark:text-white dark:border-white border-black hover:-top-1 hover:-left-0.5 rounded-xl flex h-full w-full items-center justify-center z-50 transition-all"
+                >
+                  <FaGithub className="h-6 w-6 mr-4" />
+                  <span className="font-semibold">Contribute</span>
+                </Link>
+              </div>
+
             </div>
           </div>
         </div>
@@ -171,7 +175,7 @@ export function VisualizerLayout({
 
             {/* ✅ Conditionally render Algorithm Controls */}
             {hasAlgorithmControls && (
-              <Card className="shadow-lg bg-neutral-50 backdrop-blur-sm border-2 border-primary rounded">
+              <Card className="shadow-lg bg-card backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Play className="h-5 w-5 text-blue-600" />
@@ -227,13 +231,12 @@ export function VisualizerLayout({
 
                   {/* Status Indicator */}
                   <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-sm border-border border">
                       <div
-                        className={`w-2 h-2 rounded-full ${
-                          isPlaying
-                            ? "bg-green-500 animate-pulse"
-                            : "bg-gray-400"
-                        }`}
+                        className={`w-2 h-2 rounded-full ${isPlaying
+                          ? "bg-green-500 animate-pulse"
+                          : "bg-gray-400"
+                          }`}
                       ></div>
                       {isPlaying ? "Running" : "Paused"}
                     </div>
@@ -249,7 +252,7 @@ export function VisualizerLayout({
             {complexity && (
               <Card className="shadow-lg bg-yellow-200 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="text-lg flex items-center gap-2 text-black">
                     <Zap className="h-5 w-5 text-yellow-600" />
                     Complexity Analysis
                   </CardTitle>
@@ -291,10 +294,10 @@ export function VisualizerLayout({
             {hasAlgorithmControls && (
               <Card className="shadow-lg bg-red-200 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg">Algorithm Steps</CardTitle>
+                  <CardTitle className="text-lg text-black">Algorithm Steps</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-sm text-primary/80 p-3 bg-slate-50 rounded-lg border-2 border-slate-200">
+                  <div className="text-sm text-black/80 p-3 bg-white/70 rounded-lg border-2 border-white/50">
                     Step-by-step explanation will appear here as you progress
                     through the algorithm.
                   </div>
@@ -306,18 +309,18 @@ export function VisualizerLayout({
             {applications.length > 0 && (
               <Card className="shadow-lg bg-sky-300 backdrop-blur-sm border-2 border-primary rounded">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-lg text-black">
                     Real-world Applications
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {applications.map((app, index) => (
                     <div key={index}>
-                      <div className="py-4 bg-white px-4 rounded-xl border">
+                      <div className="py-4 bg-muted/40 px-4 rounded-xl border border-border">
                         <h4 className="font-semibold text-sm mb-2 text-blue-900">
                           {app.title}
                         </h4>
-                        <p className="text-xs text-primary/80 mb-3 leading-relaxed">
+                        <p className="text-xs text-black/80 mb-3 leading-relaxed">
                           {app.description}
                         </p>
                         <div className="space-y-1">

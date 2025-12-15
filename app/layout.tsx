@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import "./globals.css"
 
+
 export const metadata: Metadata = {
   title: "DSA Visualizer - Interactive Learning Tool",
   description: "Learn Data Structures and Algorithms through interactive visualizations",

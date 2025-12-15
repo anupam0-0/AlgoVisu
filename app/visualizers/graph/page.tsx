@@ -698,7 +698,7 @@ export default function GraphVisualizerPage() {
       const neighbors = getNeighbors(u, edges, isDirected)
       for (const v of neighbors) {
         const edge = edges.find(e => e.from === u && e.to === v) ||
-                     (!isDirected && edges.find(e => e.to === u && e.from === v))
+          (!isDirected && edges.find(e => e.to === u && e.from === v))
         if (!edge || edge.weight === undefined) continue
         const alt = distances[u] + edge.weight
         if (alt < distances[v]) {
@@ -967,9 +967,9 @@ export default function GraphVisualizerPage() {
     return (
       <svg
         ref={svgRef}
-        width="800"
+        width="100%"
         height="500"
-        className="border rounded-lg bg-white"
+        className="border rounded-lg bg-white mx-auto block max-w-full"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
@@ -1048,19 +1048,19 @@ export default function GraphVisualizerPage() {
                 r="20"
                 fill={
                   isPathNode ? "#22c55e"
-                  : isCurrent ? "#6366f1"
-                  : isStart ? "#22c55e"
-                  : isTarget ? "#ef4444"
-                  : isVisited ? "#f59e0b"
-                  : "#ffffff"
+                    : isCurrent ? "#6366f1"
+                      : isStart ? "#22c55e"
+                        : isTarget ? "#ef4444"
+                          : isVisited ? "#f59e0b"
+                            : "#ffffff"
                 }
                 stroke={
                   isPathNode ? "#16a34a"
-                  : isCurrent ? "#4f46e5"
-                  : isStart ? "#16a34a"
-                  : isTarget ? "#dc2626"
-                  : isVisited ? "#d97706"
-                  : "#6b7280"
+                    : isCurrent ? "#4f46e5"
+                      : isStart ? "#16a34a"
+                        : isTarget ? "#dc2626"
+                          : isVisited ? "#d97706"
+                            : "#6b7280"
                 }
                 strokeWidth="2"
                 className="cursor-move"
@@ -1137,7 +1137,7 @@ export default function GraphVisualizerPage() {
     >
       <div className="w-full space-y-6">
         {/* Graph Information Card */}
-        <Card className="bg-orange-50 border-primary">
+        <Card className="bg-card border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Network className="h-5 w-5" />
@@ -1145,7 +1145,7 @@ export default function GraphVisualizerPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="space-y-2 text-sm text-black">
+            <CardDescription className="space-y-2 text-sm text-muted-foreground">
               <span className="block">
                 A <strong>graph</strong> is a non-linear data structure consisting of <strong>vertices (nodes)</strong> connected by <strong>edges</strong>.
                 It models pairwise relationships—think social networks, road maps, and the internet.
@@ -1178,7 +1178,7 @@ export default function GraphVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">About {detail.name}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-black">
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
             <p>{detail.overview}</p>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -1243,8 +1243,9 @@ export default function GraphVisualizerPage() {
           </CardContent>
         </Card>
 
-        {/* Visualization */}
-        <div className="flex justify-center p-4 bg-muted/10 rounded-lg">
+
+        {/* Graph Canvas */}
+        <div className="bg-muted/10 rounded-lg p-4 min-h-[500px] border relative overflow-hidden flex justify-center">
           {renderGraph()}
         </div>
 
@@ -1257,11 +1258,10 @@ export default function GraphVisualizerPage() {
             {currentPseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`py-1 px-2 rounded ${
-                  currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                }`}
+                className={`py-1 px-2 rounded ${currentCodeLine === index + 1
+                  ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                  : "text-muted-foreground"
+                  }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
@@ -1494,7 +1494,7 @@ export default function GraphVisualizerPage() {
               <div>
                 <div className="text-lg font-bold text-accent">
                   {traversalSteps[currentStep]?.queue?.length ||
-                   traversalSteps[currentStep]?.stack?.length || 0}
+                    traversalSteps[currentStep]?.stack?.length || 0}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {algorithm === "bfs" ? "Queue" : algorithm === "dfs" ? "Stack" : "—"}

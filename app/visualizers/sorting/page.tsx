@@ -6,38 +6,41 @@ import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import { Slider } from "../../../components/ui/slider"
-import { Shuffle, BarChart3, TrendingUp, Clock, Code, Layers } from "lucide-react"
+import { Shuffle, BarChart3, TrendingUp, Clock, Code, Layers, Eye } from "lucide-react"
+import {
+  bubbleSort,
+  selectionSort,
+  insertionSort,
+  mergeSort,
+  quickSort,
+  heapSort,
+  type SortElement,
+  type SortStep
+} from "../../../lib/algorithms/sorting"
+import { Switch } from "../../../components/ui/switch"
+import { Label } from "../../../components/ui/label"
 
-interface SortElement {
-  value: number
-  id: number
-  isComparing?: boolean
-  isSwapping?: boolean
-  isSorted?: boolean
-  isPivot?: boolean
-  isSelected?: boolean
-}
-
-interface SortStep {
-  array: SortElement[]
-  description: string
-  comparisons: number
-  swaps: number
-  comparing?: number[]
-  swapping?: number[]
-  pivot?: number
-  codeLine?: number
-}
+// SortElement and SortStep moved to lib/algorithms/sorting.ts
 
 type SortingAlgorithm = "bubble" | "selection" | "insertion" | "merge" | "quick" | "heap"
 
-const algorithmColors = {
+const normalColors = {
   bubble: { unsorted: "bg-blue-400", comparing: "bg-yellow-400", swapping: "bg-red-400", sorted: "bg-green-500", pivot: "bg-purple-500", selected: "bg-indigo-400" },
   selection: { unsorted: "bg-amber-400", comparing: "bg-cyan-400", swapping: "bg-red-500", sorted: "bg-emerald-500", pivot: "bg-purple-500", selected: "bg-violet-400" },
   insertion: { unsorted: "bg-rose-400", comparing: "bg-lime-400", swapping: "bg-orange-500", sorted: "bg-teal-500", pivot: "bg-purple-500", selected: "bg-fuchsia-400" },
   merge: { unsorted: "bg-accent", comparing: "bg-yellow-500", swapping: "bg-red-500", sorted: "bg-green-500", pivot: "bg-purple-500", selected: "bg-blue-500" },
   quick: { unsorted: "bg-accent", comparing: "bg-yellow-500", swapping: "bg-red-500", sorted: "bg-green-500", pivot: "bg-purple-500", selected: "bg-blue-500" },
   heap: { unsorted: "bg-accent", comparing: "bg-yellow-500", swapping: "bg-red-500", sorted: "bg-green-500", pivot: "bg-purple-500", selected: "bg-blue-500" },
+}
+
+const accessibleColors = {
+  // varied patterns could be better but sticking to high contrast colors for now
+  bubble: { unsorted: "bg-slate-400", comparing: "bg-yellow-600 border-4 border-yellow-900", swapping: "bg-red-700 border-4 border-red-900", sorted: "bg-black text-white border-2 border-white", pivot: "bg-purple-800", selected: "bg-blue-800" },
+  selection: { unsorted: "bg-slate-400", comparing: "bg-yellow-600 border-4 border-yellow-900", swapping: "bg-red-700 border-4 border-red-900", sorted: "bg-black text-white border-2 border-white", pivot: "bg-purple-800", selected: "bg-blue-800" },
+  insertion: { unsorted: "bg-slate-400", comparing: "bg-yellow-600 border-4 border-yellow-900", swapping: "bg-red-700 border-4 border-red-900", sorted: "bg-black text-white border-2 border-white", pivot: "bg-purple-800", selected: "bg-blue-800" },
+  merge: { unsorted: "bg-slate-400", comparing: "bg-yellow-600 border-4 border-yellow-900", swapping: "bg-red-700 border-4 border-red-900", sorted: "bg-black text-white border-2 border-white", pivot: "bg-purple-800", selected: "bg-blue-800" },
+  quick: { unsorted: "bg-slate-400", comparing: "bg-yellow-600 border-4 border-yellow-900", swapping: "bg-red-700 border-4 border-red-900", sorted: "bg-black text-white border-2 border-white", pivot: "bg-purple-800", selected: "bg-blue-800" },
+  heap: { unsorted: "bg-slate-400", comparing: "bg-yellow-600 border-4 border-yellow-900", swapping: "bg-red-700 border-4 border-red-900", sorted: "bg-black text-white border-2 border-white", pivot: "bg-purple-800", selected: "bg-blue-800" },
 }
 
 const pseudocodeDefinitions: Record<SortingAlgorithm, string[]> = {
@@ -203,6 +206,7 @@ export default function SortingVisualizerPage() {
   const [speed, setSpeed] = useState([500])
   const [comparisons, setComparisons] = useState(0)
   const [swaps, setSwaps] = useState(0)
+  const [highContrast, setHighContrast] = useState(false)
 
   const applications = [
     { title: "Database Query Optimization", description: "Sorting algorithms optimize database queries and indexing for faster data retrieval", examples: ["ORDER BY", "Index creation", "Query plans"] },
@@ -229,201 +233,7 @@ export default function SortingVisualizerPage() {
 
   useEffect(() => { generateRandomArray() }, [generateRandomArray])
 
-  // ---------- Sorting Implementations (same as your last version) ----------
-  const bubbleSort = (arr: SortElement[]): SortStep[] => {
-    const steps: SortStep[] = []
-    const array = [...arr]
-    let comparisons = 0, swaps = 0
-    for (let i = 0; i < array.length - 1; i++) {
-      for (let j = 0; j < array.length - i - 1; j++) {
-        comparisons++
-        steps.push({ array: [...array], description: `Comparing elements at positions ${j} and ${j + 1}`, comparisons, swaps, comparing: [j, j + 1], codeLine: 2 })
-        if (array[j].value > array[j + 1].value) {
-          ;[array[j], array[j + 1]] = [array[j + 1], array[j]]
-          swaps++
-          steps.push({ array: [...array], description: `Swapped elements at positions ${j} and ${j + 1}`, comparisons, swaps, swapping: [j, j + 1], codeLine: 3 })
-        }
-      }
-      array[array.length - 1 - i].isSorted = true
-      steps.push({ array: [...array], description: `Element at position ${array.length - 1 - i} is now in its final position`, comparisons, swaps, codeLine: 4 })
-    }
-    array[0].isSorted = true
-    steps.push({ array: [...array], description: "Sorting complete!", comparisons, swaps, codeLine: -1 })
-    return steps
-  }
-
-  const selectionSort = (arr: SortElement[]): SortStep[] => {
-    const steps: SortStep[] = []
-    const array = [...arr]
-    let comparisons = 0, swaps = 0
-    for (let i = 0; i < array.length - 1; i++) {
-      let minIndex = i
-      steps.push({ array: [...array], description: `Finding minimum element from position ${i} onwards`, comparisons, swaps, codeLine: 1 })
-      for (let j = i + 1; j < array.length; j++) {
-        comparisons++
-        steps.push({ array: [...array], description: `Comparing element at position ${j} with current minimum`, comparisons, swaps, comparing: [minIndex, j], codeLine: 3 })
-        if (array[j].value < array[minIndex].value) {
-          minIndex = j
-          steps.push({ array: [...array], description: `New minimum found at position ${j}`, comparisons, swaps, comparing: [minIndex], codeLine: 4 })
-        }
-      }
-      if (minIndex !== i) {
-        ;[array[i], array[minIndex]] = [array[minIndex], array[i]]
-        swaps++
-        steps.push({ array: [...array], description: `Swapped minimum element to position ${i}`, comparisons, swaps, swapping: [i, minIndex], codeLine: 6 })
-      }
-      array[i].isSorted = true
-      steps.push({ array: [...array], description: `Element at position ${i} is now in its final position`, comparisons, swaps, codeLine: 7 })
-    }
-    array[array.length - 1].isSorted = true
-    steps.push({ array: [...array], description: "Sorting complete!", comparisons, swaps, codeLine: -1 })
-    return steps
-  }
-
-  const insertionSort = (arr: SortElement[]): SortStep[] => {
-    const steps: SortStep[] = []
-    const array = [...arr]
-    let comparisons = 0, swaps = 0
-    array[0].isSorted = true
-    steps.push({ array: [...array], description: "First element is considered sorted", comparisons, swaps, codeLine: -1 })
-    for (let i = 1; i < array.length; i++) {
-      const key = array[i]
-      let j = i - 1
-      steps.push({ array: [...array], description: `Inserting element ${key.value} into sorted portion`, comparisons, swaps, codeLine: 1 })
-      while (j >= 0 && array[j].value > key.value) {
-        comparisons++
-        steps.push({ array: [...array], description: `Comparing ${key.value} with ${array[j].value}`, comparisons, swaps, comparing: [j, i], codeLine: 3 })
-        array[j + 1] = array[j]; swaps++; j--
-        steps.push({ array: [...array], description: `Shifted element to the right`, comparisons, swaps, codeLine: 4 })
-      }
-      array[j + 1] = key
-      steps.push({ array: [...array], description: `Inserted ${key.value} at position ${j + 1}`, comparisons, swaps, codeLine: 6 })
-      for (let k = 0; k <= i; k++) array[k].isSorted = true
-      steps.push({ array: [...array], description: `Marked positions 0 to ${i} as sorted`, comparisons, swaps, codeLine: 7 })
-    }
-    steps.push({ array: [...array], description: "Sorting complete!", comparisons, swaps, codeLine: -1 })
-    return steps
-  }
-
-  const mergeSort = (arr: SortElement[]): SortStep[] => {
-    const steps: SortStep[] = []
-    const array = [...arr]
-    let comparisons = 0, swaps = 0
-    const copy = (a: SortElement[]) => a.map(el => ({ ...el }))
-    const helper = (arrRef: SortElement[], start: number, end: number, idxs: number[], depth = 0): SortElement[] => {
-      if (start >= end) return [arrRef[start]]
-      const mid = Math.floor((start + end) / 2)
-      const highlight = copy(array); highlight.forEach((el, i) => { if (i >= start && i <= end) el.isSelected = true })
-      steps.push({ array: highlight, description: `Dividing subarray from index ${start} to ${end}`, comparisons, swaps, codeLine: depth === 0 ? 2 : 3 })
-      const leftIdx = idxs.slice(0, mid - start + 1), rightIdx = idxs.slice(mid - start + 1)
-      const left = helper(arrRef, start, mid, leftIdx, depth + 1)
-      const right = helper(arrRef, mid + 1, end, rightIdx, depth + 1)
-      const merged: SortElement[] = []; let i = 0, j = 0
-      const toMerge = copy(array); for (let k = start; k <= end; k++) toMerge[k].isSelected = true
-      steps.push({ array: toMerge, description: `Merging subarrays [${start}-${mid}] and [${mid + 1}-${end}]`, comparisons, swaps, codeLine: 5 })
-      while (i < left.length && j < right.length) {
-        comparisons++
-        const cmpArr = copy(array); const li = idxs[i]; const rj = idxs[left.length + j]
-        cmpArr[li].isComparing = true; cmpArr[rj].isComparing = true
-        steps.push({ array: cmpArr, description: `Comparing ${left[i].value} and ${right[j].value}`, comparisons, swaps, comparing: [li, rj], codeLine: 10 })
-        if (left[i].value <= right[j].value) { merged.push(left[i]); i++; steps.push({ array: copy(array), description: `Taking ${left[i - 1].value} from left array`, comparisons, swaps, codeLine: 11 }) }
-        else { merged.push(right[j]); j++; steps.push({ array: copy(array), description: `Taking ${right[j - 1].value} from right array`, comparisons, swaps, codeLine: 14 }) }
-      }
-      while (i < left.length) { merged.push(left[i++]) }
-      while (j < right.length) { merged.push(right[j++]) }
-      for (let k = 0; k < merged.length; k++) { const oi = idxs[k]; array[oi] = { ...merged[k], id: oi } }
-      const mergedArr = copy(array); for (let k = start; k <= end; k++) mergedArr[k].isSorted = true
-      steps.push({ array: mergedArr, description: `Merged subarray from index ${start} to ${end}`, comparisons, swaps, codeLine: 16 })
-      return merged
-    }
-    const idxs = arr.map((_, i) => i)
-    helper(arr, 0, arr.length - 1, idxs)
-    const final = copy(array); final.forEach(e => (e.isSorted = true))
-    steps.push({ array: final, description: "Sorting complete!", comparisons, swaps, codeLine: -1 })
-    return steps
-  }
-
-  const quickSort = (arr: SortElement[]): SortStep[] => {
-    const steps: SortStep[] = []
-    const array = [...arr]
-    let comparisons = 0, swaps = 0
-    const qs = (l: number, h: number, d = 0) => {
-      if (l < h) {
-        const p = part(l, h)
-        array[p].isSorted = true
-        steps.push({ array: [...array], description: `Pivot ${array[p].value} is now in its final position`, comparisons, swaps, pivot: p, codeLine: 2 })
-        qs(l, p - 1, d + 1); qs(p + 1, h, d + 1)
-      }
-    }
-    const part = (l: number, h: number) => {
-      const pivot = array[h]; let i = l - 1
-      const pv = [...array]; pv[h].isPivot = true
-      steps.push({ array: pv, description: `Selecting pivot: ${pivot.value} at index ${h}`, comparisons, swaps, pivot: h, codeLine: 7 })
-      for (let j = l; j < h; j++) {
-        comparisons++
-        const cmp = [...array]; cmp[j].isComparing = true; cmp[h].isPivot = true
-        steps.push({ array: cmp, description: `Comparing ${array[j].value} with pivot ${pivot.value}`, comparisons, swaps, comparing: [j], pivot: h, codeLine: 9 })
-        if (array[j].value <= pivot.value) {
-          i++; if (i !== j) {
-            [array[i], array[j]] = [array[j], array[i]]; swaps++
-            const sw = [...array]; sw[i].isSwapping = true; sw[j].isSwapping = true; sw[h].isPivot = true
-            steps.push({ array: sw, description: `Swapped ${array[i].value} and ${array[j].value}`, comparisons, swaps, swapping: [i, j], pivot: h, codeLine: 12 })
-          }
-        }
-      }
-      ;[array[i + 1], array[h]] = [array[h], array[i + 1]]; swaps++
-      const fs = [...array]; fs[i + 1].isSwapping = true; fs[h].isSwapping = true
-      steps.push({ array: fs, description: `Placed pivot ${pivot.value} at its final position ${i + 1}`, comparisons, swaps, swapping: [i + 1, h], codeLine: 13 })
-      return i + 1
-    }
-    qs(0, array.length - 1)
-    array.forEach(e => (e.isSorted = true))
-    steps.push({ array: [...array], description: "Sorting complete!", comparisons, swaps, codeLine: -1 })
-    return steps
-  }
-
-  const heapSort = (arr: SortElement[]): SortStep[] => {
-    const steps: SortStep[] = []
-    const array = [...arr]
-    let comparisons = 0, swaps = 0
-    const heapify = (n: number, i: number) => {
-      let largest = i, l = 2 * i + 1, r = 2 * i + 2
-      if (l < n) {
-        comparisons++
-        const cmp = [...array]; cmp[i].isComparing = true; cmp[l].isComparing = true
-        steps.push({ array: cmp, description: `Comparing parent ${array[i].value} with left child ${array[l].value}`, comparisons, swaps, comparing: [i, l], codeLine: 12 })
-        if (array[l].value > array[largest].value) { largest = l; steps.push({ array: [...array], description: `Left child is larger`, comparisons, swaps, codeLine: 13 }) }
-      }
-      if (r < n) {
-        comparisons++
-        const cmp2 = [...array]; cmp2[largest].isComparing = true; cmp2[r].isComparing = true
-        steps.push({ array: cmp2, description: `Comparing ${array[largest].value} with right child ${array[r].value}`, comparisons, swaps, comparing: [largest, r], codeLine: 14 })
-        if (array[r].value > array[largest].value) { largest = r; steps.push({ array: [...array], description: `Right child is larger`, comparisons, swaps, codeLine: 15 }) }
-      }
-      if (largest !== i) {
-        ;[array[i], array[largest]] = [array[largest], array[i]]; swaps++
-        const sw = [...array]; sw[i].isSwapping = true; sw[largest].isSwapping = true
-        steps.push({ array: sw, description: `Swapped ${array[i].value} and ${array[largest].value} to maintain heap property`, comparisons, swaps, swapping: [i, largest], codeLine: 17 })
-        heapify(n, largest)
-      }
-    }
-    const n = array.length
-    for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-      const step = [...array]; step[i].isSelected = true
-      steps.push({ array: step, description: `Building heap: processing node ${array[i].value} at index ${i}`, comparisons, swaps, codeLine: 3 })
-      heapify(n, i)
-    }
-    for (let i = n - 1; i > 0; i--) {
-      ;[array[0], array[i]] = [array[i], array[0]]; swaps++
-      const ex = [...array]; ex[0].isSwapping = true; ex[i].isSwapping = true; ex[i].isSorted = true
-      steps.push({ array: ex, description: `Extracted max element ${array[i].value} to position ${i}`, comparisons, swaps, swapping: [0, i], codeLine: 5 })
-      heapify(i, 0)
-    }
-    array[0].isSorted = true
-    steps.push({ array: [...array], description: "Sorting complete!", comparisons, swaps, codeLine: -1 })
-    return steps
-  }
-  // -------------------------------------------------------------------------
+  // Sorting Implementations moved to lib/algorithms/sorting.ts
 
   const startSorting = async () => {
     setIsSorting(true)
@@ -504,7 +314,7 @@ export default function SortingVisualizerPage() {
   const currentAlgorithm = algorithmInfo[algorithm]
   const currentPseudocode = pseudocodeDefinitions[algorithm]
   const currentCodeLine = sortSteps[currentStep]?.codeLine ?? -1
-  const colors = algorithmColors[algorithm]
+  const colors = highContrast ? accessibleColors[algorithm] : normalColors[algorithm]
 
   const onChooseAlgorithm = (alg: SortingAlgorithm) => {
     setAlgorithm(alg)
@@ -534,7 +344,7 @@ export default function SortingVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Sorting</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-black space-y-2">
+          <CardContent className="text-sm text-muted-foreground space-y-2">
             <div><strong>Sorting</strong> reorders data to a defined order. It’s key for fast lookup, grouping, and analytics. Algorithms trade off speed, space, stability, and in-place behavior.</div>
             <div className="rounded-md border bg-muted/30 p-3 font-mono text-xs text-foreground">
               Input: [7, 3, 8, 2] → Sorted: [2, 3, 7, 8]<br />
@@ -564,7 +374,7 @@ export default function SortingVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{currentAlgorithm.name} — Details</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-black space-y-2">
+          <CardContent className="text-sm text-muted-foreground space-y-2">
             <div className="font-medium text-foreground">{currentAlgorithm.description}</div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
@@ -616,14 +426,11 @@ export default function SortingVisualizerPage() {
                     : isComparing ? "translateY(-3px)"
                       : "translateY(0)"
 
-                // Make bars a bit wider by increasing the base width divisor
-                const barWidth = Math.max(1200 / array.length - 2, 10)
-
                 return (
                   <div
                     key={element.id}
                     className={`
-            relative rounded-t-sm
+            relative rounded-t-sm flex-1
             ${element.isSorted ? colors.sorted
                         : isPivot ? colors.pivot
                           : isSwapping ? colors.swapping
@@ -633,7 +440,6 @@ export default function SortingVisualizerPage() {
           `}
                     style={{
                       height: `${element.value}px`,
-                      width: `${barWidth}px`,
                       transition: "height 250ms ease, transform 250ms ease, background-color 150ms linear",
                       transform,
                       willChange: "height, transform",
@@ -710,6 +516,18 @@ export default function SortingVisualizerPage() {
             <CardHeader><CardTitle className="text-lg">Algorithm (Selected)</CardTitle></CardHeader>
             <CardContent>
               <div className="text-sm text-center font-medium">{algorithmInfo[algorithm].name}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-lg">Appearance</CardTitle></CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-2">
+                <Switch id="high-contrast" checked={highContrast} onCheckedChange={setHighContrast} />
+                <Label htmlFor="high-contrast" className="flex items-center gap-2 cursor-pointer">
+                  <Eye className="h-4 w-4" /> High Contrast
+                </Label>
+              </div>
             </CardContent>
           </Card>
         </div>

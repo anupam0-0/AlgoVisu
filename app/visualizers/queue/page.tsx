@@ -224,12 +224,11 @@ export default function QueueVisualizerPage() {
               transition-all duration-300 ease-out cursor-pointer group
               ${element.isNew ? "ring-2 ring-primary/40 scale-105 translate-y-[-4px]" : ""}
               ${element.isRemoving ? "opacity-0 -translate-y-3" : ""}
-              ${
-                isFront
-                  ? "bg-blue-100 border-blue-500 text-blue-800"
-                  : queueType === "priority"
-                    ? "bg-yellow-100 border-yellow-500 text-yellow-800"
-                    : "bg-card border-border hover:border-accent/50"
+              ${isFront
+                ? "bg-blue-100 border-blue-500 text-blue-800"
+                : queueType === "priority"
+                  ? "bg-yellow-100 border-yellow-500 text-yellow-800"
+                  : "bg-card border-border hover:border-accent/50"
               }
             `}
           >
@@ -490,7 +489,7 @@ export default function QueueVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Queues</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-black space-y-2">
+          <CardContent className="text-sm text-muted-foreground space-y-2">
             <div>
               A <strong>queue</strong> is a linear data structure that follows the <strong>First-In-First-Out (FIFO)</strong> principle:
               the first element added is the first one removed. Enqueue adds to the rear, dequeue removes from the front.
@@ -512,10 +511,9 @@ export default function QueueVisualizerPage() {
                 onClick={() => setQueueType(type)}
                 className={`
                   flex-1 py-2 text-sm font-medium rounded-sm transition-colors
-                  ${
-                    queueType === type
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                  ${queueType === type
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                   }
                 `}
               >
@@ -530,7 +528,7 @@ export default function QueueVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{typeInfo.label} — Details</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-black space-y-2">
+          <CardContent className="text-sm text-muted-foreground space-y-2">
             <div className="font-medium text-foreground">{typeInfo.description}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -564,7 +562,8 @@ export default function QueueVisualizerPage() {
         </Card>
 
         {/* Queue Visualization (BIGGER) */}
-        <div className="flex flex-wrap gap-5 justify-center min-h-[220px] md:min-h-[260px] items-center">
+        <div className="flex flex-wrap gap-5 justify-center min-h-[220px] md:min-h-[260px] items-center
+             p-6 bg-gradient-to-br from-muted/30 to-background rounded-2xl border border-border shadow-sm">
           {renderQueueElements()}
         </div>
 

@@ -102,7 +102,7 @@ export default function MusicPlaylistApplication() {
     const prev = prevSongIndex(currentSongIndex)
     if (prev !== null) {
       setCurrentSongIndex(prev)
-      
+
     }
   }
 
@@ -135,7 +135,7 @@ export default function MusicPlaylistApplication() {
         space: "O(n)",
       }}
       applications={[]}
-      // ⚠️ DO NOT pass: isPlaying, onPlay, onPause, onStep*, onReset, currentStep, totalSteps
+    // ⚠️ DO NOT pass: isPlaying, onPlay, onPause, onStep*, onReset, currentStep, totalSteps
     >
       <div className="w-full space-y-6">
         {/* Explanation Card */}
@@ -194,7 +194,7 @@ export default function MusicPlaylistApplication() {
               </Button>
             </div>
 
-            <div className="min-h-[160px] flex items-center justify-center overflow-x-auto py-4">
+            <div className="min-h-[160px] flex items-center justify-center overflow-x-auto py-4 p-4 bg-muted/10 rounded-lg">
               {songs.length === 0 ? (
                 <p className="text-muted-foreground">Your playlist is empty. Add some songs!</p>
               ) : (
@@ -205,14 +205,13 @@ export default function MusicPlaylistApplication() {
                       className={`
                         w-40 p-3 rounded-lg border-2 flex flex-col items-center justify-center text-center
                         transition-all duration-300 relative
-                        ${
-                          song.isRemoved
-                            ? "opacity-40 line-through bg-red-50"
-                            : song.isPlaying
+                        ${song.isRemoved
+                          ? "opacity-40 line-through bg-red-50"
+                          : song.isPlaying
                             ? "bg-blue-100 border-blue-500 scale-105 shadow-md"
                             : song.isHighlighted
-                            ? "bg-accent/20 border-accent"
-                            : "bg-card border-border"
+                              ? "bg-accent/20 border-accent"
+                              : "bg-card border-border"
                         }
                       `}
                     >

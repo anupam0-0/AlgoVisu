@@ -179,7 +179,7 @@ const typeDetails: Record<
 export default function StackVisualizerPage() {
   const [stackType, setStackType] = useState<StackType>("basic");
   const [stack, setStack] = useState<StackElement[]>(() => getInitialStack("basic"));
-  const [minStack, setMinStack] = useState<number[]>([10, 10]); 
+  const [minStack, setMinStack] = useState<number[]>([10, 10]);
   const [history, setHistory] = useState<StackElement[][]>([getInitialStack("persistent")]);
   const [inputValue, setInputValue] = useState("");
   const [lastOperation, setLastOperation] = useState<string>("");
@@ -309,7 +309,7 @@ export default function StackVisualizerPage() {
   };
 
   const renderStack = () => (
-    <div className="flex flex-col-reverse space-y-reverse space-y-2 min-h-[320px] justify-end">
+    <div className="flex flex-col-reverse gap-2 min-h-[320px] justify-end items-center">
       {stack.map((el, idx) => (
         <div
           key={el.id}
@@ -378,7 +378,7 @@ export default function StackVisualizerPage() {
               {details.title}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-base text-black space-y-3 leading-relaxed">
+          <CardContent className="text-base text-muted-foreground space-y-3 leading-relaxed">
             <div className="font-medium text-[1.05rem]">
               {details.description}
             </div>
@@ -466,7 +466,7 @@ export default function StackVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">Edge Case Demo</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 text-black">
+          <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 text-muted-foreground">
             <label className="inline-flex items-center gap-2">
               <input
                 type="checkbox"

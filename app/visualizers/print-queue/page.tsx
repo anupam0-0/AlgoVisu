@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, FileText, Plus } from "lucide-react";
 
 // Fallback for toast if sonner isn't used
-const toast = (typeof window !== "undefined" && (window as any).toast) 
-  ? (window as any).toast 
+const toast = (typeof window !== "undefined" && (window as any).toast)
+  ? (window as any).toast
   : null;
 
 interface PrintJob {
@@ -130,7 +130,7 @@ export default function PrintQueueVisualizerPage() {
       difficulty="Beginner"
       onReset={resetQueue}
       complexity={{ time: "O(1)", space: "O(n)" }}
-      
+
     >
       <div className="w-full space-y-6">
         {/* Knowledge Card */}
@@ -153,11 +153,10 @@ export default function PrintQueueVisualizerPage() {
           <div className="flex flex-col items-center">
             <div className="relative">
               <div
-                className={`w-20 h-20 rounded-lg flex items-center justify-center border-2 ${
-                  printer1Status === "printing"
+                className={`w-20 h-20 rounded-lg flex items-center justify-center border-2 ${printer1Status === "printing"
                     ? "border-blue-500 bg-blue-50 animate-pulse"
                     : "border-gray-300 bg-gray-100"
-                }`}
+                  }`}
               >
                 <Printer className="h-8 w-8 text-gray-700" />
               </div>
@@ -174,11 +173,10 @@ export default function PrintQueueVisualizerPage() {
           <div className="flex flex-col items-center">
             <div className="relative">
               <div
-                className={`w-20 h-20 rounded-lg flex items-center justify-center border-2 ${
-                  printer2Status === "printing"
+                className={`w-20 h-20 rounded-lg flex items-center justify-center border-2 ${printer2Status === "printing"
                     ? "border-green-500 bg-green-50 animate-pulse"
                     : "border-gray-300 bg-gray-100"
-                }`}
+                  }`}
               >
                 <Printer className="h-8 w-8 text-gray-700" />
               </div>
@@ -194,16 +192,15 @@ export default function PrintQueueVisualizerPage() {
         </div>
 
         {/* Queue Visualization */}
-        <div className="flex flex-wrap gap-4 justify-center min-h-[120px] items-center">
+        <div className="flex flex-wrap gap-4 justify-center min-h-[120px] items-center p-6 bg-gradient-to-br from-muted/30 to-background rounded-2xl border border-border">
           {jobs.length === 0 ? (
             <span className="text-muted-foreground italic">No print jobs queued</span>
           ) : (
             jobs.map((job, index) => (
               <div
                 key={job.id}
-                className={`w-28 h-32 border-2 rounded-lg flex flex-col items-center justify-center p-2 bg-card ${
-                  index === 0 ? "border-blue-500 bg-blue-50" : "border-border"
-                }`}
+                className={`w-28 h-32 border-2 rounded-lg flex flex-col items-center justify-center p-2 bg-card ${index === 0 ? "border-blue-500 bg-blue-50" : "border-border"
+                  }`}
               >
                 <FileText className="h-8 w-8 text-muted-foreground mb-2" />
                 <span className="font-medium text-sm text-center truncate w-full">{job.name}</span>

@@ -26,6 +26,7 @@ import {
   Trophy,
   TrendingUp,
   ArrowLeft,
+  Crown,
 } from "lucide-react";
 import Footer from "@/components/Footer";
 
@@ -127,6 +128,36 @@ const VisualizersPage = () => {
         "Priority Queue",
         "Heap Sort",
       ],
+      available: true,
+      type: "visualizer",
+    },
+    {
+      id: "pathfinding",
+      title: "Pathfinding Visualizer",
+      description: "Visualize pathfinding algorithms like A*, Dijkstra, and BFS on an interactive grid",
+      icon: <Network className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["A* Search", "Dijkstra", "BFS", "Grid Search"],
+      available: true,
+      type: "visualizer",
+    },
+    {
+      id: "n-queens",
+      title: "N-Queens Visualizer",
+      description: "Visualize Backtracking by solving the N-Queens problem on a dynamic board",
+      icon: <Crown className="h-6 w-6" />,
+      difficulty: "Advanced",
+      topics: ["Backtracking", "Recursion", "Constraint Satisfaction"],
+      available: true,
+      type: "visualizer",
+    },
+    {
+      id: "sorting-race",
+      title: "Sorting Race Mode",
+      description: "Compare sorting algorithms side-by-side to visualize time complexity differences",
+      icon: <Trophy className="h-6 w-6" />,
+      difficulty: "Intermediate",
+      topics: ["Time Complexity", "Big O", "Algorithm Comparison"],
       available: true,
       type: "visualizer",
     },
@@ -318,13 +349,14 @@ const VisualizersPage = () => {
         "sorting",
         "hash-table",
         "linked-list",
+        "sorting-race",
       ].includes(v.id)
     );
 
   const nonLinearVisualizers = visualizers
     .filter((v) => v.type === "visualizer")
     .filter((v) =>
-      ["tree", "avl", "trie", "graph", "mst", "heap"].includes(v.id)
+      ["tree", "avl", "trie", "graph", "mst", "heap", "pathfinding", "n-queens"].includes(v.id)
     );
 
   // Build visualizer meta for easy lookup
@@ -349,7 +381,7 @@ const VisualizersPage = () => {
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       {/* <Header /> */}
 
@@ -362,9 +394,9 @@ const VisualizersPage = () => {
               className={[
                 // neo-brutalism: chunky borders + offset shadow
                 "relative inline-flex items-center gap-2 px-3 py-2",
-                "bg-white text-black border-4 border-black",
-                "shadow-[6px_6px_0_0_#000] hover:shadow-[4px_4px_0_0_#000]",
-                "active:shadow-[2px_2px_0_0_#000]",
+                "bg-card text-card-foreground border-4 border-foreground/50 dark:border-border",
+                "shadow-[6px_6px_0_0_hsl(var(--foreground))] hover:shadow-[4px_4px_0_0_hsl(var(--foreground))]",
+                "active:shadow-[2px_2px_0_0_hsl(var(--foreground))]",
                 "transition-all",
                 "rounded-none",                // square look
                 "hover:translate-x-[2px] hover:translate-y-[2px]",
@@ -408,8 +440,8 @@ const VisualizersPage = () => {
                     <Card
                       key={visualizer.id}
                       className={`relative bg-sky-400 rounded border-4 border-primary ${!visualizer.available
-                          ? "opacity-60"
-                          : "hover:shadow-lg transition-shadow"
+                        ? "opacity-60"
+                        : "hover:shadow-lg transition-shadow"
                         }`}
                     >
                       <CardHeader>
@@ -419,7 +451,7 @@ const VisualizersPage = () => {
                               {visualizer.icon}
                             </div>
                             <div className="">
-                              <CardTitle className="text-lg text-primary">
+                              <CardTitle className="text-lg text-black">
                                 {visualizer.title}
                               </CardTitle>
                               <Badge
@@ -434,7 +466,7 @@ const VisualizersPage = () => {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <CardDescription className="mb-4 font-medium text-black">
+                        <CardDescription className="mb-4 font-medium text-black/80">
                           {visualizer.description}
                         </CardDescription>
                         <div className="flex flex-wrap gap-1 mb-4">
@@ -487,8 +519,8 @@ const VisualizersPage = () => {
                     <Card
                       key={visualizer.id}
                       className={`relative bg-orange-200 rounded border-4 border-primary ${!visualizer.available
-                          ? "opacity-60"
-                          : "hover:shadow-lg transition-shadow"
+                        ? "opacity-60"
+                        : "hover:shadow-lg transition-shadow"
                         }`}
                     >
                       <CardHeader>
@@ -513,7 +545,7 @@ const VisualizersPage = () => {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <CardDescription className="mb-4 font-medium text-primary">
+                        <CardDescription className="mb-4 font-medium text-black/80">
                           {visualizer.description}
                         </CardDescription>
                         <div className="flex flex-wrap gap-1 mb-4">
@@ -583,8 +615,8 @@ const VisualizersPage = () => {
                           <Card
                             key={visualizer.id}
                             className={`relative bg-[#23A094] rounded border-4 border-primary ${!visualizer.available
-                                ? "opacity-60"
-                                : "hover:shadow-lg transition-shadow"
+                              ? "opacity-60"
+                              : "hover:shadow-lg transition-shadow"
                               }`}
                           >
                             <CardHeader>
@@ -594,11 +626,11 @@ const VisualizersPage = () => {
                                     {visualizer.icon}
                                   </div>
                                   <div>
-                                    <CardTitle className="text-lg text-primary">
+                                    <CardTitle className="text-lg text-black">
                                       {visualizer.title}
                                     </CardTitle>
                                     <Badge
-                                      className={`text-xs mt-1 border border-primary pointer-events-none ${getDifficultyColor(
+                                      className={`text-xs mt-1 border border-black/20 text-black pointer-events-none ${getDifficultyColor(
                                         visualizer.difficulty
                                       )}`}
                                     >
@@ -609,7 +641,7 @@ const VisualizersPage = () => {
                               </div>
                             </CardHeader>
                             <CardContent>
-                              <CardDescription className="mb-4 font-medium text-black">
+                              <CardDescription className="mb-4 font-medium text-black/80">
                                 {visualizer.description}
                               </CardDescription>
                               <div className="flex flex-wrap gap-1 mb-4">
@@ -617,7 +649,7 @@ const VisualizersPage = () => {
                                   <Badge
                                     key={index}
                                     variant="outline"
-                                    className="text-xs border-2 border-primary rounded bg-neutral-50"
+                                    className="text-xs border-black/20 text-black rounded bg-white/50"
                                   >
                                     {topic}
                                   </Badge>

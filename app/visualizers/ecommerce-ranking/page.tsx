@@ -69,12 +69,12 @@ function makeComparator(rankBy: RankBy, order: SortOrder) {
 }
 
 const SAMPLE_NAMES = [
-  "Nova Drone","Quartz Watch","Echo Buds","Pixel Hoodie","Aero Kettle","Terra Mug",
-  "Zen Lamp","Comet Phone Case","Vega Tripod","Aurora Keyboard","Lumen Lightbar","Nimbus Router",
-  "Atlas Backpack","Orion Speaker","Mosaic Frame","Fusion Mixer","Nimbus Router Pro","Nova Drone Pro"
+  "Nova Drone", "Quartz Watch", "Echo Buds", "Pixel Hoodie", "Aero Kettle", "Terra Mug",
+  "Zen Lamp", "Comet Phone Case", "Vega Tripod", "Aurora Keyboard", "Lumen Lightbar", "Nimbus Router",
+  "Atlas Backpack", "Orion Speaker", "Mosaic Frame", "Fusion Mixer", "Nimbus Router Pro", "Nova Drone Pro"
 ]
 
-const EMOJIS = ["🛸","⌚","🎧","👕","☕","🍶","💡","📱","📷","⌨️","🚦","📡","🎒","🔊","🖼️","🥣","📡","🛸"]
+const EMOJIS = ["🛸", "⌚", "🎧", "👕", "☕", "🍶", "💡", "📱", "📷", "⌨️", "🚦", "📡", "🎒", "🔊", "🖼️", "🥣", "📡", "🛸"]
 
 function randomInt(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min }
 
@@ -204,7 +204,7 @@ function mergeSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sor
     let i = 0, j = 0, k = l
     while (i < left.length && j < right.length) {
       comparisons++
-      if (cmp(left[i], right[j]) <= 0) a[k++] = left[i++] 
+      if (cmp(left[i], right[j]) <= 0) a[k++] = left[i++]
       else a[k++] = right[j++]
       steps.push({ data: mark(a), description: `Merge ${l}-${m} and ${m + 1}-${r}`, comparisons, swaps: 0 })
     }
@@ -309,13 +309,13 @@ function heapSort(arr: Product[], cmp: (a: Product, b: Product) => number): Sort
 function ProductCard({ p, rankBy }: { p: Product; rankBy: RankBy }) {
   const primary =
     rankBy === "price" ? `₹${p.price.toLocaleString("en-IN")}` :
-    rankBy === "date" ? new Date(p.date).toLocaleDateString() :
-    `${p.popularity}`
+      rankBy === "date" ? new Date(p.date).toLocaleDateString() :
+        `${p.popularity}`
 
   const label =
     rankBy === "price" ? "Price" :
-    rankBy === "date" ? "Date" :
-    "Popularity"
+      rankBy === "date" ? "Date" :
+        "Popularity"
 
   return (
     <motion.div
@@ -353,14 +353,14 @@ function ProductCard({ p, rankBy }: { p: Product; rankBy: RankBy }) {
           style={{
             width:
               rankBy === "price" ? `${Math.min(100, (p.price / 50000) * 100)}%` :
-              rankBy === "date" ? `${Math.min(100, ((Date.now() - p.date) / (1000 * 60 * 60 * 24 * 60)) * 100)}%` :
-              `${Math.min(100, (p.popularity / 1000) * 100)}%`,
+                rankBy === "date" ? `${Math.min(100, ((Date.now() - p.date) / (1000 * 60 * 60 * 24 * 60)) * 100)}%` :
+                  `${Math.min(100, (p.popularity / 1000) * 100)}%`,
             background:
               p.isSwapping ? "linear-gradient(90deg, #ef4444, #f97316)" :
-              p.isComparing ? "linear-gradient(90deg, #f59e0b, #10b981)" :
-              p.isPivot ? "linear-gradient(90deg, #a855f7, #6366f1)" :
-              p.isSorted ? "linear-gradient(90deg, #10b981, #22c55e)" :
-              "linear-gradient(90deg, var(--accent), var(--accent))",
+                p.isComparing ? "linear-gradient(90deg, #f59e0b, #10b981)" :
+                  p.isPivot ? "linear-gradient(90deg, #a855f7, #6366f1)" :
+                    p.isSorted ? "linear-gradient(90deg, #10b981, #22c55e)" :
+                      "linear-gradient(90deg, var(--accent), var(--accent))",
             opacity: 0.9
           }}
         />
@@ -641,7 +641,7 @@ export default function EcommerceRankingPage() {
           <div className="
             grid gap-4
             sm:grid-cols-2 lg:grid-cols-3
-            min-h-[420px] p-2 rounded-lg bg-muted/10
+            min-h-[420px] p-4 rounded-lg bg-muted/10
           ">
             <AnimatePresence mode="popLayout">
               {items.map((p, idx) => (

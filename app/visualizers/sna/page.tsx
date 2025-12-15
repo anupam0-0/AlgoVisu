@@ -294,8 +294,8 @@ export default function SocialNetworkAnalyzer() {
       let triangles = 0
       for (let i = 0; i < neighbors.length; i++) {
         for (let j = i + 1; j < neighbors.length; j++) {
-          const exists = connections.some(c => 
-            (c.from === neighbors[i] && c.to === neighbors[j]) || 
+          const exists = connections.some(c =>
+            (c.from === neighbors[i] && c.to === neighbors[j]) ||
             (c.from === neighbors[j] && c.to === neighbors[i])
           )
           if (exists) triangles++
@@ -309,7 +309,7 @@ export default function SocialNetworkAnalyzer() {
     const possibleConnections = n * (n - 1) / 2
     const density = possibleConnections > 0 ? connections.length / possibleConnections : 0
     // Update state
-    setPeople(prev => 
+    setPeople(prev =>
       prev.map(p => ({
         ...p,
         betweenness: normalizedBetweenness.get(p.id) || 0,
@@ -353,9 +353,9 @@ export default function SocialNetworkAnalyzer() {
       (c) => (c.from === connectFrom && c.to === connectTo) || (c.from === connectTo && c.to === connectFrom)
     )
     if (!exists) {
-      setConnections([...connections, { 
-        from: connectFrom, 
-        to: connectTo, 
+      setConnections([...connections, {
+        from: connectFrom,
+        to: connectTo,
         weight,
         type: connectionType
       }])
@@ -452,7 +452,7 @@ export default function SocialNetworkAnalyzer() {
         const person1 = values[headers.indexOf('person1')];
         const person2 = values[headers.indexOf('person2')];
         const weight = parseInt(values[headers.indexOf('interaction_strength')]) || 5;
-        const type = headers.includes('type') 
+        const type = headers.includes('type')
           ? values[headers.indexOf('type')] || 'other'
           : 'other';
         if (!person1 || !person2) continue;
@@ -497,7 +497,7 @@ export default function SocialNetworkAnalyzer() {
 
   const exportCSV = () => {
     const headers = ["person1", "person2", "interaction_strength", "type"]
-    const rows = connections.map(conn => 
+    const rows = connections.map(conn =>
       [conn.from, conn.to, conn.weight, conn.type || "other"].join(",")
     )
     const csvContent = [headers.join(","), ...rows].join("\n")
@@ -579,9 +579,8 @@ export default function SocialNetworkAnalyzer() {
     return (
       <svg
         ref={svgRef}
-        width="800"
-        height="400"
-        className="border rounded-lg bg-white"
+        viewBox="0 0 800 400"
+        className="w-full h-auto max-w-[800px] border rounded-lg bg-white"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
@@ -724,7 +723,7 @@ export default function SocialNetworkAnalyzer() {
       title="Social Network Analysis"
       description="Discover connections, communities, and influencers in social graphs with advanced metrics"
       difficulty="Intermediate"
-      
+
       complexity={{
         time: currentMode.time,
         space: currentMode.space,
@@ -809,9 +808,9 @@ export default function SocialNetworkAnalyzer() {
                 Random Network
               </Button>
               <div className="flex gap-2">
-                <Button 
-                  onClick={() => fileInputRef.current?.click()} 
-                  variant="outline" 
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
                   className="flex-1"
                 >
                   <Upload className="h-4 w-4 mr-2" />

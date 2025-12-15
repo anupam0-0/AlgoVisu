@@ -33,9 +33,9 @@ type TreeMode = "binary" | "bst"
 /*\Size constants*/
 const SVG_W = 900
 const SVG_H = 430
-const NODE_RADIUS = 25               
-const H_GAP_BASE = 250               
-const V_GAP = 88                     
+const NODE_RADIUS = 25
+const H_GAP_BASE = 250
+const V_GAP = 88
 const MIN_H_SPACING = 58
 
 
@@ -241,7 +241,7 @@ export default function TreeVisualizerPage() {
       setRoot({ ...newRoot })
       calculateTreeMetrics(newRoot)
     } else {
-      
+
       const insertLevelOrder = (r: TreeNode, n: TreeNode): TreeNode => {
         const q: TreeNode[] = [r]
         while (q.length) {
@@ -456,17 +456,17 @@ export default function TreeVisualizerPage() {
           r={NODE_RADIUS}
           fill={
             node.isFound ? "#22c55e"
-            : isCurrent ? "#6366f1"
-            : isVisited ? "#f59e0b"
-            : node.isVisited ? "#ef4444"
-            : "#ffffff"
+              : isCurrent ? "#6366f1"
+                : isVisited ? "#f59e0b"
+                  : node.isVisited ? "#ef4444"
+                    : "#ffffff"
           }
           stroke={
             node.isFound ? "#16a34a"
-            : isCurrent ? "#4f46e5"
-            : isVisited ? "#d97706"
-            : node.isVisited ? "#dc2626"
-            : "#6b7280"
+              : isCurrent ? "#4f46e5"
+                : isVisited ? "#d97706"
+                  : node.isVisited ? "#dc2626"
+                    : "#6b7280"
           }
           strokeWidth="2"
           className="transition-all duration-300"
@@ -535,7 +535,7 @@ export default function TreeVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">📚 Understanding Trees</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-black">
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
             <ul className="list-disc list-inside space-y-1">
               {treesIntro.bullets.map((b, i) => <li key={i}>{b}</li>)}
             </ul>
@@ -548,7 +548,7 @@ export default function TreeVisualizerPage() {
         </Card>
 
         {/* Mode Selector */}
-        <Card className="bg-orange-50 border-primary">
+        <Card className="bg-card border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <GitBranch className="h-5 w-5" />
@@ -559,17 +559,15 @@ export default function TreeVisualizerPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => setMode("binary")}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  mode === "binary" ? "bg-blue-600 text-white" : "bg-muted hover:bg-muted/80"
-                }`}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${mode === "binary" ? "bg-blue-600 text-white" : "bg-muted hover:bg-muted/80"
+                  }`}
               >
                 Binary Tree (BT)
               </button>
               <button
                 onClick={() => setMode("bst")}
-                className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                  mode === "bst" ? "bg-green-600 text-white" : "bg-muted hover:bg-muted/80"
-                }`}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${mode === "bst" ? "bg-green-600 text-white" : "bg-muted hover:bg-muted/80"
+                  }`}
               >
                 Binary Search Tree (BST)
               </button>
@@ -582,7 +580,7 @@ export default function TreeVisualizerPage() {
           <CardHeader>
             <CardTitle className="text-lg">{modeDetails[mode].title}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-black">
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
             <div>{modeDetails[mode].summary}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -631,8 +629,8 @@ export default function TreeVisualizerPage() {
         </Card>
 
         {/* Tree Visualization */}
-        <div className="bg-muted/10 rounded-lg p-4 min-h-[440px] overflow-auto">
-          <svg width={SVG_W} height={SVG_H} className="mx-auto">
+        <div className="bg-muted/10 rounded-lg p-4 min-h-[440px] overflow-auto flex justify-center">
+          <svg width={SVG_W} height={SVG_H} className="mx-auto block">
             {positionedRoot && renderTree(positionedRoot)}
           </svg>
         </div>
@@ -658,11 +656,10 @@ export default function TreeVisualizerPage() {
             {currentPseudocode.map((line, index) => (
               <div
                 key={index}
-                className={`py-1 px-2 rounded ${
-                  currentCodeLine === index + 1
-                    ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                }`}
+                className={`py-1 px-2 rounded ${currentCodeLine === index + 1
+                  ? "bg-primary/20 border-l-4 border-primary text-primary-foreground"
+                  : "text-muted-foreground"
+                  }`}
               >
                 <span className="text-xs text-muted-foreground/70 mr-3">{index + 1}</span>
                 {line || "\u00A0"}
@@ -744,11 +741,10 @@ export default function TreeVisualizerPage() {
               <button
                 onClick={handleDeleteNode}
                 disabled={!deleteValue || mode === "binary"}
-                className={`w-full py-2 rounded-md ${
-                  mode === "binary"
-                    ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                    : "bg-red-600 text-white hover:bg-red-700"
-                }`}
+                className={`w-full py-2 rounded-md ${mode === "binary"
+                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  : "bg-red-600 text-white hover:bg-red-700"
+                  }`}
                 title={mode === "binary" ? "Deletion not supported in generic Binary Tree mode" : ""}
               >
                 {mode === "binary" ? "Delete (BST Only)" : "Delete"}

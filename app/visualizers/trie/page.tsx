@@ -406,8 +406,8 @@ export default function TrieVisualizer() {
       description="Visualize insert, search, and delete with step-by-step snapshots"
       difficulty="Intermediate"
       isPlaying={false}
-      onPlay={() => {}}
-      onPause={() => {}}
+      onPlay={() => { }}
+      onPause={() => { }}
       onStepBack={stepBack}
       onStepForward={stepForward}
       onReset={reset}
@@ -421,7 +421,7 @@ export default function TrieVisualizer() {
     >
       <div className="w-full space-y-6">
         {/* What is a Trie? */}
-        <Card className="bg-orange-50 border-primary">
+        <Card className="bg-card border-primary">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <GitBranch className="h-5 w-5" />
@@ -429,7 +429,7 @@ export default function TrieVisualizer() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="space-y-2 text-sm text-black">
+            <CardDescription className="space-y-2 text-sm text-muted-foreground">
               <span className="block">
                 A <strong>trie</strong> (prefix tree) stores strings by characters along a path from the root.
                 Shared prefixes are stored once, enabling super-fast <em>prefix</em> lookups.
@@ -507,8 +507,8 @@ export default function TrieVisualizer() {
                   operation === "insert"
                     ? handleInsert
                     : operation === "search"
-                    ? handleSearch
-                    : handleDelete
+                      ? handleSearch
+                      : handleDelete
                 }
                 className="gap-1"
               >
@@ -556,7 +556,7 @@ export default function TrieVisualizer() {
             <CardTitle>Trie Structure</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-muted/20 p-4 rounded min-h-64">
+            <div className="bg-muted/10 p-4 rounded min-h-64 overflow-auto">
               {currentStepData.trieSnapshot.children.every(child => child === null) ? (
                 <div className="text-muted-foreground italic">Trie is empty</div>
               ) : (

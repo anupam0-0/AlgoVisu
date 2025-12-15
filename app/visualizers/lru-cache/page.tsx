@@ -133,7 +133,7 @@ export default function LRUCacheApplication() {
             }}
             applications={[]}
         >
-            
+
             <div className="w-full space-y-6">
                 {/* Explanation Card */}
                 <Card>
@@ -214,7 +214,7 @@ export default function LRUCacheApplication() {
                         </div>
 
                         {/* Cache Visualization */}
-                        <div className="min-h-[160px] flex items-center justify-center overflow-x-auto py-4">
+                        <div className="min-h-[160px] flex items-center justify-center overflow-x-auto py-4 p-4 bg-muted/10 rounded-lg">
                             {cache.length === 0 ? (
                                 <p className="text-muted-foreground">Cache is empty</p>
                             ) : (

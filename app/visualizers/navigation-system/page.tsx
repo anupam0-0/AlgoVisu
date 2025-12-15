@@ -463,7 +463,7 @@ export default function NavigationSystemsVisualizer() {
   const renderMap = () => {
     const step = steps[currentStep] || { visited: [], currentNode: "", pathEdges: [], distances: {} }
     return (
-      <svg width="800" height="500" className="border rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg">
+      <svg viewBox="0 0 800 500" className="w-full h-auto max-w-[800px] border rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-lg">
         {/* Background grid */}
         <defs>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -556,29 +556,29 @@ export default function NavigationSystemsVisualizer() {
 
           return (
             <g key={node.id}>
-              <circle 
-                cx={node.x} 
-                cy={node.y} 
-                r="28" 
-                fill={fill} 
-                stroke={stroke} 
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r="28"
+                fill={fill}
+                stroke={stroke}
                 strokeWidth={strokeWidth}
                 className="cursor-pointer transition-all duration-200 hover:r-32 hover:stroke-3"
               />
-              <text 
-                x={node.x} 
-                y={node.y + 6} 
-                textAnchor="middle" 
+              <text
+                x={node.x}
+                y={node.y + 6}
+                textAnchor="middle"
                 className="text-sm font-bold"
                 fill={isPath || isCurrent || isStart || isTarget || isVisited ? "#fff" : "#1e293b"}
               >
                 {node.label.split(" ")[0]}
               </text>
               {step.distances[node.id] !== undefined && step.distances[node.id] < Infinity && (
-                <text 
-                  x={node.x} 
-                  y={node.y - 40} 
-                  textAnchor="middle" 
+                <text
+                  x={node.x}
+                  y={node.y - 40}
+                  textAnchor="middle"
                   className="text-xs font-bold"
                   fill={routingMode === "fastest" ? "#1d4ed8" : "#7c3aed"}
                 >
@@ -668,11 +668,10 @@ export default function NavigationSystemsVisualizer() {
             {(routingMode === "fastest" ? pseudocodeFastest : pseudocodeShortest).map((line, idx) => (
               <div
                 key={idx}
-                className={`py-2 px-3 rounded-lg mb-1 transition-colors ${
-                  codeLine === idx + 1
+                className={`py-2 px-3 rounded-lg mb-1 transition-colors ${codeLine === idx + 1
                     ? "bg-emerald-100 border-l-4 border-emerald-500 text-emerald-800 font-medium"
                     : "text-gray-600 hover:bg-gray-100"
-                }`}
+                  }`}
               >
                 <span className="text-xs text-gray-500 mr-4 w-6 inline-block">{idx + 1}</span>
                 {line}
